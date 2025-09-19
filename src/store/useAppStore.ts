@@ -10,6 +10,7 @@ interface AppState {
   voiceEnabled: boolean;
   showCVCreatorDemo: boolean;
   apiKeyStatus: ApiKeyStatus;
+  previewFile: File | null;
 
   setActiveTab: (tab: string) => void;
   setShowSettings: (value: boolean) => void;
@@ -17,6 +18,7 @@ interface AppState {
   setVoiceEnabled: (value: boolean) => void;
   setShowCVCreatorDemo: (value: boolean) => void;
   setApiKeyStatus: (status: ApiKeyStatus) => void;
+  setPreviewFile: (file: File | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -29,6 +31,7 @@ export const useAppStore = create<AppState>()(
         voiceEnabled: true,
         showCVCreatorDemo: false,
         apiKeyStatus: 'missing',
+        previewFile: null,
 
         setActiveTab: (tab) => set({ activeTab: tab }),
         setShowSettings: (value) => set({ showSettings: value }),
@@ -36,6 +39,7 @@ export const useAppStore = create<AppState>()(
         setVoiceEnabled: (value) => set({ voiceEnabled: value }),
         setShowCVCreatorDemo: (value) => set({ showCVCreatorDemo: value }),
         setApiKeyStatus: (status) => set({ apiKeyStatus: status }),
+        setPreviewFile: (file) => set({ previewFile: file }),
       }),
       {
         name: 'app-store',

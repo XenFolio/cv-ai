@@ -5,13 +5,15 @@ import { DetailedAnalysis } from './DetailedAnalysis';
 import { CVOptimization } from '../CVOptimization/CVOptimization';
 import { useOpenAI, CVAnalysisResponse } from '../../hooks/useOpenAI';
 import { useSupabase } from '../../hooks/useSupabase';
+import { useCVLibrary, DocumentType } from '../../hooks/useCVLibrary';
+import { useAppStore } from '../../store/useAppStore';
 import {  ArrowLeft } from 'lucide-react';
 import GradientSpinLoader from '../loader/GradientSpinLoader';
-
-export type DocumentType = 'cv' | 'lettre';
+// Type local pour le composant CVAnalysis
+export type CVAnalysisDocumentType = 'cv' | 'lettre';
 
 interface CVAnalysisProps {
-  documentType?: DocumentType;
+  documentType?: CVAnalysisDocumentType;
   title?: string;
   description?: string;
   uploadDescription?: string;
@@ -32,9 +34,21 @@ export const CVAnalysis: React.FC<CVAnalysisProps> = ({
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const { analyzeFile, error } = useOpenAI();
-  const { addActivity } = useSupabase();
+  const { addActivity, addDocument, updateDocument } = useSupabase();
+  const { addAnalyzedCV } = useCVLibrary();
+  const previewFile = useAppStore(s => s.previewFile);
+  const setPreviewFile = useAppStore(s => s.setPreviewFile);
 
-  const handleFileUpload = async (file: File) => {
+  // Si un fichier est à prévisualiser depuis la bibliothèque, l'initialiser
+  React.useEffect(() => {
+    if (previewFile && !uploadedFile) {
+      setUploadedFile(previewFile);
+      // Nettoyer le store après utilisation
+      setPreviewFile(null);
+    }
+  }, [previewFile, uploadedFile, setPreviewFile]);
+
+  const handleFileUpload = async (file: File, documentId?: string) => {
     setUploadedFile(file);
     setIsAnalyzing(true);
     
@@ -54,6 +68,107 @@ export const CVAnalysis: React.FC<CVAnalysisProps> = ({
         // Stocker le contenu original pour l'affichage
         setOriginalContent(`Analyse du fichier: ${file.name}`);
         
+        // Ajouter le CV/Lettre analysé à la bibliothèque et sauvegarder dans Supabase
+        try {
+          // Convertir 'lettre' vers 'letter' pour le type DocumentType du hook
+          const docTypeForLibrary: DocumentType = documentType === 'lettre' ? 'letter' : documentType;
+          const docId = await addAnalyzedCV(file.name, results, file, docTypeForLibrary);
+          console.log(`✅ Document ajouté et sauvegardé avec l'ID: ${docId}`);
+        } catch (error) {
+          console.warn('⚠️ Erreur lors de l\'ajout/sauvegarde à la bibliothèque:', error);
+          // Ne pas bloquer l'analyse - l'utilisateur peut continuer
+        }
+
+        // Mettre à jour le document existant avec les résultats d'analyse
+        if (documentId) {
+          try {
+            await updateDocument(documentId, {
+              ats_score: results.overallScore,
+              status: 'completed',
+              content: `Document analysé avec un score ATS de ${results.overallScore}%`,
+              analysis_results: results as unknown as Record<string, unknown>,
+              metadata: {
+                uploadedAt: new Date().toISOString(),
+                fileType: file.type,
+                originalSize: file.size,
+                documentType: documentType,
+                analysisVersion: '1.0',
+                userAgent: navigator.userAgent,
+                analysisCompletedAt: new Date().toISOString()
+              }
+            });
+            console.log('✅ Document mis à jour avec les résultats d\'analyse, ID:', documentId);
+          } catch (error) {
+            console.warn('⚠️ Erreur lors de la mise à jour du document:', error);
+            // Créer un nouveau document en cas d'erreur de mise à jour
+            try {
+              const fileData = new Uint8Array(await file.arrayBuffer());
+              const docTypeForSupabase = documentType === 'lettre' ? 'letter' : 'cv';
+              await addDocument({
+                doc_type: docTypeForSupabase,
+                name: file.name.replace(/\.[^/.]+$/, ""),
+                type: 'analyzed',
+                ats_score: results.overallScore,
+                status: 'completed',
+                template: undefined,
+                industry: 'Non spécifié',
+                file_size: `${(file.size / 1024).toFixed(1)} KB`,
+                version: 1,
+                content: `Document analysé avec un score ATS de ${results.overallScore}%`,
+                original_file_name: file.name,
+                original_file_data: fileData,
+                analysis_results: results as unknown as Record<string, unknown>,
+                cv_data: {},
+                metadata: {
+                  uploadedAt: new Date().toISOString(),
+                  fileType: file.type,
+                  originalSize: file.size,
+                  documentType: documentType,
+                  analysisVersion: '1.0',
+                  userAgent: navigator.userAgent
+                }
+              });
+              console.log('✅ Nouveau document créé en fallback');
+            } catch (fallbackError) {
+              console.warn('⚠️ Erreur lors de la création de fallback:', fallbackError);
+            }
+          }
+        } else {
+          console.warn('⚠️ Aucun ID de document fourni, création d\'un nouveau document');
+          // Fallback : créer un nouveau document
+          try {
+            const fileData = new Uint8Array(await file.arrayBuffer());
+            const docTypeForSupabase = documentType === 'lettre' ? 'letter' : 'cv';
+            await addDocument({
+              doc_type: docTypeForSupabase,
+              name: file.name.replace(/\.[^/.]+$/, ""),
+              type: 'analyzed',
+              ats_score: results.overallScore,
+              status: 'completed',
+              template: undefined,
+              industry: 'Non spécifié',
+              file_size: `${(file.size / 1024).toFixed(1)} KB`,
+              version: 1,
+              content: `Document analysé avec un score ATS de ${results.overallScore}%`,
+              original_file_name: file.name,
+              original_file_data: fileData,
+              analysis_results: results as unknown as Record<string, unknown>,
+              cv_data: {},
+              metadata: {
+                uploadedAt: new Date().toISOString(),
+                fileType: file.type,
+                originalSize: file.size,
+                documentType: documentType,
+                analysisVersion: '1.0',
+                userAgent: navigator.userAgent
+              }
+            });
+            console.log('✅ Nouveau document créé (pas d\'ID fourni)');
+          } catch (fallbackError) {
+            console.warn('⚠️ Erreur lors de la création de document fallback:', fallbackError);
+          }
+        }
+
         // Ajouter l'activité à Supabase (optionnel - ne pas bloquer l'analyse si ça échoue)
         try {
           const documentLabel = documentType === 'cv' ? 'CV' : 'Lettre de motivation';

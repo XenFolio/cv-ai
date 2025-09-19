@@ -490,8 +490,8 @@ IMPORTANT : Réponds UNIQUEMENT avec le JSON, aucun autre texte.`;
             structure: analysisResult.cvAnalysis?.structureEvaluation?.score || 85,
             content: analysisResult.cvAnalysis?.atsCompatibility?.score || 80
           },
-          recommendations: analysisResult.cvAnalysis?.improvementRecommendations?.map((rec: unknown) =>
-            typeof rec === 'string' ? rec : (rec as { recommendation?: string }).recommendation || 'Recommandation d\'amélioration'
+          recommendations: (analysisResult.cvAnalysis?.improvementRecommendations?.recommendations || analysisResult.cvAnalysis?.improvementRecommendations)?.map?.((rec: unknown) =>
+            typeof rec === 'string' ? rec : (rec as { title?: string, description?: string }).title || (rec as { title?: string, description?: string }).description || 'Recommandation d\'amélioration'
           ) || [
             "Optimiser les mots-clés pour améliorer la compatibilité ATS",
             "Améliorer la structure du document",
@@ -516,10 +516,10 @@ IMPORTANT : Réponds UNIQUEMENT avec le JSON, aucun autre texte.`;
             missing: ["JavaScript", "React", "Node.js", "TypeScript"],
             suggestions: ["Docker", "AWS", "Git", "Agile", "CI/CD"]
           },
-          improvements: analysisResult.cvAnalysis?.improvementRecommendations?.map((rec: unknown) => ({
-            title: typeof rec === 'string' ? rec : (rec as { recommendation?: string }).recommendation || 'Amélioration',
-            description: typeof rec === 'object' ? (rec as { recommendation?: string }).recommendation || 'Description détaillée' : rec as string,
-            priority: typeof rec === 'object' ? ((rec as { priority?: string }).priority?.toLowerCase() || 'medium') : 'medium'
+          improvements: (analysisResult.cvAnalysis?.improvementRecommendations?.recommendations || analysisResult.cvAnalysis?.improvementRecommendations)?.map?.((rec: unknown) => ({
+            title: (rec as { title?: string }).title || 'Amélioration',
+            description: (rec as { description?: string }).description || 'Description détaillée',
+            priority: ((rec as { priority?: string }).priority?.toLowerCase() || 'medium') as 'high' | 'medium' | 'low'
           })) || [
             {
               title: "Optimisation des mots-clés",

@@ -4,37 +4,18 @@ import {
   Eye,
   Star,
   Calendar,
-  
+  Trash2,
+  Download,
+  FileText,
+  BarChart3
 } from "lucide-react";
 
-import { QuickActions } from "./QuickActions"; 
+import { QuickActions } from "./QuickActions";
+import { useCVLibrary } from "../../hooks/useCVLibrary";
+import { useAppStore } from "../../store/useAppStore";
 
-// ----------------------
-// Types
-// ----------------------
-type DocumentType = "cv" | "letter";
-type SourceType = "analyzed" | "created";
-type Status = "draft" | "completed" | "optimized";
 type FilterType = "all" | "analyzed" | "created";
 type SortBy = "date" | "score" | "name";
-
-interface DocumentItem {
-  id: string;
-  docType: DocumentType;
-  name: string;
-  type: SourceType;
-  atsScore: number;
-  createdAt: Date;
-  lastModified: Date;
-  status: Status;
-  template?: string;
-  industry: string;
-  isFavorite: boolean;
-  fileSize: string;
-  version: number;
-}
-
-
 
 // ----------------------
 // Composant
@@ -44,103 +25,70 @@ export const CVLibrary: React.FC = () => {
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [sortBy, setSortBy] = useState<SortBy>("date");
 
-  // ----------------------
-  // Données
-  // ----------------------
-  const documents: DocumentItem[] = [
-    {
-      id: "1",
-      docType: "cv",
-      name: "CV_Marie_Dubois_DevFullStack",
-      type: "created",
-      atsScore: 94,
-      createdAt: new Date("2024-01-15"),
-      lastModified: new Date("2024-01-16"),
-      status: "completed",
-      template: "Tech Innovant",
-      industry: "Développement",
-      isFavorite: true,
-      fileSize: "245 KB",
-      version: 3,
-    },
-    {
-      id: "2",
-      docType: "cv",
-      name: "CV_Data_Scientist_Analyse",
-      type: "analyzed",
-      atsScore: 96,
-      createdAt: new Date("2024-01-12"),
-      lastModified: new Date("2024-01-12"),
-      status: "completed",
-      industry: "Data Science",
-      isFavorite: false,
-      fileSize: "278 KB",
-      version: 1,
-    },
-    {
-      id: "3",
-      docType: "letter",
-      name: "Lettre_Motivation_Designer_UX",
-      type: "created",
-      atsScore: 90,
-      createdAt: new Date("2024-02-01"),
-      lastModified: new Date("2024-02-02"),
-      status: "draft",
-      template: "Créatif Premium",
-      industry: "Design",
-      isFavorite: true,
-      fileSize: "120 KB",
-      version: 1,
-    },
-    {
-      id: "4",
-      docType: "letter",
-      name: "Lettre_Analyse_Finance",
-      type: "analyzed",
-      atsScore: 88,
-      createdAt: new Date("2024-02-03"),
-      lastModified: new Date("2024-02-03"),
-      status: "optimized",
-      industry: "Finance",
-      isFavorite: false,
-      fileSize: "98 KB",
-      version: 1,
-    },
-  ];
+  // Hook pour la gestion des documents
+  const { 
+    documents, 
+    toggleFavorite, 
+    deleteDocument, 
+    searchDocuments, 
+    getStats 
+  } = useCVLibrary();
+
+  // Hook pour la navigation
+  const setActiveTab = useAppStore(s => s.setActiveTab);
+  const setShowSettings = useAppStore(s => s.setShowSettings);
+  const setPreviewFile = useAppStore(s => s.setPreviewFile);
 
   // ----------------------
   // Filtres et Tri
   // ----------------------
-  const filteredDocs = documents
-    .filter((doc) => {
-      const matchesSearch =
-        doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.industry.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesFilter = filterType === "all" || doc.type === filterType;
-      return matchesSearch && matchesFilter;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "score":
-          return b.atsScore - a.atsScore;
-        case "name":
-          return a.name.localeCompare(b.name);
-        case "date":
-        default:
-          return b.lastModified.getTime() - a.lastModified.getTime();
-      }
-    });
+  const filteredDocs = searchDocuments(searchTerm, filterType, sortBy);
 
   // ----------------------
   // Actions
   // ----------------------
-  const toggleFavorite = (id: string) => {
-    console.log("Toggle favorite for:", id);
+  const handleAction = (action: string, docId: string) => {
+    switch (action) {
+      case 'view': {
+        const document = documents.find(doc => doc.id === docId);
+        if (document) {
+          if (document.type === 'created') {
+            // Pour un CV créé, retourner au créateur avec les données
+            setShowSettings(false);
+            setActiveTab('creator');
+            
+            // TODO: Ici on pourrait charger les données du CV dans le créateur
+            // en utilisant le cvData stocké dans le document
+            console.log('Navigation vers le créateur avec les données:', document.cvData);
+          } else {
+            // Pour un CV analysé, retourner à l'aperçu pré-analyse
+            if (document.originalFile) {
+              // Passer le fichier original pour prévisualisation
+              setPreviewFile(document.originalFile);
+            }
+            setShowSettings(false);
+            setActiveTab('analyze');
+            
+            console.log('Navigation vers l\'aperçu du CV analysé:', document.name);
+          }
+        }
+        break;
+      }
+      case 'delete':
+        if (window.confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) {
+          deleteDocument(docId);
+        }
+        break;
+      case 'download':
+        console.log(`Téléchargement du document ${docId}`);
+        // Ici on pourrait implémenter le téléchargement
+        break;
+      default:
+        console.log(`Action ${action} pour le document ${docId}`);
+    }
   };
 
-  const handleAction = (action: string, docId: string) => {
-    console.log(`Action ${action} for document ${docId}`);
-  };
+  const stats = getStats();
 
   // ----------------------
   // Render
@@ -154,6 +102,43 @@ export const CVLibrary: React.FC = () => {
           Gérez vos CV et lettres de motivation (créés ou analysés).
         </p>
       </div>
+
+      {/* Statistiques */}
+      {stats.total > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white/70 rounded-2xl p-4 border border-gray-200/30 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <FileText className="w-6 h-6 text-violet-600" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+            <div className="text-sm text-gray-600">Total documents</div>
+          </div>
+
+          <div className="bg-white/70 rounded-2xl p-4 border border-gray-200/30 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Search className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{stats.analyzed}</div>
+            <div className="text-sm text-gray-600">Analysés</div>
+          </div>
+
+          <div className="bg-white/70 rounded-2xl p-4 border border-gray-200/30 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Eye className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{stats.created}</div>
+            <div className="text-sm text-gray-600">Créés</div>
+          </div>
+
+          <div className="bg-white/70 rounded-2xl p-4 border border-gray-200/30 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <BarChart3 className="w-6 h-6 text-orange-600" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{stats.averageScore}%</div>
+            <div className="text-sm text-gray-600">Score ATS moyen</div>
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white/70 rounded-2xl p-6 border border-gray-200/30">
@@ -194,12 +179,58 @@ export const CVLibrary: React.FC = () => {
         </div>
       </div>
 
+      {/* Message si aucun document */}
+      {filteredDocs.length === 0 && documents.length === 0 && (
+        <div className="text-center py-12">
+          <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-gray-900 mb-2">
+            Bibliothèque vide
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Commencez par créer ou analyser un CV pour le voir apparaître ici.
+          </p>
+          <div className="space-x-4">
+            <button 
+              onClick={() => {
+                setShowSettings(false);
+                setActiveTab('creator');
+              }}
+              className="bg-gradient-to-r from-violet-600 to-pink-600 text-white px-6 py-2 rounded-lg font-medium hover:from-violet-700 hover:to-pink-700 transition-all"
+            >
+              Créer un CV
+            </button>
+            <button 
+              onClick={() => {
+                setShowSettings(false);
+                setActiveTab('analyze');
+              }}
+              className="border border-violet-600 text-violet-600 px-6 py-2 rounded-lg font-medium hover:bg-violet-50 transition-all"
+            >
+              Analyser un CV
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Message si aucun résultat de recherche */}
+      {filteredDocs.length === 0 && documents.length > 0 && (
+        <div className="text-center py-12">
+          <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-gray-900 mb-2">
+            Aucun résultat trouvé
+          </h3>
+          <p className="text-gray-600">
+            Essayez de modifier vos critères de recherche ou filtres.
+          </p>
+        </div>
+      )}
+
       {/* Cards */}
       <div className="flex flex-wrap justify-center gap-6">
         {filteredDocs.map((doc) => (
           <div
             key={doc.id}
-            className="w-80 bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-all"
+            className="w-80 bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-all group"
           >
             <div className="p-5">
               {/* Header */}
@@ -207,17 +238,27 @@ export const CVLibrary: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900 truncate">
                   {doc.name}
                 </h3>
-                <button
-                  onClick={() => toggleFavorite(doc.id)}
-                  className={`p-1 rounded-full transition-colors ${doc.isFavorite
-                      ? "text-yellow-500"
-                      : "text-gray-400 hover:text-yellow-500"
-                    }`}
-                >
-                  <Star
-                    className={`w-5 h-5 ${doc.isFavorite ? "fill-current" : ""}`}
-                  />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleFavorite(doc.id)}
+                    className={`p-1 rounded-full transition-colors ${doc.isFavorite
+                        ? "text-yellow-500"
+                        : "text-gray-400 hover:text-yellow-500"
+                      }`}
+                    title="Marquer comme favori"
+                  >
+                    <Star
+                      className={`w-5 h-5 ${doc.isFavorite ? "fill-current" : ""}`}
+                    />
+                  </button>
+                  <button
+                    onClick={() => handleAction("delete", doc.id)}
+                    className="p-1 rounded-full text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Infos */}
@@ -225,30 +266,66 @@ export const CVLibrary: React.FC = () => {
                 <span className="font-medium uppercase">
                   {doc.docType === "cv" ? "CV" : "Lettre"}
                 </span>{" "}
-                • {doc.type === "created" ? "Créé" : "Analysé"} • {doc.industry}
+                • <span className={`px-2 py-1 rounded-full text-xs ${
+                  doc.type === "created" 
+                    ? "bg-green-100 text-green-800" 
+                    : "bg-blue-100 text-blue-800"
+                }`}>
+                  {doc.type === "created" ? "Créé" : "Analysé"}
+                </span> • {doc.industry}
+                {doc.template && (
+                  <span className="block mt-1 text-xs text-gray-500">
+                    Template: {doc.template}
+                  </span>
+                )}
               </div>
 
               {/* Score */}
-              <div className="text-xl font-bold text-gray-900 mb-2">
-                {doc.atsScore}%
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xl font-bold text-gray-900">
+                  {doc.atsScore}%
+                </div>
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  doc.atsScore >= 90 ? 'bg-green-100 text-green-800' :
+                  doc.atsScore >= 80 ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {doc.atsScore >= 90 ? 'Excellent' :
+                   doc.atsScore >= 80 ? 'Bon' : 'À améliorer'}
+                </div>
               </div>
 
-              {/* Date */}
-              <div className="flex items-center text-xs text-gray-500 mb-4">
-                <Calendar className="w-3 h-3 mr-1" />
-                <span>
-                  Modifié le {doc.lastModified.toLocaleDateString("fr-FR")}
-                </span>
+              {/* Métadonnées */}
+              <div className="text-xs text-gray-500 mb-4 space-y-1">
+                <div className="flex items-center">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  <span>
+                    Modifié le {doc.lastModified.toLocaleDateString("fr-FR")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Taille: {doc.fileSize}</span>
+                  <span>v{doc.version}</span>
+                </div>
               </div>
 
-              {/* Bouton Voir */}
-              <button
-                onClick={() => handleAction("view", doc.id)}
-                className="w-full bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-violet-700 hover:to-pink-700 transition-all"
-              >
-                <Eye className="w-4 h-4 inline mr-2" />
-                Voir
-              </button>
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleAction("view", doc.id)}
+                  className="flex-1 bg-gradient-to-r from-violet-600 to-pink-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-violet-700 hover:to-pink-700 transition-all"
+                >
+                  <Eye className="w-4 h-4 inline mr-1" />
+                  Voir
+                </button>
+                <button
+                  onClick={() => handleAction("download", doc.id)}
+                  className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-all"
+                  title="Télécharger"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         ))}

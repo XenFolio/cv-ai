@@ -1,12 +1,18 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, FileText, AlertCircle, CheckCircle, Settings } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { useOpenAI } from '../../hooks/useOpenAI';
+import { useSupabase } from '../../hooks/useSupabase';
 import { DocumentViewer } from '../DocumentViewer/DocumentViewer';
-import { DocumentType } from './CVAnalysis';
+import { CVAnalysisDocumentType } from './CVAnalysis';
+
+// Interface pour étendre File avec l'ID du document
+interface FileWithDocumentId extends File {
+  __documentId?: string;
+}
 
 interface CVUploadProps {
-  onFileUpload: (file: File) => void;
-  documentType?: DocumentType;
+  onFileUpload: (file: File, documentId?: string) => void;
+  documentType?: CVAnalysisDocumentType;
   uploadDescription?: string;
 }
 
@@ -19,6 +25,7 @@ export const CVUpload: React.FC<CVUploadProps> = ({
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const { error } = useOpenAI();
+  const { addDocument } = useSupabase();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -30,17 +37,7 @@ export const CVUpload: React.FC<CVUploadProps> = ({
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFileUpload(files[0]);
-    }
-  }, []);
-
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = useCallback(async (file: File) => {
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
     
     if (!allowedTypes.includes(file.type)) {
@@ -56,11 +53,68 @@ export const CVUpload: React.FC<CVUploadProps> = ({
     setUploadStatus('uploading');
     setPreviewFile(file);
     
-    // Simulate upload delay
-    setTimeout(() => {
+    let documentId: string | undefined;
+    
+    try {
+      // Convertir le fichier en données binaires
+      let fileData: Uint8Array | undefined;
+      if (file) {
+        const arrayBuffer = await file.arrayBuffer();
+        fileData = new Uint8Array(arrayBuffer);
+      }
+
+      // Sauvegarder directement dans la table documents avec status 'draft'
+      const docTypeForSupabase = documentType === 'lettre' ? 'letter' : 'cv';
+      const document = await addDocument({
+        doc_type: docTypeForSupabase,
+        name: file.name.replace(/\.[^/.]+$/, ""), // Supprimer l'extension
+        type: 'analyzed', // Le fichier est téléchargé pour analyse
+        ats_score: 0, // Score par défaut, sera mis à jour après analyse
+        status: 'draft', // Statut draft car pas encore analysé
+        template: undefined,
+        industry: 'Non spécifié',
+        file_size: `${(file.size / 1024).toFixed(1)} KB`,
+        version: 1,
+        content: `Document téléchargé le ${new Date().toLocaleDateString('fr-FR')} - En attente d'analyse`,
+        original_file_name: file.name,
+        original_file_data: fileData,
+        analysis_results: {}, // Vide pour l'instant
+        cv_data: {},
+        metadata: {
+          uploadedAt: new Date().toISOString(),
+          fileType: file.type,
+          originalSize: file.size,
+          documentType: documentType,
+          uploadSource: 'CVUpload',
+          status: 'uploaded',
+          userAgent: navigator.userAgent
+        }
+      });
+
+      documentId = document.id;
+      console.log('✅ Document créé dans CVUpload avec ID:', documentId, 'pour le fichier:', file.name);
       setUploadStatus('success');
-    }, 1500);
-  };
+    } catch (error) {
+      console.warn('⚠️ Erreur lors de la sauvegarde dans CVUpload:', error);
+      // Même en cas d'erreur de sauvegarde, on laisse l'utilisateur continuer
+      setUploadStatus('success');
+    }
+    
+    // Stocker l'ID du document pour pouvoir le passer lors de l'analyse
+    if (documentId) {
+      (file as FileWithDocumentId).__documentId = documentId;
+    }
+  }, [addDocument, documentType]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileUpload(files[0]);
+    }
+  }, [handleFileUpload]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,7 +125,8 @@ export const CVUpload: React.FC<CVUploadProps> = ({
 
   const handleAnalyzeFile = () => {
     if (previewFile) {
-      onFileUpload(previewFile);
+      const documentId = (previewFile as FileWithDocumentId).__documentId;
+      onFileUpload(previewFile, documentId);
     }
   };
 
@@ -224,16 +279,7 @@ export const CVUpload: React.FC<CVUploadProps> = ({
       )}
         <div className="mt-6">
           
-          {/* API Key Warning */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start space-x-3">
-            <Settings className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="font-medium text-amber-800 text-sm mb-1">Configuration requise</h4>
-              <p className="text-amber-700 text-xs">
-                Assurez-vous d'avoir configuré votre clé API OpenAI dans les paramètres pour une analyse IA réelle.
-              </p>
-            </div>
-          </div>
+          
         </div>
     </div>
   );

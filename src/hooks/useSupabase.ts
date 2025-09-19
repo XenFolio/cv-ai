@@ -157,6 +157,247 @@ export const useSupabase = () => {
     }
   };
 
+  // Fonction pour ajouter un document directement dans la table documents
+  // Structure conforme au schéma Supabase exact
+  // Gère automatiquement l'unicité du nom avec la contrainte DB
+  const addDocument = async (document: {
+    doc_type: 'cv' | 'letter';
+    name: string;
+    type: 'analyzed' | 'created';
+    ats_score?: number;
+    status?: 'draft' | 'completed' | 'optimized';
+    template?: string;
+    industry?: string;
+    file_size?: string;
+    version?: number;
+    content?: string;
+    original_file_name?: string;
+    original_file_data?: Uint8Array;
+    analysis_results?: Record<string, unknown>;
+    cv_data?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+  }) => {
+    if (!supabase) {
+      throw new Error('Supabase non configuré');
+    }
+
+    try {
+      // Récupérer l'utilisateur connecté
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Erreur d\'authentification:', authError);
+        throw new Error('Utilisateur non authentifié');
+      }
+      
+      if (!user) {
+        throw new Error('Utilisateur non connecté');
+      }
+
+      // Essayer d'abord avec le nom original
+      let finalName = document.name;
+      const documentData = {
+        user_id: user.id,
+        doc_type: document.doc_type,
+        name: finalName,
+        type: document.type,
+        ats_score: document.ats_score || 0,
+        status: document.status || 'completed',
+        template: document.template || null,
+        industry: document.industry || 'Non spécifié',
+        is_favorite: false,
+        file_size: document.file_size || 'Inconnu',
+        version: document.version || 1,
+        content: document.content || null,
+        original_file_name: document.original_file_name || null,
+        original_file_data: document.original_file_data || null,
+        analysis_results: document.analysis_results || {},
+        cv_data: document.cv_data || {},
+        metadata: document.metadata || {}
+      };
+
+      let { data, error } = await supabase
+        .from('documents')
+        .insert([documentData])
+        .select()
+        .single();
+
+      // Si erreur de contrainte UNIQUE sur le nom (codes multiples possibles)
+      if (error && (
+        error.code === '23505' || 
+        error.message.includes('duplicate key') || 
+        error.message.includes('unique constraint') ||
+        error.message.includes('conflicting key') ||
+        error.code === 'PGRST203'
+      )) {
+        console.log('🔄 Conflit détecté (contrainte UNIQUE), génération d\'un nom unique...');
+        console.log('Erreur originale:', error);
+        console.log('Nom original qui a causé le conflit:', document.name);
+        
+        // Générer un nom unique de façon plus robuste
+        let retryCount = 0;
+        let success = false;
+        
+        while (!success && retryCount < 10) { // Maximum 10 tentatives
+          retryCount++;
+          
+          // Générer un nom unique basé sur le nom original + timestamp pour garantir l'unicité
+          const timestamp = Date.now();
+          const randomSuffix = Math.floor(Math.random() * 1000);
+          finalName = `${document.name} (${retryCount})`;
+          
+          // Si on arrive aux dernières tentatives, ajouter un timestamp pour garantir l'unicité
+          if (retryCount > 5) {
+            finalName = `${document.name} (${timestamp}-${randomSuffix})`;
+          }
+          
+          const updatedDocumentData = {
+            ...documentData,
+            name: finalName
+          };
+
+          console.log(`Tentative ${retryCount}/10 avec nom unique:`, finalName);
+          
+          try {
+            const result = await supabase
+              .from('documents')
+              .insert([updatedDocumentData])
+              .select()
+              .single();
+
+            if (!result.error) {
+              data = result.data;
+              error = null;
+              success = true;
+              console.log('✅ Succès avec nom unique:', finalName);
+            } else {
+              console.log(`Tentative ${retryCount} échouée:`, result.error);
+              if (retryCount === 10) {
+                error = result.error;
+              }
+            }
+          } catch (retryError) {
+            console.error(`Erreur tentative ${retryCount}:`, retryError);
+          }
+        }
+        
+        if (!success) {
+          console.error('Impossible de générer un nom unique après 10 tentatives');
+        }
+      }
+
+      if (error) {
+        console.error('Erreur Supabase lors de l\'insertion document:', error);
+        throw error;
+      }
+
+      console.log('✅ Document ajouté à la table documents:', data.id, 'avec nom:', finalName);
+      return data;
+    } catch (err) {
+      console.error('Erreur lors de l\'ajout du document:', err);
+      throw err;
+    }
+  };
+
+  // Fonction pour vérifier si un nom de document existe déjà
+  const checkDocumentNameExists = async (name: string, docType: 'cv' | 'letter'): Promise<boolean> => {
+    if (!supabase) {
+      throw new Error('Supabase non configuré');
+    }
+
+    try {
+      // Récupérer l'utilisateur connecté
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error('Utilisateur non authentifié');
+      }
+
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('doc_type', docType)
+        .eq('name', name)
+        .limit(1);
+
+      if (error) {
+        throw error;
+      }
+
+      return (data && data.length > 0);
+    } catch (err) {
+      console.error('Erreur lors de la vérification du nom:', err);
+      throw err;
+    }
+  };
+
+  // Fonction pour générer un nom unique
+  const generateUniqueName = async (baseName: string, docType: 'cv' | 'letter'): Promise<string> => {
+    let uniqueName = baseName;
+    let counter = 1;
+
+    while (await checkDocumentNameExists(uniqueName, docType)) {
+      counter++;
+      uniqueName = `${baseName} (${counter})`;
+    }
+
+    return uniqueName;
+  };
+
+  // Fonction pour mettre à jour un document existant
+  const updateDocument = async (documentId: string, updates: {
+    ats_score?: number;
+    status?: 'draft' | 'completed' | 'optimized';
+    content?: string;
+    analysis_results?: Record<string, unknown>;
+    cv_data?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+  }) => {
+    if (!supabase) {
+      throw new Error('Supabase non configuré');
+    }
+
+    try {
+      // Récupérer l'utilisateur connecté
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Erreur d\'authentification:', authError);
+        throw new Error('Utilisateur non authentifié');
+      }
+      
+      if (!user) {
+        throw new Error('Utilisateur non connecté');
+      }
+
+      // Préparer les données de mise à jour avec timestamp
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('documents')
+        .update(updateData)
+        .eq('id', documentId)
+        .eq('user_id', user.id) // Sécurité : s'assurer que l'utilisateur ne peut mettre à jour que ses propres documents
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erreur Supabase lors de la mise à jour du document:', error);
+        throw error;
+      }
+
+      console.log('✅ Document mis à jour dans la table documents:', data.id);
+      return data;
+    } catch (err) {
+      console.error('Erreur lors de la mise à jour du document:', err);
+      throw err;
+    }
+  };
+
   // Fonction pour charger le profil utilisateur (stabilisée avec useCallback)
   const loadProfile = useCallback(async (userId?: string) => {
     console.log('useSupabase - loadProfile appelé, supabase:', !!supabase);
@@ -617,6 +858,10 @@ export const useSupabase = () => {
     skillsLoading,
     error,
     addActivity,
+    addDocument,
+    updateDocument,
+    generateUniqueName,
+    checkDocumentNameExists,
     refreshActivities: loadActivities,
     loadProfile,
     saveProfile,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import { SupabaseAuthProvider } from './components/Auth/SupabaseAuthProvider';
 import { useAuth } from './hooks/useAuth';
 import { AuthProvider, useAuth as useMockAuth } from './components/Auth/AuthProvider';
@@ -6,19 +6,25 @@ import { UniversalLoginPage } from './components/Auth/UniversalLoginPage';
 import { SupabaseConfigModal } from './components/Auth/SupabaseConfigModal';
 import { Header } from './components/Layout/Header';
 import { Navigation } from './components/Layout/Navigation';
-import { Dashboard } from './components/Dashboard/Dashboard';
-import { CVAnalysis } from './components/CVAnalysis/CVAnalysis';
-import { CVCreator } from './components/CVCreator/CVCreator';
-import { CVLibrary } from './components/CVLibrary/CVLibrary';
-import { Models } from './components/Models/Models';
-import { Templates } from './components/Templates/Templates';
-import { Settings } from './components/Settings/Settings';
-import { AIChat } from './components/Chat/AIChat';
-import { CVCreatorDemo } from './components/CVCreator/CVCreatorDemo';
-import { LetterEditor } from './components/LetterEditor/LetterEditor';
 import { useAppStore } from './store/useAppStore';
 import { AuthBoundary } from './components/Auth/AuthBoundary';
 import { useAuthStore } from './store/useAuthStore';
+import { lazyComponentsMap, intelligentPreload } from './utils/lazyComponents';
+import PageLoader from './components/loader/PageLoader';
+
+// Composants lazy chargés à la demande
+const {
+  Dashboard,
+  CVAnalysis,
+  CVCreator,
+  CVLibrary,
+  Models,
+  Templates,
+  Settings,
+  AIChat,
+  CVCreatorDemo,
+  LetterEditor,
+} = lazyComponentsMap;
 
 // Composant pour l'authentification Supabase
 const SupabaseAppContent: React.FC = () => {
@@ -75,6 +81,11 @@ const SupabaseAppContent: React.FC = () => {
     }
   }, [showSettings]);
 
+  // Préchargement intelligent basé sur l'onglet actuel
+  useEffect(() => {
+    intelligentPreload(activeTab);
+  }, [activeTab]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 flex items-center justify-center">
@@ -98,75 +109,101 @@ const SupabaseAppContent: React.FC = () => {
   }
 
   const renderActiveTab = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard onNavigate={handleTabChange} />;
-      case 'analyze':
-        return (
-          <CVAnalysis 
-            documentType="cv" 
-            title="Analyse CV" 
-            description="Uploadez votre CV pour une analyse ATS complète" 
-          />
-        );
-      case 'creator':
-        return <CVCreator />;
-      case 'templates':
-        return <Templates />;
-      case 'lettre-analyze':
-        return (
-          <CVAnalysis 
-            documentType="lettre" 
-            title="Analyse Lettre de motivation" 
-            description="Uploadez votre lettre de motivation pour une analyse détaillée" 
-          />
-        );
-      case 'library':
-        return <CVLibrary />;
-      case 'models':
-        return <Models />;
-      case 'settings':
-        return <Settings onBack={handleBackToDashboard} onApiKeyStatusChange={setApiKeyStatus} />;
-      case 'chat':
-        return (
-          <AIChat 
-            onBack={handleBackToDashboard} 
-            voiceEnabled={voiceEnabled}
-            mode="lettre"
-            title="Assistant Lettre de Motivation IA"
-            description="Créez une lettre de motivation professionnelle et personnalisée"
-          />
-        );
-      case 'chat-cv':
-        return (
-          <AIChat 
-            onBack={handleBackToDashboard} 
-            voiceEnabled={voiceEnabled}
-            mode="general"
-            title="Coach CV IA"
-            description="Votre assistant personnel pour améliorer votre CV"
-          />
-        );
-      case 'chat-general':
-        return (
-          <AIChat 
-            onBack={handleBackToDashboard} 
-            voiceEnabled={voiceEnabled}
-            mode="general"
-            title="Coach de Carrière IA"
-            description="Votre assistant personnel pour des conseils de carrière"
-          />
-        );
-      case 'letter-editor':
-        return (
-          <LetterEditor 
-            onSave={(content) => console.log('Letter saved:', content)}
-            onExport={(content, format) => console.log('Letter exported:', format, content)}
-          />
-        );
-      default:
-        return <Dashboard />;
-    }
+    const content = (() => {
+      switch (activeTab) {
+        case 'dashboard':
+          return <Dashboard onNavigate={handleTabChange} />;
+        case 'analyze':
+          return (
+            <CVAnalysis 
+              documentType="cv" 
+              title="Analyse CV" 
+              description="Uploadez votre CV pour une analyse ATS complète" 
+            />
+          );
+        case 'creator':
+          return <CVCreator />;
+        case 'templates':
+          return <Templates />;
+        case 'lettre-analyze':
+          return (
+            <CVAnalysis 
+              documentType="lettre" 
+              title="Analyse Lettre de motivation" 
+              description="Uploadez votre lettre de motivation pour une analyse détaillée" 
+            />
+          );
+        case 'library':
+          return <CVLibrary />;
+        case 'models':
+          return <Models />;
+        case 'settings':
+          return <Settings onBack={handleBackToDashboard} onApiKeyStatusChange={setApiKeyStatus} />;
+        case 'chat':
+          return (
+            <AIChat 
+              onBack={handleBackToDashboard} 
+              voiceEnabled={voiceEnabled}
+              mode="lettre"
+              title="Assistant Lettre de Motivation IA"
+              description="Créez une lettre de motivation professionnelle et personnalisée"
+            />
+          );
+        case 'chat-cv':
+          return (
+            <AIChat 
+              onBack={handleBackToDashboard} 
+              voiceEnabled={voiceEnabled}
+              mode="general"
+              title="Coach CV IA"
+              description="Votre assistant personnel pour améliorer votre CV"
+            />
+          );
+        case 'chat-general':
+          return (
+            <AIChat 
+              onBack={handleBackToDashboard} 
+              voiceEnabled={voiceEnabled}
+              mode="general"
+              title="Coach de Carrière IA"
+              description="Votre assistant personnel pour des conseils de carrière"
+            />
+          );
+        case 'letter-editor':
+          return (
+            <LetterEditor 
+              onSave={(content) => console.log('Letter saved:', content)}
+              onExport={(content, format) => console.log('Letter exported:', format, content)}
+            />
+          );
+        default:
+          return <Dashboard onNavigate={handleTabChange} />;
+      }
+    })();
+
+    return (
+      <Suspense fallback={<PageLoader message={`Chargement ${getTabDisplayName(activeTab)}...`} />}>
+        {content}
+      </Suspense>
+    );
+  };
+
+  const getTabDisplayName = (tab: string): string => {
+    const displayNames: Record<string, string> = {
+      dashboard: 'du tableau de bord',
+      analyze: 'de l\'analyse',
+      creator: 'du créateur CV',
+      templates: 'des modèles',
+      'lettre-analyze': 'de l\'analyse lettre',
+      library: 'de la bibliothèque',
+      models: 'des modèles IA',
+      settings: 'des paramètres',
+      chat: 'du chat',
+      'chat-cv': 'du coach CV',
+      'chat-general': 'du coach carrière',
+      'letter-editor': 'de l\'éditeur de lettre'
+    };
+    return displayNames[tab] || 'du contenu';
   };
 
   const handleSettingsClick = () => {
@@ -284,6 +321,11 @@ const MockAppContent: React.FC = () => {
     }
   }, [showSettings]);
 
+  // Préchargement intelligent basé sur l'onglet actuel
+  useEffect(() => {
+    intelligentPreload(activeTab);
+  }, [activeTab]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 flex items-center justify-center">
@@ -307,75 +349,101 @@ const MockAppContent: React.FC = () => {
   }
 
   const renderActiveTab = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard onNavigate={handleTabChange} />;
-      case 'analyze':
-        return (
-          <CVAnalysis 
-            documentType="cv" 
-            title="Analyse CV" 
-            description="Uploadez votre CV pour une analyse ATS complète" 
-          />
-        );
-      case 'creator':
-        return <CVCreator />;
-      case 'templates':
-        return <Templates />;
-      case 'lettre-analyze':
-        return (
-          <CVAnalysis 
-            documentType="lettre" 
-            title="Analyse Lettre de motivation" 
-            description="Uploadez votre lettre de motivation pour une analyse détaillée" 
-          />
-        );
-      case 'library':
-        return <CVLibrary />;
-      case 'models':
-        return <Models />;
-      case 'settings':
-        return <Settings onBack={handleBackToDashboard} />;
-      case 'chat':
-        return (
-          <AIChat 
-            onBack={handleBackToDashboard} 
-            voiceEnabled={voiceEnabled}
-            mode="lettre"
-            title="Assistant Lettre de Motivation IA"
-            description="Créez une lettre de motivation professionnelle et personnalisée"
-          />
-        );
-      case 'chat-cv':
-        return (
-          <AIChat 
-            onBack={handleBackToDashboard} 
-            voiceEnabled={voiceEnabled}
-            mode="general"
-            title="Coach CV IA"
-            description="Votre assistant personnel pour améliorer votre CV"
-          />
-        );
-      case 'chat-general':
-        return (
-          <AIChat 
-            onBack={handleBackToDashboard} 
-            voiceEnabled={voiceEnabled}
-            mode="general"
-            title="Coach de Carrière IA"
-            description="Votre assistant personnel pour des conseils de carrière"
-          />
-        );
-      case 'letter-editor':
-        return (
-          <LetterEditor 
-            onSave={(content) => console.log('Letter saved:', content)}
-            onExport={(content, format) => console.log('Letter exported:', format, content)}
-          />
-        );
-      default:
-        return <Dashboard />;
-    }
+    const content = (() => {
+      switch (activeTab) {
+        case 'dashboard':
+          return <Dashboard onNavigate={handleTabChange} />;
+        case 'analyze':
+          return (
+            <CVAnalysis 
+              documentType="cv" 
+              title="Analyse CV" 
+              description="Uploadez votre CV pour une analyse ATS complète" 
+            />
+          );
+        case 'creator':
+          return <CVCreator />;
+        case 'templates':
+          return <Templates />;
+        case 'lettre-analyze':
+          return (
+            <CVAnalysis 
+              documentType="lettre" 
+              title="Analyse Lettre de motivation" 
+              description="Uploadez votre lettre de motivation pour une analyse détaillée" 
+            />
+          );
+        case 'library':
+          return <CVLibrary />;
+        case 'models':
+          return <Models />;
+        case 'settings':
+          return <Settings onBack={handleBackToDashboard} />;
+        case 'chat':
+          return (
+            <AIChat 
+              onBack={handleBackToDashboard} 
+              voiceEnabled={voiceEnabled}
+              mode="lettre"
+              title="Assistant Lettre de Motivation IA"
+              description="Créez une lettre de motivation professionnelle et personnalisée"
+            />
+          );
+        case 'chat-cv':
+          return (
+            <AIChat 
+              onBack={handleBackToDashboard} 
+              voiceEnabled={voiceEnabled}
+              mode="general"
+              title="Coach CV IA"
+              description="Votre assistant personnel pour améliorer votre CV"
+            />
+          );
+        case 'chat-general':
+          return (
+            <AIChat 
+              onBack={handleBackToDashboard} 
+              voiceEnabled={voiceEnabled}
+              mode="general"
+              title="Coach de Carrière IA"
+              description="Votre assistant personnel pour des conseils de carrière"
+            />
+          );
+        case 'letter-editor':
+          return (
+            <LetterEditor 
+              onSave={(content) => console.log('Letter saved:', content)}
+              onExport={(content, format) => console.log('Letter exported:', format, content)}
+            />
+          );
+        default:
+          return <Dashboard onNavigate={handleTabChange} />;
+      }
+    })();
+
+    return (
+      <Suspense fallback={<PageLoader message={`Chargement ${getTabDisplayName(activeTab)}...`} />}>
+        {content}
+      </Suspense>
+    );
+  };
+
+  const getTabDisplayName = (tab: string): string => {
+    const displayNames: Record<string, string> = {
+      dashboard: 'du tableau de bord',
+      analyze: 'de l\'analyse',
+      creator: 'du créateur CV',
+      templates: 'des modèles',
+      'lettre-analyze': 'de l\'analyse lettre',
+      library: 'de la bibliothèque',
+      models: 'des modèles IA',
+      settings: 'des paramètres',
+      chat: 'du chat',
+      'chat-cv': 'du coach CV',
+      'chat-general': 'du coach carrière',
+      'letter-editor': 'de l\'éditeur de lettre'
+    };
+    return displayNames[tab] || 'du contenu';
   };
 
   const handleSettingsClick = () => {

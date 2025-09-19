@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart3, FileText, BookOpen, FolderOpen, Brain, MessageSquare, ChevronDown, Plus, Search } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
+import { preloadOnHover } from '../../utils/lazyComponents';
 
 interface NavigationProps {
   activeTab: string;
@@ -93,6 +94,12 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
                       handleItemClick(item.id);
                     }
                   }}
+                  onMouseEnter={() => {
+                    // Préchargement au survol pour les éléments sans dropdown
+                    if (!hasDropdown) {
+                      preloadOnHover(item.id);
+                    }
+                  }}
                   className={`relative flex items-center space-x-2 px-4 py-4 text-sm font-medium transition-all duration-200 group ${
                     isActive
                       ? 'text-violet-600 border-b-2 border-violet-500'
@@ -126,6 +133,10 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
                         <button
                           key={subItem.id}
                           onClick={() => handleItemClick(subItem.id)}
+                          onMouseEnter={() => {
+                            // Préchargement au survol pour les éléments du dropdown
+                            preloadOnHover(subItem.id);
+                          }}
                           className={`w-full flex items-center space-x-3 px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-violet-50 ${
                             isSubActive
                               ? 'text-violet-600 bg-violet-50'

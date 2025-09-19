@@ -6,6 +6,7 @@ import { ProfileForm } from '../Profile/ProfileForm';
 import { ProfileTest } from '../Profile/ProfileTest';
 import { SupabaseConfigModal } from '../Auth/SupabaseConfigModal';
 import { useAuthStore } from '../../store/useAuthStore';
+import ConnectionStatusModal from './ConnectionStatusModal';
 
 interface SettingsProps {
   onBack: () => void;
@@ -66,6 +67,13 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
   const [activeSection, setActiveSection] = useState('ai');
   const [authError, setAuthError] = useState<string | null>(null);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [connectionModal, setConnectionModal] = useState({
+    isOpen: false,
+    status: 'testing',
+    message: '',
+    details: '',
+    apiProvider: 'OpenAI'
+  });
   const { profile: supaProfile, saveOpenAIKey, removeOpenAIKey } = useSupabase();
   const storeProfile = useAuthStore(s => s.profile);
   const currentProfile = storeProfile ?? supaProfile;
@@ -192,22 +200,68 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
   };
 
   const testApiKey = async (apiKey: string): Promise<'valid' | 'invalid'> => {
+    // Déterminer le provider API
+    const apiProvider = settings.ai.model.includes('gpt') ? 'OpenAI' : 
+                       settings.ai.model.includes('claude') ? 'Anthropic' :
+                       settings.ai.model.includes('gemini') ? 'Google' :
+                       settings.ai.model.includes('mistral') ? 'Mistral' : 'IA';
+
+    // Afficher la modale de test
+    setConnectionModal({
+      isOpen: true,
+      status: 'testing',
+      message: 'Test de la connexion à l\'API en cours...',
+      details: 'Vérification de la validité de votre clé API',
+      apiProvider
+    });
+
     try {
-      const response = await fetch('https://api.openai.com/v1/models', {
+      // Adapter l'URL selon le provider
+      let apiUrl = 'https://api.openai.com/v1/models';
+      if (settings.ai.model.includes('claude')) {
+        // Pour Anthropic, utiliser un endpoint différent si nécessaire
+        apiUrl = 'https://api.anthropic.com/v1/messages';
+      } else if (settings.ai.model.includes('gemini')) {
+        apiUrl = 'https://generativelanguage.googleapis.com/v1/models';
+      }
+
+      const response = await fetch(apiUrl, {
         headers: {
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
         }
       });
       
       if (response.ok) {
-        alert('✅ Clé API OpenAI valide et connectée !');
+        // Succès
+        setConnectionModal({
+          isOpen: true,
+          status: 'success',
+          message: 'Connexion établie avec succès !',
+          details: `Votre clé API ${apiProvider} est valide et fonctionnelle`,
+          apiProvider
+        });
         return 'valid';
       } else {
-        alert('❌ Clé API invalide. Vérifiez votre clé.');
+        // Erreur API
+        setConnectionModal({
+          isOpen: true,
+          status: 'error',
+          message: 'Clé API invalide',
+          details: `La clé API ${apiProvider} semble incorrecte ou expirée. Vérifiez votre clé sur ${apiProvider === 'OpenAI' ? 'platform.openai.com' : 'la plateforme officielle'}`,
+          apiProvider
+        });
         return 'invalid';
       }
-    } catch {
-      alert('❌ Erreur de connexion à OpenAI. Vérifiez votre clé et votre connexion internet.');
+    } catch  {
+      // Erreur de connexion
+      setConnectionModal({
+        isOpen: true,
+        status: 'error',
+        message: 'Erreur de connexion',
+        details: `Impossible de se connecter à ${apiProvider}. Vérifiez votre connexion internet et réessayez.`,
+        apiProvider
+      });
       return 'invalid';
     }
   };
@@ -401,9 +455,21 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
                           const result = await saveOpenAIKey(settings.ai.apiKey);
                           
                           if (result.success) {
-                            alert('✅ Clé API OpenAI validée et sauvegardée dans votre profil !');
+                            // Mise à jour du statut pour indiquer la sauvegarde réussie
+                            setConnectionModal(prev => ({
+                              ...prev,
+                              status: 'success',
+                              message: 'Clé API validée et sauvegardée !',
+                              details: 'Votre clé API a été validée et sauvegardée dans votre profil avec succès.'
+                            }));
                           } else {
-                            alert('✅ Clé API validée mais erreur de sauvegarde : ' + (result.message || 'Erreur inconnue'));
+                            // Mise à jour du statut pour indiquer l'erreur de sauvegarde
+                            setConnectionModal(prev => ({
+                              ...prev,
+                              status: 'success',
+                              message: 'Clé API validée',
+                              details: 'Clé API validée mais erreur de sauvegarde. La clé reste disponible localement.'
+                            }));
                             console.error('Erreur sauvegarde:', result.error);
                           }
                         }
@@ -465,12 +531,34 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
                       <button
                         onClick={async () => {
                           if (confirm('Êtes-vous sûr de vouloir supprimer la clé API de votre profil ?')) {
+                            // Afficher la modale de statut pendant la suppression
+                            setConnectionModal({
+                              isOpen: true,
+                              status: 'saving',
+                              message: 'Suppression en cours...',
+                              details: 'Suppression de votre clé API du profil',
+                              apiProvider: 'OpenAI'
+                            });
+                            
                             const result = await removeOpenAIKey();
                             if (result.success) {
-                              alert('✅ Clé API supprimée de votre profil');
-                              // Garder la clé dans les settings locaux
+                              // Succès de suppression
+                              setConnectionModal({
+                                isOpen: true,
+                                status: 'success',
+                                message: 'Clé API supprimée !',
+                                details: 'Votre clé API a été supprimée de votre profil. Elle reste disponible localement.',
+                                apiProvider: 'OpenAI'
+                              });
                             } else {
-                              alert('❌ Erreur lors de la suppression : ' + (result.message || 'Erreur inconnue'));
+                              // Erreur de suppression
+                              setConnectionModal({
+                                isOpen: true,
+                                status: 'error',
+                                message: 'Erreur de suppression',
+                                details: 'Impossible de supprimer la clé API de votre profil. ' + (result.message || 'Erreur inconnue'),
+                                apiProvider: 'OpenAI'
+                              });
                             }
                           }
                         }}
@@ -939,6 +1027,21 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
         isOpen={showConfigModal}
         onClose={() => setShowConfigModal(false)}
         onContinueDemo={() => setShowConfigModal(false)}
+      />
+
+      {/* Modale de statut de connexion API */}
+      <ConnectionStatusModal
+        isOpen={connectionModal.isOpen}
+        onClose={() => setConnectionModal(prev => ({ ...prev, isOpen: false }))}
+        status={connectionModal.status as 'testing' | 'success' | 'error' | 'saving'}
+        message={connectionModal.message}
+        details={connectionModal.details}
+        apiProvider={connectionModal.apiProvider}
+        onRetry={() => {
+          if (settings.ai.apiKey) {
+            testApiKey(settings.ai.apiKey);
+          }
+        }}
       />
     </div>
   );

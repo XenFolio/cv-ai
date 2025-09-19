@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Document, Packer, Paragraph, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { useOpenAI } from '../../hooks/useOpenAI';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useLocalStorageCV } from '../../hooks/useLocalStorageCV';
+import { useCVLibrary, CVData } from '../../hooks/useCVLibrary';
 import { CVPreviewDragDrop } from './CVPreviewDragDrop';
 import { StyleControls } from './StyleControls';
 import type { CVExperience, CVSkill, CVLanguage, CVContent, CVEducation } from './types';
@@ -120,6 +121,9 @@ export const CVCreator: React.FC = () => {
     autoSaveEnabled,
     setAutoSaveEnabled
   } = useLocalStorageCV();
+  
+  // Hook pour la bibliothèque CV
+  const { addCreatedCV } = useCVLibrary();
 
   const [experiences, setExperiences] = useState<CVExperience[]>([
     { id: 1, content: '[Poste] - [Entreprise] (Dates)', details: '• Réalisation clé ou projet important.' }
@@ -752,7 +756,57 @@ export const CVCreator: React.FC = () => {
     });
 
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `${template.name.replace(/\s+/g, '_').toLowerCase()}.docx`);
+    const fileName = `${template.name.replace(/\s+/g, '_').toLowerCase()}.docx`;
+    saveAs(blob, fileName);
+
+    // Ajouter le CV créé à la bibliothèque
+    try {
+      const cvData: CVData = {
+        name: editableContent.name,
+        contact: editableContent.contact,
+        profileContent: editableContent.profileContent,
+        experiences: experiences,
+        skills: skills.map((skill, index) => ({ id: index + 1, content: skill })), // Convertir en format CVData
+        languages: languages,
+        educations: educations,
+        industry: template.category,
+        customFont: customFont,
+        customColor: customColor,
+        templateName: template.name
+      };
+
+      // Calculer un score ATS basé sur le template et le contenu
+      const atsScore = calculateATSScore(template, cvData);
+      
+      const docId = await addCreatedCV(
+        `${editableContent.name || 'CV'} - ${template.name}`,
+        cvData,
+        template.name,
+        atsScore
+      );
+      
+      console.log(`✅ CV créé ajouté et sauvegardé avec l'ID: ${docId}`);
+    } catch (error) {
+      console.warn('Erreur lors de l\'ajout du CV créé à la bibliothèque:', error);
+      // Ne pas bloquer la génération du CV
+    }
+  };
+
+  // Fonction pour calculer un score ATS approximatif
+  const calculateATSScore = (template: Template, cvData: CVData): number => {
+    let score = template.atsScore; // Score de base du template
+
+    // Bonifications basées sur le contenu
+    if (cvData.name && cvData.name !== '[VOTRE NOM]') score += 2;
+    if (cvData.contact && !cvData.contact.includes('[')) score += 3;
+    if (cvData.profileContent && !cvData.profileContent.includes('Résumé de votre profil')) score += 3;
+    if (cvData.experiences.length > 0 && !cvData.experiences[0].content.includes('[Poste]')) score += 5;
+    if (cvData.skills.length >= 3) score += 3;
+    if (cvData.languages.length >= 1) score += 2;
+    if (cvData.educations.length > 0 && !cvData.educations[0].degree.includes('[Diplôme]')) score += 2;
+
+    // Plafonner le score à 98
+    return Math.min(score, 98);
   };
 
 
