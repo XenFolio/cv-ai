@@ -1,75 +1,71 @@
 import React from 'react';
-import { StyleControls } from './StyleControls';
+import { useCVCreator } from './CVCreatorContext.hook';
 import { DraggableSections } from './DraggableSections';
-import type { CVPreviewProps } from './types';
 
+interface CVPreviewDragDropProps {
+  setSectionsOrder: (func: (sections: any[]) => void) => void;
+}
 
-export const CVPreviewDragDrop: React.FC<CVPreviewProps> = ({
-  editableContent,
-  setEditableContent,
-  experiences,
-  setExperiences,
-  skills,
-  setSkills,
-  languages,
-  setLanguages,
-  educations,
-  setEducations,
-  editingField,
-  setEditingField,
-  customFont = 'Calibri',
-  setCustomFont,
-  customColor = '000000',
-  setCustomColor,
-  titleColor = '000000',
-  setTitleColor,
-  layoutColumns = 1,
-  setLayoutColumns,
-  nameAlignment = 'center',
-  setNameAlignment,
-  photoAlignment = 'center',
-  setPhotoAlignment,
-  photoSize = 'medium',
-  setPhotoSize,
-  photoShape = 'circle',
-  setPhotoShape,
-  nameFontSize = 18,
-  setNameFontSize,
-  // Nouveaux props pour les ajustements d'image
-  photoZoom = 100,
-  setPhotoZoom,
-  photoPositionX = 0,
-  setPhotoPositionX,
-  photoPositionY = 0,
-  setPhotoPositionY,
-  photoRotation = 0,
-  setPhotoRotation,
-  photoObjectFit = 'contain',
-  setPhotoObjectFit,
-  selectedSection,
-  setSelectedSection,
-  availableFonts = ['Calibri', 'Georgia', 'Helvetica', 'Consolas', 'Times New Roman', 'Arial'],
-  availableColors = [
-    { name: 'Noir', value: '000000', category: 'Neutres' },
-    { name: 'Bleu marine', value: '2E3A59', category: 'Bleus' },
-    { name: 'Bleu vif', value: '2563EB', category: 'Bleus' },
-    { name: 'Gris foncé', value: '111827', category: 'Neutres' },
-    { name: 'Vert foncé', value: '064E3B', category: 'Verts' },
-    { name: 'Violet', value: '7C3AED', category: 'Violets' }
-  ],
-  addExperience,
-  removeExperience,
-  addSkill,
-  removeSkill,
-  addLanguage,
-  removeLanguage,
-  addEducation,
-  removeEducation,
-  generateWithAI,
-  isLoading,
-  error,
-  openAIError
-}) => {
+export const CVPreviewDragDrop: React.FC<CVPreviewDragDropProps> = ({ setSectionsOrder }) => {
+  const {
+    editableContent,
+    setEditableContent,
+    experiences,
+    setExperiences,
+    skills,
+    setSkills,
+    languages,
+    setLanguages,
+    educations,
+    setEducations,
+    editingField,
+    setEditingField,
+    customFont,
+    setCustomFont,
+    customColor,
+    setCustomColor,
+    titleColor,
+    setTitleColor,
+    layoutColumns,
+    setLayoutColumns,
+    nameAlignment,
+    setNameAlignment,
+    photoAlignment,
+    setPhotoAlignment,
+    photoSize,
+    setPhotoSize,
+    photoShape,
+    setPhotoShape,
+    nameFontSize,
+    setNameFontSize,
+    photoZoom,
+    setPhotoZoom,
+    photoPositionX,
+    setPhotoPositionX,
+    photoPositionY,
+    setPhotoPositionY,
+    photoRotation,
+    setPhotoRotation,
+    photoObjectFit,
+    setPhotoObjectFit,
+    selectedSection,
+    setSelectedSection,
+    availableFonts,
+    availableColors,
+    addExperience,
+    removeExperience,
+    addSkill,
+    removeSkill,
+    addLanguage,
+    removeLanguage,
+    addEducation,
+    removeEducation,
+    generateWithAI,
+    isLoading,
+    error,
+    openAIError,
+    selectedTemplateName
+  } = useCVCreator();
   const [showError, setShowError] = React.useState(false);
 
   // Auto-hide error after 3 seconds
@@ -119,44 +115,7 @@ export const CVPreviewDragDrop: React.FC<CVPreviewProps> = ({
             )}
 
               {/* Sections déplaçables */}
-            <DraggableSections
-              editableContent={editableContent}
-              setEditableContent={setEditableContent}
-              experiences={experiences}
-              setExperiences={setExperiences}
-              skills={skills}
-              setSkills={setSkills}
-              languages={languages}
-              setLanguages={setLanguages}
-              educations={educations}
-              setEducations={setEducations}
-              editingField={editingField}
-              setEditingField={setEditingField}
-              customColor={customColor}
-              titleColor={titleColor}
-              addExperience={addExperience}
-              removeExperience={removeExperience}
-              addSkill={addSkill}
-              removeSkill={removeSkill}
-              addLanguage={addLanguage}
-              removeLanguage={removeLanguage}
-              addEducation={addEducation}
-              removeEducation={removeEducation}
-              generateWithAI={generateWithAI}
-              isLoading={isLoading}
-              nameAlignment={nameAlignment}
-              photoAlignment={photoAlignment}
-              photoSize={photoSize}
-              photoShape={photoShape}
-              nameFontSize={nameFontSize}
-              // Props pour les ajustements d'image
-              photoZoom={photoZoom}
-              photoPositionX={photoPositionX}
-              photoPositionY={photoPositionY}
-              photoRotation={photoRotation}
-              photoObjectFit={photoObjectFit}
-              setSelectedSection={setSelectedSection}
-            />
+            <DraggableSections />
           </div>
         </div>
       </div>

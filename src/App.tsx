@@ -1,4 +1,5 @@
-import React, { useState, Suspense, useEffect } from 'react';
+import React, { useState, Suspense, useEffect, useCallback } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import { SupabaseAuthProvider } from './components/Auth/SupabaseAuthProvider';
 import { useAuth } from './hooks/useAuth';
 import { AuthProvider, useAuth as useMockAuth } from './components/Auth/AuthProvider';
@@ -6,11 +7,14 @@ import { UniversalLoginPage } from './components/Auth/UniversalLoginPage';
 import { SupabaseConfigModal } from './components/Auth/SupabaseConfigModal';
 import { Header } from './components/Layout/Header';
 import { Navigation } from './components/Layout/Navigation';
+import { Sparkles } from 'lucide-react';
 import { useAppStore } from './store/useAppStore';
 import { AuthBoundary } from './components/Auth/AuthBoundary';
 import { useAuthStore } from './store/useAuthStore';
 import { lazyComponentsMap, intelligentPreload } from './utils/lazyComponents';
 import PageLoader from './components/loader/PageLoader';
+import { ThemeProvider } from './contexts/ThemeContext';
+import AIDashboard from './components/AISuggestions/AIDashboard';
 
 // Composants lazy chargés à la demande
 const {
@@ -24,7 +28,11 @@ const {
   AIChat,
   CVCreatorDemo,
   LetterEditor,
+  JobSearch,
 } = lazyComponentsMap;
+
+// Import direct pour SubscriptionPlans (pas de lazy loading pour les tarifs)
+import { SubscriptionPlans } from './components/Subscription/SubscriptionPlans';
 
 // Composant pour l'authentification Supabase
 const SupabaseAppContent: React.FC = () => {
@@ -46,14 +54,14 @@ const SupabaseAppContent: React.FC = () => {
   const setApiKeyStatus = useAppStore(s => s.setApiKeyStatus);
 
   // Fonction pour vérifier le statut de la clé API
-  const checkApiKeyStatus = () => {
+  const checkApiKeyStatus = useCallback(() => {
     const savedSettings = localStorage.getItem('cvAssistantSettings');
     if (savedSettings) {
       try {
         const settings = JSON.parse(savedSettings);
         const apiKey = settings.ai?.apiKey;
         const keyStatus = settings.ai?.keyStatus;
-        
+
         if (!apiKey || apiKey.length === 0) {
           setApiKeyStatus('missing');
         } else if (keyStatus === 'valid') {
@@ -68,18 +76,18 @@ const SupabaseAppContent: React.FC = () => {
     } else {
       setApiKeyStatus('missing');
     }
-  };
+  }, [setApiKeyStatus]);
 
   // Vérifier le statut de la clé API au chargement et quand on revient des settings
   React.useEffect(() => {
     checkApiKeyStatus();
-  }, []);
+  }, [checkApiKeyStatus]);
 
   React.useEffect(() => {
     if (!showSettings) {
       checkApiKeyStatus();
     }
-  }, [showSettings]);
+  }, [showSettings, checkApiKeyStatus]);
 
   // Préchargement intelligent basé sur l'onglet actuel
   useEffect(() => {
@@ -88,12 +96,19 @@ const SupabaseAppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-violet-500 via-pink-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-white font-bold text-lg">CV</span>
+          <div className="relative mx-auto mb-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto animate-pulse">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-ping"></div>
           </div>
-          <p className="text-gray-600">Chargement...</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">CV ATS Pro</h3>
+          <p className="text-gray-600">Chargement de votre espace...</p>
+          <div className="mt-4 flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          </div>
         </div>
       </div>
     );
@@ -115,10 +130,10 @@ const SupabaseAppContent: React.FC = () => {
           return <Dashboard onNavigate={handleTabChange} />;
         case 'analyze':
           return (
-            <CVAnalysis 
-              documentType="cv" 
-              title="Analyse CV" 
-              description="Uploadez votre CV pour une analyse ATS complète" 
+            <CVAnalysis
+              documentType="cv"
+              title="Analyse CV"
+              description="Uploadez votre CV pour une analyse ATS complète"
             />
           );
         case 'creator':
@@ -127,10 +142,10 @@ const SupabaseAppContent: React.FC = () => {
           return <Templates />;
         case 'lettre-analyze':
           return (
-            <CVAnalysis 
-              documentType="lettre" 
-              title="Analyse Lettre de motivation" 
-              description="Uploadez votre lettre de motivation pour une analyse détaillée" 
+            <CVAnalysis
+              documentType="lettre"
+              title="Analyse Lettre de motivation"
+              description="Uploadez votre lettre de motivation pour une analyse détaillée"
             />
           );
         case 'library':
@@ -141,8 +156,8 @@ const SupabaseAppContent: React.FC = () => {
           return <Settings onBack={handleBackToDashboard} onApiKeyStatusChange={setApiKeyStatus} />;
         case 'chat':
           return (
-            <AIChat 
-              onBack={handleBackToDashboard} 
+            <AIChat
+              onBack={handleBackToDashboard}
               voiceEnabled={voiceEnabled}
               mode="lettre"
               title="Assistant Lettre de Motivation IA"
@@ -151,8 +166,8 @@ const SupabaseAppContent: React.FC = () => {
           );
         case 'chat-cv':
           return (
-            <AIChat 
-              onBack={handleBackToDashboard} 
+            <AIChat
+              onBack={handleBackToDashboard}
               voiceEnabled={voiceEnabled}
               mode="general"
               title="Coach CV IA"
@@ -161,8 +176,8 @@ const SupabaseAppContent: React.FC = () => {
           );
         case 'chat-general':
           return (
-            <AIChat 
-              onBack={handleBackToDashboard} 
+            <AIChat
+              onBack={handleBackToDashboard}
               voiceEnabled={voiceEnabled}
               mode="general"
               title="Coach de Carrière IA"
@@ -171,11 +186,17 @@ const SupabaseAppContent: React.FC = () => {
           );
         case 'letter-editor':
           return (
-            <LetterEditor 
+            <LetterEditor
               onSave={(content) => console.log('Letter saved:', content)}
               onExport={(content, format) => console.log('Letter exported:', format, content)}
             />
           );
+        case 'jobs':
+          return <JobSearch />;
+        case 'ai-dashboard':
+          return <AIDashboard />;
+        case 'tarifs':
+          return <SubscriptionPlans />;
         default:
           return <Dashboard onNavigate={handleTabChange} />;
       }
@@ -201,7 +222,11 @@ const SupabaseAppContent: React.FC = () => {
       chat: 'du chat',
       'chat-cv': 'du coach CV',
       'chat-general': 'du coach carrière',
-      'letter-editor': 'de l\'éditeur de lettre'
+      'letter-editor': 'de l\'éditeur de lettre',
+      jobs: 'des offres d\'emploi',
+      'ai-dashboard': 'du coach IA',
+      tarifs: 'des tarifs',
+      'cv-designer-test': 'du CV Designer test'
     };
     return displayNames[tab] || 'du contenu';
   };
@@ -242,7 +267,7 @@ const SupabaseAppContent: React.FC = () => {
   } : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-violet-300/20 to-pink-300/20 rounded-full blur-3xl" />
@@ -258,7 +283,7 @@ const SupabaseAppContent: React.FC = () => {
           apiKeyStatus={apiKeyStatus}
         />
         {!showSettings && !showChat && <Navigation activeTab={activeTab} onTabChange={handleTabChange} />}
-        
+
         <main className="flex justify-center px-4 sm:px-6 lg:px-8 py-8">
           <div className="max-w-8xl w-full">
             {renderActiveTab()}
@@ -286,14 +311,14 @@ const MockAppContent: React.FC = () => {
   const setApiKeyStatus = useAppStore(s => s.setApiKeyStatus);
 
   // Fonction pour vérifier le statut de la clé API
-  const checkApiKeyStatus = () => {
+  const checkApiKeyStatus = useCallback(() => {
     const savedSettings = localStorage.getItem('cvAssistantSettings');
     if (savedSettings) {
       try {
         const settings = JSON.parse(savedSettings);
         const apiKey = settings.ai?.apiKey;
         const keyStatus = settings.ai?.keyStatus;
-        
+
         if (!apiKey || apiKey.length === 0) {
           setApiKeyStatus('missing');
         } else if (keyStatus === 'valid') {
@@ -308,18 +333,18 @@ const MockAppContent: React.FC = () => {
     } else {
       setApiKeyStatus('missing');
     }
-  };
+  }, [setApiKeyStatus]);
 
   // Vérifier le statut de la clé API au chargement et quand on revient des settings
   React.useEffect(() => {
     checkApiKeyStatus();
-  }, []);
+  }, [checkApiKeyStatus]);
 
   React.useEffect(() => {
     if (!showSettings) {
       checkApiKeyStatus();
     }
-  }, [showSettings]);
+  }, [showSettings, checkApiKeyStatus]);
 
   // Préchargement intelligent basé sur l'onglet actuel
   useEffect(() => {
@@ -328,12 +353,19 @@ const MockAppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-violet-500 via-pink-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-white font-bold text-lg">CV</span>
+          <div className="relative mx-auto mb-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto animate-pulse">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-ping"></div>
           </div>
-          <p className="text-gray-600">Chargement...</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">CV ATS Pro</h3>
+          <p className="text-gray-600">Chargement de votre espace...</p>
+          <div className="mt-4 flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          </div>
         </div>
       </div>
     );
@@ -355,10 +387,10 @@ const MockAppContent: React.FC = () => {
           return <Dashboard onNavigate={handleTabChange} />;
         case 'analyze':
           return (
-            <CVAnalysis 
-              documentType="cv" 
-              title="Analyse CV" 
-              description="Uploadez votre CV pour une analyse ATS complète" 
+            <CVAnalysis
+              documentType="cv"
+              title="Analyse CV"
+              description="Uploadez votre CV pour une analyse ATS complète"
             />
           );
         case 'creator':
@@ -367,10 +399,10 @@ const MockAppContent: React.FC = () => {
           return <Templates />;
         case 'lettre-analyze':
           return (
-            <CVAnalysis 
-              documentType="lettre" 
-              title="Analyse Lettre de motivation" 
-              description="Uploadez votre lettre de motivation pour une analyse détaillée" 
+            <CVAnalysis
+              documentType="lettre"
+              title="Analyse Lettre de motivation"
+              description="Uploadez votre lettre de motivation pour une analyse détaillée"
             />
           );
         case 'library':
@@ -381,8 +413,8 @@ const MockAppContent: React.FC = () => {
           return <Settings onBack={handleBackToDashboard} />;
         case 'chat':
           return (
-            <AIChat 
-              onBack={handleBackToDashboard} 
+            <AIChat
+              onBack={handleBackToDashboard}
               voiceEnabled={voiceEnabled}
               mode="lettre"
               title="Assistant Lettre de Motivation IA"
@@ -391,8 +423,8 @@ const MockAppContent: React.FC = () => {
           );
         case 'chat-cv':
           return (
-            <AIChat 
-              onBack={handleBackToDashboard} 
+            <AIChat
+              onBack={handleBackToDashboard}
               voiceEnabled={voiceEnabled}
               mode="general"
               title="Coach CV IA"
@@ -401,8 +433,8 @@ const MockAppContent: React.FC = () => {
           );
         case 'chat-general':
           return (
-            <AIChat 
-              onBack={handleBackToDashboard} 
+            <AIChat
+              onBack={handleBackToDashboard}
               voiceEnabled={voiceEnabled}
               mode="general"
               title="Coach de Carrière IA"
@@ -411,11 +443,18 @@ const MockAppContent: React.FC = () => {
           );
         case 'letter-editor':
           return (
-            <LetterEditor 
+            <LetterEditor
               onSave={(content) => console.log('Letter saved:', content)}
               onExport={(content, format) => console.log('Letter exported:', format, content)}
             />
           );
+        case 'jobs':
+          return <JobSearch />;
+        case 'ai-dashboard':
+          return <AIDashboard />;
+        case 'tarifs':
+          return <SubscriptionPlans />;
+
         default:
           return <Dashboard onNavigate={handleTabChange} />;
       }
@@ -441,7 +480,11 @@ const MockAppContent: React.FC = () => {
       chat: 'du chat',
       'chat-cv': 'du coach CV',
       'chat-general': 'du coach carrière',
-      'letter-editor': 'de l\'éditeur de lettre'
+      'letter-editor': 'de l\'éditeur de lettre',
+      jobs: 'des offres d\'emploi',
+      'ai-dashboard': 'du coach IA',
+      tarifs: 'des tarifs',
+      'cv-designer-test': 'du CV Designer test'
     };
     return displayNames[tab] || 'du contenu';
   };
@@ -468,13 +511,13 @@ const MockAppContent: React.FC = () => {
     setShowSettings(false);
     setActiveTab('dashboard');
   };
-  
+
   const handleLogout = () => {
     logout();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-violet-300/20 to-pink-300/20 rounded-full blur-3xl" />
@@ -495,7 +538,7 @@ const MockAppContent: React.FC = () => {
           apiKeyStatus={apiKeyStatus}
         />
         {!showSettings && !showChat && <Navigation activeTab={activeTab} onTabChange={handleTabChange} />}
-        
+
         <main className="flex justify-center px-4 sm:px-6 lg:px-8 py-8">
           <div className="max-w-8xl w-full">
             {renderActiveTab()}
@@ -512,54 +555,64 @@ const App: React.FC = () => {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const isConfigured = !!(supabaseUrl && supabaseKey);
-  
+
   const [showConfigModal, setShowConfigModal] = useState(!isConfigured);
   const [useDemoMode, setUseDemoMode] = useState(false);
 
   // Si Supabase est configuré, utiliser directement Supabase
   if (isConfigured) {
     return (
-      <SupabaseAuthProvider>
-        <AuthBoundary>
-          <SupabaseAppContent />
-        </AuthBoundary>
-      </SupabaseAuthProvider>
+      <HelmetProvider>
+        <ThemeProvider>
+          <SupabaseAuthProvider>
+            <AuthBoundary>
+              <SupabaseAppContent />
+            </AuthBoundary>
+          </SupabaseAuthProvider>
+        </ThemeProvider>
+      </HelmetProvider>
     );
   }
 
   // Si l'utilisateur a choisi le mode démo, utiliser le provider mock
   if (useDemoMode) {
     return (
-      <AuthProvider>
-        <MockAppContent />
-      </AuthProvider>
+      <HelmetProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <MockAppContent />
+          </AuthProvider>
+        </ThemeProvider>
+      </HelmetProvider>
     );
   }
 
   // Sinon, afficher la modale de configuration
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-violet-500 via-pink-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-lg">CV</span>
+    <HelmetProvider>
+      <ThemeProvider>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-400 bg-clip-text text-transparent mb-2">
+              CV ATS Pro
+            </h1>
+            <p className="text-gray-600">Configuration en cours...</p>
           </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-pink-400 bg-clip-text text-transparent mb-2">
-            CV ATS Assistant
-          </h1>
-          <p className="text-gray-600">Configuration en cours...</p>
         </div>
-      </div>
-      
-      <SupabaseConfigModal
-        isOpen={showConfigModal}
-        onClose={() => setShowConfigModal(false)}
-        onContinueDemo={() => {
-          setUseDemoMode(true);
-          setShowConfigModal(false);
-        }}
-      />
-    </>
+
+        <SupabaseConfigModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+          onContinueDemo={() => {
+            setUseDemoMode(true);
+            setShowConfigModal(false);
+          }}
+        />
+      </ThemeProvider>
+    </HelmetProvider>
   );
 };
 

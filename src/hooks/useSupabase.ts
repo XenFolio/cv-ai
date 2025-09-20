@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import type { CVContent } from '../components/CVCreator/types';
 
 // Types pour les templates
 export interface Template {
@@ -67,6 +68,9 @@ export interface UserProfile {
   profession: string;
   company: string;
   openai_api_key?: string;
+  subscription_type?: 'free' | 'pro_monthly' | 'pro_yearly';
+  subscription_status?: 'free' | 'active' | 'inactive' | 'canceled';
+  stripe_customer_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -170,7 +174,7 @@ export const useSupabase = () => {
     industry?: string;
     file_size?: string;
     version?: number;
-    content?: string;
+    content: CVContent | string; // Accepter soit CVContent soit une chaîne de caractères
     original_file_name?: string;
     original_file_data?: Uint8Array;
     analysis_results?: Record<string, unknown>;
@@ -182,24 +186,21 @@ export const useSupabase = () => {
     }
 
     try {
-      // Récupérer l'utilisateur connecté
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
+
       if (authError) {
         console.error('Erreur d\'authentification:', authError);
         throw new Error('Utilisateur non authentifié');
       }
-      
+
       if (!user) {
         throw new Error('Utilisateur non connecté');
       }
 
-      // Essayer d'abord avec le nom original
-      let finalName = document.name;
       const documentData = {
         user_id: user.id,
         doc_type: document.doc_type,
-        name: finalName,
+        name: document.name,
         type: document.type,
         ats_score: document.ats_score || 0,
         status: document.status || 'completed',
@@ -208,7 +209,7 @@ export const useSupabase = () => {
         is_favorite: false,
         file_size: document.file_size || 'Inconnu',
         version: document.version || 1,
-        content: document.content || null,
+        content: document.content, // Enregistrer directement en JSON
         original_file_name: document.original_file_name || null,
         original_file_data: document.original_file_data || null,
         analysis_results: document.analysis_results || {},
@@ -216,82 +217,18 @@ export const useSupabase = () => {
         metadata: document.metadata || {}
       };
 
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('documents')
         .insert([documentData])
         .select()
         .single();
-
-      // Si erreur de contrainte UNIQUE sur le nom (codes multiples possibles)
-      if (error && (
-        error.code === '23505' || 
-        error.message.includes('duplicate key') || 
-        error.message.includes('unique constraint') ||
-        error.message.includes('conflicting key') ||
-        error.code === 'PGRST203'
-      )) {
-        console.log('🔄 Conflit détecté (contrainte UNIQUE), génération d\'un nom unique...');
-        console.log('Erreur originale:', error);
-        console.log('Nom original qui a causé le conflit:', document.name);
-        
-        // Générer un nom unique de façon plus robuste
-        let retryCount = 0;
-        let success = false;
-        
-        while (!success && retryCount < 10) { // Maximum 10 tentatives
-          retryCount++;
-          
-          // Générer un nom unique basé sur le nom original + timestamp pour garantir l'unicité
-          const timestamp = Date.now();
-          const randomSuffix = Math.floor(Math.random() * 1000);
-          finalName = `${document.name} (${retryCount})`;
-          
-          // Si on arrive aux dernières tentatives, ajouter un timestamp pour garantir l'unicité
-          if (retryCount > 5) {
-            finalName = `${document.name} (${timestamp}-${randomSuffix})`;
-          }
-          
-          const updatedDocumentData = {
-            ...documentData,
-            name: finalName
-          };
-
-          console.log(`Tentative ${retryCount}/10 avec nom unique:`, finalName);
-          
-          try {
-            const result = await supabase
-              .from('documents')
-              .insert([updatedDocumentData])
-              .select()
-              .single();
-
-            if (!result.error) {
-              data = result.data;
-              error = null;
-              success = true;
-              console.log('✅ Succès avec nom unique:', finalName);
-            } else {
-              console.log(`Tentative ${retryCount} échouée:`, result.error);
-              if (retryCount === 10) {
-                error = result.error;
-              }
-            }
-          } catch (retryError) {
-            console.error(`Erreur tentative ${retryCount}:`, retryError);
-          }
-        }
-        
-        if (!success) {
-          console.error('Impossible de générer un nom unique après 10 tentatives');
-        }
-      }
 
       if (error) {
         console.error('Erreur Supabase lors de l\'insertion document:', error);
         throw error;
       }
 
-      console.log('✅ Document ajouté à la table documents:', data.id, 'avec nom:', finalName);
+      console.log('✅ Document ajouté à la table documents:', data.id);
       return data;
     } catch (err) {
       console.error('Erreur lors de l\'ajout du document:', err);
@@ -349,7 +286,7 @@ export const useSupabase = () => {
   const updateDocument = async (documentId: string, updates: {
     ats_score?: number;
     status?: 'draft' | 'completed' | 'optimized';
-    content?: string;
+    content?: CVContent | string; // Accepter soit CVContent soit une chaîne de caractères
     analysis_results?: Record<string, unknown>;
     cv_data?: Record<string, unknown>;
     metadata?: Record<string, unknown>;
@@ -359,29 +296,31 @@ export const useSupabase = () => {
     }
 
     try {
-      // Récupérer l'utilisateur connecté
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
+
       if (authError) {
         console.error('Erreur d\'authentification:', authError);
         throw new Error('Utilisateur non authentifié');
       }
-      
+
       if (!user) {
         throw new Error('Utilisateur non connecté');
       }
 
-      // Préparer les données de mise à jour avec timestamp
       const updateData = {
         ...updates,
         updated_at: new Date().toISOString()
       };
 
+      if (updates.content) {
+        updateData['content'] = updates.content; // Enregistrer directement en JSON
+      }
+
       const { data, error } = await supabase
         .from('documents')
         .update(updateData)
         .eq('id', documentId)
-        .eq('user_id', user.id) // Sécurité : s'assurer que l'utilisateur ne peut mettre à jour que ses propres documents
+        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -544,11 +483,18 @@ export const useSupabase = () => {
         throw new Error('Utilisateur non connecté');
       }
 
+      // Définir les valeurs par défaut pour l'abonnement
+      const defaultSubscriptionData = {
+        subscription_type: 'free' as const,
+        subscription_status: 'free' as const,
+      };
+
       const { data, error } = await supabase
         .from('profiles')
         .insert({
           id: user.id,
           email: user.email,
+          ...defaultSubscriptionData,
           ...profileData,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -561,7 +507,7 @@ export const useSupabase = () => {
       }
 
       setProfile(data);
-      console.log('Profil créé avec succès:', data);
+      console.log('Profil créé avec succès avec abonnement free par défaut:', data);
       return { success: true, data };
     } catch (err) {
       console.error('Erreur lors de la création du profil:', err);

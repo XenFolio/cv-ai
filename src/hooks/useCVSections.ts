@@ -138,6 +138,9 @@ function cleanupLayersPure(sections: SectionConfig[]): SectionConfig[] {
 
 /* ---------------- Lecture initiale ---------------- */
 function loadInitialSections(): SectionConfig[] {
+  console.log("[useCVSections] Loading initial sections");
+
+  // Essayer de charger depuis localStorage d'abord
   const keysToTry = [STORAGE_KEY_V2, ...LEGACY_KEYS];
   for (const key of keysToTry) {
     try {
@@ -146,12 +149,16 @@ function loadInitialSections(): SectionConfig[] {
       const parsed = JSON.parse(raw) as unknown;
       const migrated = migrateSections(parsed);
       if (migrated && migrated.length) {
+        console.log("[useCVSections] Sections loaded from localStorage:", migrated);
         return cleanupLayersPure(migrated);
       }
     } catch (e) {
       console.warn("[useCVSections] Échec lecture/migration localStorage:", e);
     }
   }
+
+  // Si rien n'est trouvé dans localStorage, utiliser les sections par défaut
+  console.log("[useCVSections] No sections found in localStorage, using defaults");
   return cleanupLayersPure(DEFAULT_SECTIONS);
 }
 

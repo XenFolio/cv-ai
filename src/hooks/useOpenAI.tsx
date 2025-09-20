@@ -778,11 +778,76 @@ export const useOpenAI = () => {
     }
   };
 
+  const generateCoverLetter = async (prompt: string): Promise<any> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const apiKey = getApiKey(profile);
+
+      if (!apiKey) {
+        throw new Error('Clé API OpenAI non configurée. Veuillez l\'ajouter dans les paramètres.');
+      }
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: [
+            {
+              role: 'system',
+              content: 'Tu es un expert en rédaction de lettres de motivation professionnelles et persuasives. Tu génères des lettres de motivation optimisées pour les recruteurs et les ATS. Tu réponds en JSON avec la structure: {introduction: "...", body: "...", conclusion: "...", skillsHighlight: ["compétence1", "compétence2"]}'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Erreur API OpenAI: ${errorData.error?.message || 'Erreur inconnue'}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices[0].message.content.trim();
+
+      try {
+        const parsedResponse = JSON.parse(aiResponse);
+        setIsLoading(false);
+        return parsedResponse;
+      } catch (parseError) {
+        // Fallback: return as plain text structure
+        setIsLoading(false);
+        return {
+          introduction: aiResponse,
+          body: '',
+          conclusion: '',
+          skillsHighlight: []
+        };
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la génération de la lettre de motivation.';
+      setError(errorMessage);
+      setIsLoading(false);
+      return null;
+    }
+  };
+
   return {
     analyzeCV: analyzeCVContent,
     analyzeFile,
     generateCVContent,
     editCVField,
+    generateCoverLetter,
     isLoading,
     error
   };

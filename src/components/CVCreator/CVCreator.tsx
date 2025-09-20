@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Document, Packer, Paragraph, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { useOpenAI } from '../../hooks/useOpenAI';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useLocalStorageCV } from '../../hooks/useLocalStorageCV';
 import { useCVLibrary, CVData } from '../../hooks/useCVLibrary';
+import { useCVSections } from '../../hooks/useCVSections';
 import { CVPreviewDragDrop } from './CVPreviewDragDrop';
 import { StyleControls } from './StyleControls';
+import { CVTemplateCarousel } from './CVTemplateCarousel';
+import { CVCreatorProvider } from './CVCreatorContext.provider';
 import type { CVExperience, CVSkill, CVLanguage, CVContent, CVEducation } from './types';
 
 interface SectionConfig {
@@ -14,6 +17,8 @@ interface SectionConfig {
   name: string;
   component: string;
   visible: boolean;
+  layer?: number;
+  width?: 'full' | 'half';
 }
 
 interface Template {
@@ -96,7 +101,35 @@ export const CVCreator: React.FC = () => {
   const [photoRotation, setPhotoRotation] = useState<number>(0);
   const [photoObjectFit, setPhotoObjectFit] = useState<'contain' | 'cover'>('contain');
   const [error, setError] = useState<string | null>(null);
-  const [setSectionsOrderFunc, setSectionsOrderFuncSetter] = useState<((sections: SectionConfig[]) => void) | null>(null);
+
+  // Hook pour la gestion des sections
+  const {
+    sections,
+    toggleSectionVisibility,
+    setSectionsOrder: setSectionsOrderFunc,
+    cleanupLayers,
+    expandSection,
+    contractSection
+  } = useCVSections();
+
+  // Log pour déboguer
+  console.log('Sections from hook:', sections);
+
+  // Gérer le clic en dehors des sections pour désélectionner
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Vérifier si le clic est en dehors des sections
+      if (!target.closest('[data-section]') && !target.closest('button')) {
+        setSelectedSection(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   const [editableContent, setEditableContent] = useState<CVContent>({
     name: '[VOTRE NOM]',
     contact: '[Votre Email] • [Votre Téléphone] • [LinkedIn]',
@@ -549,12 +582,14 @@ export const CVCreator: React.FC = () => {
         contactTitle: "CONTACT"
       },
       sectionsOrder: [
-        { id: 'profile', name: 'Profil', component: 'ProfileSection', visible: true, layer: 1, width: 'full' },
-        { id: 'experience', name: 'Expérience', component: 'ExperienceSection', visible: true, layer: 2, width: 'half' },
-        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 2, width: 'half' },
-        { id: 'education', name: 'Formation', component: 'EducationSection', visible: true, layer: 3, width: 'half' },
-        { id: 'skills', name: 'Compétences', component: 'SkillsSection', visible: true, layer: 3, width: 'half' },
-        { id: 'languages', name: 'Langues', component: 'LanguagesSection', visible: true, layer: 4, width: 'full' }
+        { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
+        { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: false, layer: 2, order: 0, width: 'half' as const },
+        { id: 'profile', name: 'Profil', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
+        { id: 'experience', name: 'Expérience', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'half' as const },
+        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 4, order: 1, width: 'half' as const },
+        { id: 'education', name: 'Formation', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'half' as const },
+        { id: 'skills', name: 'Compétences', component: 'SkillsSection', visible: true, layer: 3, order: 0, width: 'full' as const },
+        { id: 'languages', name: 'Langues', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'full' as const }
       ]
     },
     {
@@ -576,12 +611,12 @@ export const CVCreator: React.FC = () => {
         contactTitle: "CONTACT"
       },
       sectionsOrder: [
-        { id: 'profile', name: 'À propos de moi', component: 'ProfileSection', visible: true, layer: 1, width: 'full' },
-        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 2, width: 'full' },
-        { id: 'skills', name: 'Talents & Outils', component: 'SkillsSection', visible: true, layer: 3, width: 'full' },
-        { id: 'experience', name: 'Parcours Créatif', component: 'ExperienceSection', visible: true, layer: 4, width: 'full' },
-        { id: 'education', name: 'Formation Artistique', component: 'EducationSection', visible: true, layer: 5, width: 'half' },
-        { id: 'languages', name: 'Langues Parlées', component: 'LanguagesSection', visible: true, layer: 5, width: 'half' }
+        { id: 'profile', name: 'À propos de moi', component: 'ProfileSection', visible: true, layer: 1, order: 0, width: 'full' as const },
+        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 2, order: 0, width: 'full' as const },
+        { id: 'skills', name: 'Talents & Outils', component: 'SkillsSection', visible: true, layer: 3, order: 0, width: 'full' as const },
+        { id: 'experience', name: 'Parcours Créatif', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const },
+        { id: 'education', name: 'Formation Artistique', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'half' as const },
+        { id: 'languages', name: 'Langues Parlées', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'half' as const }
       ]
     },
     {
@@ -603,12 +638,14 @@ export const CVCreator: React.FC = () => {
         contactTitle: "CONTACT"
       },
       sectionsOrder: [
-        { id: 'profile', name: 'Profil Professionnel', component: 'ProfileSection', visible: true, layer: 1, width: 'full' },
-        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 2, width: 'full' },
-        { id: 'experience', name: 'Expérience Professionnelle', component: 'ExperienceSection', visible: true, layer: 3, width: 'full' },
-        { id: 'education', name: 'Formation Académique', component: 'EducationSection', visible: true, layer: 4, width: 'full' },
-        { id: 'skills', name: 'Compétences Techniques', component: 'SkillsSection', visible: true, layer: 5, width: 'half' },
-        { id: 'languages', name: 'Langues Étrangères', component: 'LanguagesSection', visible: true, layer: 5, width: 'half' }
+        { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
+        { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
+        { id: 'profile', name: 'Profil Professionnel', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
+        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const },
+        { id: 'experience', name: 'Expérience Professionnelle', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const },
+        { id: 'education', name: 'Formation Académique', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'full' as const },
+        { id: 'skills', name: 'Compétences Techniques', component: 'SkillsSection', visible: true, layer: 6, order: 0, width: 'half' as const },
+        { id: 'languages', name: 'Langues Étrangères', component: 'LanguagesSection', visible: true, layer: 6, order: 1, width: 'half' as const }
       ]
     },
     {
@@ -630,12 +667,14 @@ export const CVCreator: React.FC = () => {
         contactTitle: "CONTACT"
       },
       sectionsOrder: [
-        { id: 'profile', name: 'Qui suis-je ?', component: 'ProfileSection', visible: true, layer: 1, width: 'full' },
-        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 2, width: 'full' },
-        { id: 'skills', name: 'Mes Compétences', component: 'SkillsSection', visible: true, layer: 3, width: 'full' },
-        { id: 'experience', name: 'Mon Parcours', component: 'ExperienceSection', visible: true, layer: 4, width: 'full' },
-        { id: 'languages', name: 'Mes Langues', component: 'LanguagesSection', visible: true, layer: 5, width: 'half' },
-        { id: 'education', name: 'Mes Études', component: 'EducationSection', visible: true, layer: 5, width: 'half' }
+        { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
+        { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
+        { id: 'profile', name: 'Qui suis-je ?', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
+        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const },
+        { id: 'skills', name: 'Mes Compétences', component: 'SkillsSection', visible: true, layer: 4, order: 0, width: 'full' as const },
+        { id: 'experience', name: 'Mon Parcours', component: 'ExperienceSection', visible: true, layer: 5, order: 0, width: 'full' as const },
+        { id: 'languages', name: 'Mes Langues', component: 'LanguagesSection', visible: true, layer: 6, order: 0, width: 'half' as const },
+        { id: 'education', name: 'Mes Études', component: 'EducationSection', visible: true, layer: 6, order: 1, width: 'half' as const }
       ]
     },
     {
@@ -657,11 +696,13 @@ export const CVCreator: React.FC = () => {
         contactTitle: "CONTACT"
       },
       sectionsOrder: [
-        { id: 'profile', name: 'Présentation', component: 'ProfileSection', visible: true },
-        { id: 'experience', name: 'Carrière Professionnelle', component: 'ExperienceSection', visible: true },
-        { id: 'education', name: 'Cursus Académique', component: 'EducationSection', visible: true },
-        { id: 'skills', name: 'Expertise Technique', component: 'SkillsSection', visible: true },
-        { id: 'languages', name: 'Maîtrise Linguistique', component: 'LanguagesSection', visible: true }
+        { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
+        { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
+        { id: 'profile', name: 'Présentation', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
+        { id: 'experience', name: 'Carrière Professionnelle', component: 'ExperienceSection', visible: true, layer: 3, order: 0, width: 'full' as const },
+        { id: 'education', name: 'Cursus Académique', component: 'EducationSection', visible: true, layer: 4, order: 0, width: 'full' as const },
+        { id: 'skills', name: 'Expertise Technique', component: 'SkillsSection', visible: true, layer: 5, order: 0, width: 'half' as const },
+        { id: 'languages', name: 'Maîtrise Linguistique', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'half' as const }
       ]
     },
     {
@@ -683,12 +724,14 @@ export const CVCreator: React.FC = () => {
         contactTitle: "CONTACT"
       },
       sectionsOrder: [
-        { id: 'profile', name: 'Profil Personnel', component: 'ProfileSection', visible: true },
-        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true },
-        { id: 'experience', name: 'Expériences Clés', component: 'ExperienceSection', visible: true },
-        { id: 'skills', name: 'Savoir-faire', component: 'SkillsSection', visible: true },
-        { id: 'education', name: 'Parcours Éducatif', component: 'EducationSection', visible: true },
-        { id: 'languages', name: 'Compétences Linguistiques', component: 'LanguagesSection', visible: true }
+        { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
+        { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
+        { id: 'profile', name: 'Profil Personnel', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
+        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const },
+        { id: 'experience', name: 'Expériences Clés', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const },
+        { id: 'skills', name: 'Savoir-faire', component: 'SkillsSection', visible: true, layer: 5, order: 0, width: 'full' as const },
+        { id: 'education', name: 'Parcours Éducatif', component: 'EducationSection', visible: true, layer: 6, order: 0, width: 'full' as const },
+        { id: 'languages', name: 'Compétences Linguistiques', component: 'LanguagesSection', visible: true, layer: 7, order: 0, width: 'full' as const }
       ]
     },
   ];
@@ -810,48 +853,128 @@ export const CVCreator: React.FC = () => {
   };
 
 
-  const addExperience = () => {
+  const addExperience = useCallback(() => {
     const newId = experiences.length > 0 ? Math.max(...experiences.map(exp => exp.id)) + 1 : 1;
     setExperiences(prev => [...prev, { id: newId, content: '[Poste] - [Entreprise] (Dates)', details: '• Réalisation clé ou projet important.' }]);
-  };
+  }, [experiences]);
 
-  const removeExperience = (id: number) => {
+  const removeExperience = useCallback((id: number) => {
     setExperiences(prev => prev.filter(exp => exp.id !== id));
-  };
+  }, []);
 
-  const addSkill = () => {
+  const addSkill = useCallback(() => {
     const newId = skills.length > 0 ? Math.max(...skills.map(skill => skill.id)) + 1 : 1;
     setSkills(prev => [...prev, { id: newId, content: 'Nouvelle compétence' }]);
-  };
+  }, [skills]);
 
-  const removeSkill = (id: number) => {
+  const removeSkill = useCallback((id: number) => {
     setSkills(prev => prev.filter(skill => skill.id !== id));
-  };
+  }, []);
 
-  const addLanguage = () => {
+  const addLanguage = useCallback(() => {
     const newId = languages.length > 0 ? Math.max(...languages.map(lang => lang.id)) + 1 : 1;
     setLanguages(prev => [...prev, { id: newId, name: 'Nouvelle langue', level: 'Niveau' }]);
-  };
+  }, [languages]);
 
-  const removeLanguage = (id: number) => {
+  const removeLanguage = useCallback((id: number) => {
     setLanguages(prev => prev.filter(lang => lang.id !== id));
-  };
+  }, []);
 
-  const addEducation = () => {
+  const addEducation = useCallback(() => {
     const newId = educations.length > 0 ? Math.max(...educations.map(edu => edu.id)) + 1 : 1;
     setEducations(prev => [...prev, { id: newId, degree: '[Diplôme]', school: '[École]', year: '[Année]' }]);
-  };
+  }, [educations]);
 
-  const removeEducation = (id: number) => {
+  const removeEducation = useCallback((id: number) => {
     setEducations(prev => prev.filter(edu => edu.id !== id));
+  }, []);
+
+  // Context value for provider
+  const contextValue = {
+    // Content state
+    editableContent,
+    setEditableContent,
+    experiences,
+    setExperiences,
+    skills,
+    setSkills,
+    languages,
+    setLanguages,
+    educations,
+    setEducations,
+
+    // Style state
+    customFont,
+    setCustomFont,
+    customColor,
+    setCustomColor,
+    titleColor,
+    setTitleColor,
+    layoutColumns,
+    setLayoutColumns,
+    nameAlignment,
+    setNameAlignment,
+    photoAlignment,
+    setPhotoAlignment,
+    photoSize,
+    setPhotoSize,
+    photoShape,
+    setPhotoShape,
+    nameFontSize,
+    setNameFontSize,
+    photoZoom,
+    setPhotoZoom,
+    photoPositionX,
+    setPhotoPositionX,
+    photoPositionY,
+    setPhotoPositionY,
+    photoRotation,
+    setPhotoRotation,
+    photoObjectFit,
+    setPhotoObjectFit,
+
+    // UI state
+    editingField,
+    setEditingField,
+    selectedSection,
+    setSelectedSection,
+    selectedTemplateName,
+    // Sections state
+    sections,
+    toggleSectionVisibility,
+    setSectionsOrder: setSectionsOrderFunc,
+    cleanupLayers,
+    expandSection,
+    contractSection,
+
+    // Actions
+    addExperience,
+    removeExperience,
+    addSkill,
+    removeSkill,
+    addLanguage,
+    removeLanguage,
+    addEducation,
+    removeEducation,
+    generateWithAI,
+
+    // Data
+    availableFonts,
+    availableColors,
+    isLoading,
+    error,
+    openAIError
   };
 
   return (
-    <div className='w-full'>
-      <h1 className="heading-gradient text-center">Créateur de CV</h1>
+    <CVCreatorProvider value={contextValue}>
+      <main className="w-full min-h-screen bg-gray-50">
+        <header className="py-8 px-4">
+          <h1 className="heading-gradient text-center">Créateur de CV</h1>
+        </header>
 
       {/* Indicateur de sauvegarde automatique */}
-      <div className="flex justify-center items-center gap-4 mb-0 p-1 bg-gray-50 rounded-lg mx-4">
+      <section className="flex justify-center items-center gap-4 mb-0 p-1 bg-gray-50 rounded-lg mx-4">
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input
@@ -863,26 +986,26 @@ export const CVCreator: React.FC = () => {
             Sauvegarde automatique
           </label>
         </div>
-        
+
         {lastSaved && (
-          <div className="text-xs text-gray-500">
+          <time className="text-xs text-gray-500">
             Dernière sauvegarde : {lastSaved.toLocaleTimeString()}
-          </div>
+          </time>
         )}
-        
+
         {hasLocalData() && (
           <div className="text-xs text-green-600 flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="w-2 h-2 bg-green-500 rounded-full inline-block" aria-hidden="true"></span>
             Données sauvegardées localement
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="p-4 flex flex-col lg:flex-row gap-6">
+      <div className="p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <div className="w-full lg:w-2/3 space-y-4">
-          {/* Barre d'outils séparée */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+        <div className="lg:col-span-8 flex gap-4">
+          {/* Contrôles de style à gauche */}
+          <aside className="w-80 flex-shrink-0">
             <StyleControls
               customFont={customFont}
               setCustomFont={setCustomFont}
@@ -916,216 +1039,68 @@ export const CVCreator: React.FC = () => {
               availableFonts={availableFonts}
               availableColors={availableColors}
               hasPhoto={!!editableContent.photo}
+              sections={sections.map(s => ({ id: s.id, name: s.name, visible: s.visible }))}
+              toggleSectionVisibility={toggleSectionVisibility}
             />
-          </div>
-          
+          </aside>
+
           {/* Aperçu dynamique en temps réel */}
-          <CVPreviewDragDrop
-            editableContent={editableContent}
-            setEditableContent={setEditableContent}
-            experiences={experiences}
-            setExperiences={setExperiences}
-            skills={skills}
-            setSkills={setSkills}
-            languages={languages}
-            setLanguages={setLanguages}
-            educations={educations}
-            setEducations={setEducations}
-            editingField={editingField}
-            setEditingField={setEditingField}
-            customFont={customFont}
-            setCustomFont={setCustomFont}
-            customColor={customColor}
-            setCustomColor={setCustomColor}
-            titleColor={titleColor}
-            setTitleColor={setTitleColor}
-            layoutColumns={layoutColumns}
-            setLayoutColumns={setLayoutColumns}
-            nameAlignment={nameAlignment}
-            setNameAlignment={setNameAlignment}
-            photoAlignment={photoAlignment}
-            setPhotoAlignment={setPhotoAlignment}
-            photoSize={photoSize}
-            setPhotoSize={setPhotoSize}
-            photoShape={photoShape}
-            setPhotoShape={setPhotoShape}
-            nameFontSize={nameFontSize}
-            setNameFontSize={setNameFontSize}
-            // Nouveaux props pour les ajustements d'image
-            photoZoom={photoZoom}
-            setPhotoZoom={setPhotoZoom}
-            photoPositionX={photoPositionX}
-            setPhotoPositionX={setPhotoPositionX}
-            photoPositionY={photoPositionY}
-            setPhotoPositionY={setPhotoPositionY}
-            photoRotation={photoRotation}
-            setPhotoRotation={setPhotoRotation}
-            photoObjectFit={photoObjectFit}
-            setPhotoObjectFit={setPhotoObjectFit}
-            selectedSection={selectedSection}
-            setSelectedSection={setSelectedSection}
-            availableFonts={availableFonts}
-            availableColors={availableColors}
-            addExperience={addExperience}
-            removeExperience={removeExperience}
-            addSkill={addSkill}
-            removeSkill={removeSkill}
-            addLanguage={addLanguage}
-            removeLanguage={removeLanguage}
-            addEducation={addEducation}
-            removeEducation={removeEducation}
-            generateWithAI={generateWithAI}
-            isLoading={isLoading}
-            error={error}
-            openAIError={openAIError}
-            setSectionsOrder={(func) => setSectionsOrderFuncSetter(() => func)}
-            templateName={selectedTemplateName}
-          />
+          <section className="flex-1">
+            <CVPreviewDragDrop
+              setSectionsOrder={() => setSectionsOrderFunc}
+            />
+          </section>
+
         </div>
 
-        <div className="w-full lg:w-1/3 bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 rounded-xl border border-violet-200 shadow-lg overflow-hidden">
-          {/* Header du carousel */}
-          <div className="bg-gradient-to-r from-violet-600 to-pink-600 text-white p-4 text-center">
-            <h3 className="text-lg font-bold flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              Modèles de CV
-            </h3>
-            <p className="text-sm opacity-90 mt-1">Choisissez votre style préféré</p>
-          </div>
+        <aside className="lg:col-span-4">
+          <CVTemplateCarousel
+          templates={templates}
+          selectedTemplate={selectedTemplate}
+          onTemplateSelect={(templateId, templateName) => {
+            setSelectedTemplate(templateId);
+            setSelectedTemplateName(templateName);
+            const template = templates.find(t => t.id === templateId);
+            if (template) {
+              // Appliquer automatiquement le thème du template
+              setCustomColor(template.theme.primaryColor);
+              setTitleColor(template.theme.primaryColor);
+              setCustomFont(template.theme.font);
+              // Définir l'alignement du nom selon le template
+              if (template.name === "Minimaliste") {
+                setNameAlignment('left');
+              } else {
+                setNameAlignment('center');
+              }
+              // Appliquer le nombre de colonnes du template
+              setLayoutColumns(template.layoutColumns);
+              // Appliquer les titres de sections du template
+              setEditableContent(prev => ({
+                ...prev,
+                profileTitle: template.sectionTitles.profileTitle,
+                experienceTitle: template.sectionTitles.experienceTitle,
+                educationTitle: template.sectionTitles.educationTitle,
+                skillsTitle: template.sectionTitles.skillsTitle,
+                languagesTitle: template.sectionTitles.languagesTitle,
+                contactTitle: template.sectionTitles.contactTitle
+              }));
+              // Appliquer l'ordre des sections du template
+              if (setSectionsOrderFunc && Array.isArray(template.sectionsOrder)) {
+                try {
+                  // Pour tous les templates, utiliser les sections du template directement
+                  setSectionsOrderFunc(template.sectionsOrder);
+                } catch (error) {
+                  console.warn('Erreur lors de l\'application de l\'ordre des sections:', error);
+                }
+              }
+            }
+          }}
+          onDownloadTemplate={generateDocx}
+        />
 
-          {/* Carousel vertical avec scroll personnalisé */}
-          <div className="h-[calc(100vh)] overflow-y-auto scrollbar-thin scrollbar-thumb-violet-300 scrollbar-track-violet-100 hover:scrollbar-thumb-violet-400 p-3 space-y-4">
-            {templates.map((template) => (
-              <div
-                key={template.id}
-                title={`Template ${template.name} - ${template.description}`}
-                onClick={() => {
-                  setSelectedTemplate(template.id);
-                  setSelectedTemplateName(template.name);
-                  // Appliquer automatiquement le thème du template
-                  setCustomColor(template.theme.primaryColor);
-                  setTitleColor(template.theme.primaryColor);
-                  setCustomFont(template.theme.font);
-                  // Définir l'alignement du nom selon le template
-                  if (template.name === "Minimaliste") {
-                    setNameAlignment('left');
-                  } else {
-                    setNameAlignment('center');
-                  }
-                  // Appliquer le nombre de colonnes du template
-                  setLayoutColumns(template.layoutColumns);
-                  // Appliquer les titres de sections du template
-                  setEditableContent(prev => ({
-                    ...prev,
-                    profileTitle: template.sectionTitles.profileTitle,
-                    experienceTitle: template.sectionTitles.experienceTitle,
-                    educationTitle: template.sectionTitles.educationTitle,
-                    skillsTitle: template.sectionTitles.skillsTitle,
-                    languagesTitle: template.sectionTitles.languagesTitle,
-                    contactTitle: template.sectionTitles.contactTitle
-                  }));
-                  // Appliquer l'ordre des sections du template
-                  if (setSectionsOrderFunc) {
-                    setSectionsOrderFunc(template.sectionsOrder);
-                  }
-                }}
-                className={`
-                  group relative rounded-xl border-2 shadow-lg transition-all duration-500 ease-out cursor-pointer overflow-hidden
-                  transform hover:scale-[1.02] hover:-translate-y-1 hover:shadow-2xl
-                  ${selectedTemplate === template.id
-                    ? 'border-violet-500 ring-4 ring-violet-200 bg-gradient-to-br from-violet-100 to-pink-100'
-                    : 'border-gray-200 bg-white hover:border-violet-500 hover:ring-2 hover:ring-violet-300'}
-                `}
-                style={{
-                  backgroundImage: `url(${template.image})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  aspectRatio: '1 / 1.414'
-                }}
-              >
-                {/* Overlay avec effet glassmorphism - disparaît au hover */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-white/40 to-transparent backdrop-blur-[1px] group-hover:opacity-0 transition-all duration-500 z-0"></div>
-                
-                {/* Badge ATS Score */}
-                <div className="absolute top-2 right-2 z-20">
-                  <div className={`px-2 py-1 rounded-full text-xs font-bold shadow-md ${
-                    template.atsScore >= 90 ? 'bg-green-500 text-white' :
-                    template.atsScore >= 80 ? 'bg-yellow-500 text-white' :
-                    'bg-red-500 text-white'
-                  }`}>
-                    ATS {template.atsScore}%
-                  </div>
-                </div>
-
-                {/* Badge de sélection */}
-                {selectedTemplate === template.id && (
-                  <div className="absolute top-2 left-2 z-20">
-                    <div className="bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-full p-1.5 shadow-lg">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
-
-                {/* Contenu principal */}
-                <div className="relative z-10 p-4 h-full flex flex-col justify-between">
-                  {/* Bandeau en travers sur toute la largeur */}
-                  <div className="absolute top-6 left-0 right-0 z-20 transform -rotate-12 origin-left">
-                    <div className={`py-2 px-6 shadow-lg ${
-                      template.name === "Minimaliste" ? "bg-gradient-to-r from-gray-600 to-gray-800" :
-                      template.name === "Créatif" ? "bg-gradient-to-r from-pink-500 to-rose-600" :
-                      template.name === "Corporate" ? "bg-gradient-to-r from-violet-600 to-purple-700" :
-                      template.name === "Moderne Coloré" ? "bg-gradient-to-r from-purple-500 to-indigo-600" :
-                      template.name === "Élégant B&W" ? "bg-gradient-to-r from-slate-700 to-black" :
-                      template.name === "Émeraude" ? "bg-gradient-to-r from-emerald-500 to-green-600" :
-                      "bg-gradient-to-r from-violet-600 to-purple-700"
-                    }`}>
-                      <h4 className="text-lg font-bold text-white drop-shadow-lg">
-                        {template.name}
-                      </h4>
-                    </div>
-                  </div>
-
-                  {/* En-tête avec catégorie */}
-                  <div className="text-center mt-12">
-                    <span className="inline-block px-2 py-1 bg-violet-100 text-violet-700 text-xs rounded-full font-medium">
-                      {template.category}
-                    </span>
-                  </div>
-
-                  
-                  {/* Actions en bas */}
-                  <div className="flex justify-center gap-2">
-                    <button
-                      className="px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 relative z-10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        generateDocx(template);
-                      }}
-                    >
-                      <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Télécharger
-                    </button>
-                  </div>
-                </div>
-
-                
-                {/* Bordure violette animée au hover */}
-                <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-500 z-30 pointer-events-none">
-                  <div className="absolute inset-0 rounded-xl border-2 border-violet-400 shadow-lg shadow-violet-400/50"></div>
-                  <div className="absolute inset-1 rounded-xl border border-violet-300 shadow-inner"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+        </aside>
       </div>
-    </div>
+      </main>
+    </CVCreatorProvider>
   );
 };

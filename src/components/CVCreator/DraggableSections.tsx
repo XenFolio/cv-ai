@@ -18,7 +18,9 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { RotateCcw, Move, Maximize2, Minimize2 } from "lucide-react";
-import { useCVSections } from "../../hooks/useCVSections";
+// import { useCVSections } from "../../hooks/useCVSections";
+// import { cleanupLayersPure } from "../../hooks/useCVSections";
+import { useCVCreator } from "./CVCreatorContext.hook";
 import {
   NameSection,
   PhotoSection,
@@ -31,11 +33,6 @@ import {
   SectionWrapper,
 } from "./sections";
 import type {
-  CVContent,
-  CVExperience,
-  CVSkill,
-  CVLanguage,
-  CVEducation,
   SectionConfig,
 } from "./types";
 
@@ -140,7 +137,7 @@ const LayerContainer: React.FC<LayerContainerProps> = ({
             ? "border border-gray-200"
             : "hover:border-2 hover:border-violet-500 hover:border-dashed"}
       `}
-      style={{ minHeight: "100px" }}
+      style={{ minHeight: "60px" }}
     >
       {children}
       
@@ -171,7 +168,7 @@ const InterLayerDropZone: React.FC<{ index: number; isDragging: boolean }> = ({ 
       className={`
         w-full my-2 transition-all duration-300 ease-in-out relative
         ${isDragging ? "opacity-100" : "opacity-0 hover:opacity-50"}
-        ${isDragging ? "h-4" : "h-1"}
+        ${isDragging ? "h-3" : "h-1"}
       `}
     >
       <div
@@ -217,12 +214,12 @@ const SectionDroppable: React.FC<SectionDroppableProps> = ({
     <div
       ref={setNodeRef}
       className={`
-        ${widthClass}
+        ${widthClass} h-full
         relative transition-colors
         ${isOver ? "bg-violet-50" : ""}
       `}
       style={{
-        minHeight: "80px",
+        minHeight: section.id === "name" ? "auto" : "80px",
         display: "flex",
         flexDirection: "column",
         opacity: isDragging && activeSection === section.id ? 0 : 1,
@@ -276,94 +273,52 @@ const EmptySlot: React.FC<EmptySlotProps> = ({
   );
 };
 
-/* ---------------- Props ---------------- */
-
-interface DraggableSectionsProps {
-  editableContent: CVContent;
-  setEditableContent: React.Dispatch<React.SetStateAction<CVContent>>;
-  experiences: CVExperience[];
-  setExperiences: React.Dispatch<React.SetStateAction<CVExperience[]>>;
-  skills: CVSkill[];
-  setSkills: React.Dispatch<React.SetStateAction<CVSkill[]>>;
-  languages: CVLanguage[];
-  setLanguages: React.Dispatch<React.SetStateAction<CVLanguage[]>>;
-  educations: CVEducation[];
-  setEducations: React.Dispatch<React.SetStateAction<CVEducation[]>>;
-  editingField: string | null;
-  setEditingField: React.Dispatch<React.SetStateAction<string | null>>;
-  customColor: string;
-  titleColor: string;
-  addExperience: () => void;
-  removeExperience: (id: number) => void;
-  addSkill: () => void;
-  removeSkill: (id: number) => void;
-  addLanguage: () => void;
-  removeLanguage: (id: number) => void;
-  addEducation: () => void;
-  removeEducation: (id: number) => void;
-  generateWithAI: (field: string, currentContent?: string) => Promise<void>;
-  isLoading: boolean;
-  nameAlignment: "left" | "center" | "right";
-  photoAlignment?: "left" | "center" | "right";
-  photoSize?: "small" | "medium" | "large";
-  photoShape?: "circle" | "square" | "rounded";
-  nameFontSize?: number;
-  // Nouveaux props pour les ajustements d'image
-  photoZoom?: number;
-  photoPositionX?: number;
-  photoPositionY?: number;
-  photoRotation?: number;
-  photoObjectFit?: 'contain' | 'cover';
-  setSelectedSection?: React.Dispatch<React.SetStateAction<string | null>>;
-}
 
 /* ---------------- Composant principal ---------------- */
 
-export const DraggableSections: React.FC<DraggableSectionsProps> = ({
-  editableContent,
-  setEditableContent,
-  experiences,
-  setExperiences,
-  skills,
-  setSkills,
-  languages,
-  setLanguages,
-  educations,
-  setEducations,
-  editingField,
-  setEditingField,
-  customColor,
-  titleColor,
-  addExperience,
-  removeExperience,
-  addSkill,
-  removeSkill,
-  addLanguage,
-  removeLanguage,
-  addEducation,
-  removeEducation,
-  generateWithAI,
-  isLoading,
-  nameAlignment,
-  photoAlignment,
-  photoSize,
-  photoShape,
-  nameFontSize,
-  // Props pour les ajustements d'image
-  photoZoom,
-  photoPositionX,
-  photoPositionY,
-  photoRotation,
-  photoObjectFit,
-  setSelectedSection,
-}) => {
+export const DraggableSections: React.FC = () => {
   const {
+    editableContent,
+    setEditableContent,
+    experiences,
+    setExperiences,
+    skills,
+    setSkills,
+    languages,
+    setLanguages,
+    educations,
+    setEducations,
+    editingField,
+    setEditingField,
+    customColor,
+    titleColor,
+    addExperience,
+    removeExperience,
+    addSkill,
+    removeSkill,
+    addLanguage,
+    removeLanguage,
+    addEducation,
+    removeEducation,
+    generateWithAI,
+    isLoading,
+    nameAlignment,
+    photoAlignment,
+    photoSize,
+    photoShape,
+    nameFontSize,
+    photoZoom,
+    photoPositionX,
+    photoPositionY,
+    photoRotation,
+    photoObjectFit,
+    setSelectedSection,
     sections,
     setSectionsOrder,
     cleanupLayers,
     expandSection,
     contractSection,
-  } = useCVSections();
+  } = useCVCreator();
 
   const [isDragging, setIsDragging] = React.useState(false);
   const [activeSection, setActiveSection] = React.useState<string | null>(null);
@@ -489,6 +444,8 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({
   };
 
   const visible = sections.filter((s) => s.visible);
+  console.log('All sections:', sections);
+  console.log('Visible sections:', visible);
   const layersMap = new Map<number, { capacity: number; sections: SectionConfig[] }>();
 
   visible.forEach((s) => {
@@ -599,7 +556,7 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({
                   >
                     <SortableContext items={sorted.map((s) => s.id)} strategy={rectSortingStrategy}>
                       {capacity === 2 ? (
-                        <div className="flex items-stretch">
+                        <div className="flex items-stretch gap-2">
                           {(() => {
                             const left = sorted.find((s) => s.order === 0);
                             const right = sorted.find((s) => s.order === 1);
@@ -660,7 +617,7 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({
                         </div>
                       ) : (
                         // capacité 1 : rendu plein
-                        <div className="flex">
+                        <div className="flex items-stretch">
                           {sorted.map((section) => (
                             <SectionDroppable
                               key={section.id}

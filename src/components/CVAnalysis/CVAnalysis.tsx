@@ -71,7 +71,7 @@ export const CVAnalysis: React.FC<CVAnalysisProps> = ({
         // Ajouter le CV/Lettre analysé à la bibliothèque et sauvegarder dans Supabase
         try {
           // Convertir 'lettre' vers 'letter' pour le type DocumentType du hook
-          const docTypeForLibrary: DocumentType = documentType === 'lettre' ? 'letter' : documentType;
+          const docTypeForLibrary: DocumentType = documentType === 'lettre' ? 'letter' : 'cv';
           const docId = await addAnalyzedCV(file.name, results, file, docTypeForLibrary);
           console.log(`✅ Document ajouté et sauvegardé avec l'ID: ${docId}`);
         } catch (error) {
@@ -347,7 +347,7 @@ export const CVAnalysis: React.FC<CVAnalysisProps> = ({
           results={analysisResults} 
           fileName={uploadedFile?.name || (documentType === 'cv' ? 'CV' : 'Lettre')}
           originalContent={originalContent}
-          documentType={documentType}
+          documentType={documentType === 'lettre' ? 'letter' : 'cv'}
           onOptimize={handleOptimize}
           isOptimizing={isOptimizing}
         />

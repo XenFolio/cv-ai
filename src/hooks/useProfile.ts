@@ -210,6 +210,48 @@ export const useProfile = () => {
     return parts.join(', ');
   };
 
+  // Fonction pour obtenir le type d'abonnement (avec "free" par défaut)
+  const getSubscriptionType = (): 'free' | 'pro_monthly' | 'pro_yearly' => {
+    return profile?.subscription_type || 'free';
+  };
+
+  // Fonction pour obtenir le statut d'abonnement (avec "free" par défaut)
+  const getSubscriptionStatus = (): 'free' | 'active' | 'inactive' | 'canceled' => {
+    return profile?.subscription_status || 'free';
+  };
+
+  // Fonction pour vérifier si l'utilisateur a un abonnement actif
+  const hasActiveSubscription = (): boolean => {
+    const status = getSubscriptionStatus();
+    return status === 'active';
+  };
+
+  // Fonction pour vérifier si l'utilisateur est sur le plan gratuit
+  const isFreeUser = (): boolean => {
+    const type = getSubscriptionType();
+    return type === 'free';
+  };
+
+  // Fonction pour vérifier si l'utilisateur a un abonnement Pro
+  const isProUser = (): boolean => {
+    const type = getSubscriptionType();
+    return type === 'pro_monthly' || type === 'pro_yearly';
+  };
+
+  // Fonction pour obtenir le nom d'affichage du plan d'abonnement
+  const getSubscriptionDisplayName = (): string => {
+    const type = getSubscriptionType();
+    switch (type) {
+      case 'pro_monthly':
+        return 'Pro Mensuel';
+      case 'pro_yearly':
+        return 'Pro Annuel';
+      case 'free':
+      default:
+        return 'Gratuit';
+    }
+  };
+
   // Charger le profil au montage du hook (une seule fois)
   useEffect(() => {
     if (!profile && !profileLoading) {
@@ -239,6 +281,14 @@ export const useProfile = () => {
     isProfileComplete,
     getCompletionPercentage,
     getFormattedAddress,
+    
+    // Utilitaires d'abonnement
+    getSubscriptionType,
+    getSubscriptionStatus,
+    hasActiveSubscription,
+    isFreeUser,
+    isProUser,
+    getSubscriptionDisplayName,
     
     // Reset des erreurs
     clearValidationErrors: () => setValidationErrors({}),

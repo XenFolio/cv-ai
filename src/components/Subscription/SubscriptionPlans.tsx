@@ -2,20 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuthStore } from '@/store/useAuthStore';
-import { stripePromise, createCheckoutSession, getSubscriptionPlans, formatPrice, getIntervalText } from '@/lib/stripe';
+import { stripePromise, createCheckoutSession, getSubscriptionPlans, formatPrice, getIntervalText, SubscriptionPlan } from '@/lib/stripe';
 import { Check, Star, ArrowRight, CheckCircle } from 'lucide-react';
-
-interface SubscriptionPlan {
-  id: string;
-  stripe_price_id: string;
-  name: string;
-  description: string;
-  price: number;
-  currency: string;
-  interval: string;
-  features: string[];
-  is_popular?: boolean;
-}
 
 export function SubscriptionPlans() {
   const { user } = useAuthStore();
@@ -98,7 +86,7 @@ export function SubscriptionPlans() {
     }
   ];
 
-  const displayPlans = plans || defaultPlans;
+  const displayPlans: SubscriptionPlan[] = Array.isArray(plans) ? plans : defaultPlans;
 
   // Check if a plan is currently active
   const isPlanActive = (plan: SubscriptionPlan) => {

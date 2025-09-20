@@ -6,6 +6,7 @@ import { ProfileForm } from '../Profile/ProfileForm';
 import { ProfileTest } from '../Profile/ProfileTest';
 import { SupabaseConfigModal } from '../Auth/SupabaseConfigModal';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useAppStore } from '../../store/useAppStore';
 import ConnectionStatusModal from './ConnectionStatusModal';
 
 interface SettingsProps {
@@ -82,7 +83,13 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
     getFullName,
     getInitials,
     isProfileComplete,
-    getCompletionPercentage
+    getCompletionPercentage,
+    getSubscriptionType,
+    getSubscriptionStatus,
+    getSubscriptionDisplayName,
+    hasActiveSubscription,
+    isFreeUser,
+    isProUser
   } = useProfile();
   
   // Charger les paramètres depuis localStorage ou utiliser les valeurs par défaut
@@ -790,6 +797,133 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
               : 'Complétez votre profil pour une meilleure expérience.'
             }
           </p>
+        </div>
+      )}
+
+      {/* Informations d'abonnement */}
+      {currentProfile && (
+        <div className="bg-gradient-to-br from-violet-50 to-pink-50 rounded-2xl p-6 border border-violet-200/30">
+          <h4 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+              hasActiveSubscription() 
+                ? 'bg-emerald-600' 
+                : isFreeUser() 
+                ? 'bg-blue-600' 
+                : 'bg-gray-400'
+            }`}>
+              {hasActiveSubscription() ? (
+                <span className="text-white text-xs">★</span>
+              ) : (
+                <span className="text-white text-xs">○</span>
+              )}
+            </div>
+            <span>Abonnement</span>
+          </h4>
+          
+          <div className="space-y-4">
+            {/* Plan actuel */}
+            <div className="flex items-center justify-between p-4 bg-white/50 rounded-xl border border-gray-200/30">
+              <div>
+                <div className="font-medium text-gray-900">{getSubscriptionDisplayName()}</div>
+                <div className="text-sm text-gray-600">
+                  Statut: {getSubscriptionStatus() === 'free' ? 'Gratuit' : 
+                          getSubscriptionStatus() === 'active' ? 'Actif' :
+                          getSubscriptionStatus() === 'inactive' ? 'Inactif' :
+                          'Annulé'}
+                </div>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                hasActiveSubscription() 
+                  ? 'bg-emerald-100 text-emerald-800' 
+                  : isFreeUser()
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-gray-100 text-gray-800'
+              }`}>
+                {isProUser() ? 'PRO' : 'FREE'}
+              </div>
+            </div>
+
+            {/* Détails de l'abonnement */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-3 bg-white/30 rounded-lg">
+                <div className="text-xs text-gray-600 mb-1">Type d'abonnement</div>
+                <div className="font-medium text-gray-900">
+                  {getSubscriptionType() === 'pro_monthly' ? 'Pro Mensuel' :
+                   getSubscriptionType() === 'pro_yearly' ? 'Pro Annuel' :
+                   'Gratuit'}
+                </div>
+              </div>
+              <div className="p-3 bg-white/30 rounded-lg">
+                <div className="text-xs text-gray-600 mb-1">Statut</div>
+                <div className="font-medium text-gray-900">
+                  {getSubscriptionStatus() === 'free' ? 'Plan gratuit' :
+                   getSubscriptionStatus() === 'active' ? 'Abonnement actif' :
+                   getSubscriptionStatus() === 'inactive' ? 'Abonnement suspendu' :
+                   'Abonnement annulé'}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions d'abonnement */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              {isFreeUser() && (
+                <button
+                  onClick={() => {
+                    // Navigation vers la page tarifs
+                    if (onBack) {
+                      onBack(); // Retour au dashboard
+                      // Puis navigation vers tarifs (utilisation du store)
+                      setTimeout(() => {
+                        const setActiveTab = useAppStore.getState().setActiveTab;
+                        setActiveTab('tarifs');
+                      }, 100);
+                    }
+                  }}
+                  className="bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2 rounded-lg font-medium hover:from-violet-700 hover:to-pink-700 transition-all duration-200 hover:scale-105"
+                >
+                  Passer à Pro
+                </button>
+              )}
+              {hasActiveSubscription() && (
+                <>
+                  <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-all duration-200">
+                    Gérer l'abonnement
+                  </button>
+                  <button className="border border-red-300 text-red-700 px-4 py-2 rounded-lg font-medium hover:bg-red-50 transition-all duration-200">
+                    Résilier
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => {
+                  // Navigation vers la page tarifs pour voir tous les plans
+                  if (onBack) {
+                    onBack();
+                    setTimeout(() => {
+                      const setActiveTab = useAppStore.getState().setActiveTab;
+                      setActiveTab('tarifs');
+                    }, 100);
+                  }
+                }}
+                className="border border-violet-300 text-violet-700 px-4 py-2 rounded-lg font-medium hover:bg-violet-50 transition-all duration-200"
+              >
+                Voir tous les plans
+              </button>
+            </div>
+
+            {/* Message informatif */}
+            <div className="p-3 bg-blue-50/50 rounded-lg border border-blue-200/30">
+              <div className="text-xs font-medium text-blue-900 mb-1">💡 Information</div>
+              <div className="text-xs text-blue-800">
+                {isFreeUser() 
+                  ? 'Vous profitez actuellement de notre plan gratuit. Passez à Pro pour débloquer toutes les fonctionnalités avancées.'
+                  : hasActiveSubscription()
+                  ? 'Votre abonnement Pro vous donne accès à toutes les fonctionnalités premium de la plateforme.'
+                  : 'Votre abonnement nécessite une attention. Contactez le support si vous avez des questions.'
+                }
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

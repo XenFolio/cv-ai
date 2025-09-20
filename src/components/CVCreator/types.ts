@@ -117,3 +117,63 @@ export interface CVPreviewProps {
   setSectionsOrder?: (sections: SectionConfig[]) => void;
   templateName?: string;
 }
+
+// Interface pour les props des sections individuelles
+export interface BaseSectionProps {
+  editableContent: CVContent;
+  setEditableContent: React.Dispatch<React.SetStateAction<CVContent>>;
+  editingField: string | null;
+  setEditingField: React.Dispatch<React.SetStateAction<string | null>>;
+  customColor: string;
+  titleColor: string;
+  generateWithAI: (field: string, currentContent?: string) => Promise<void>;
+  isLoading: boolean;
+}
+
+export interface ExperienceSectionProps extends BaseSectionProps {
+  experiences: CVExperience[];
+  setExperiences: React.Dispatch<React.SetStateAction<CVExperience[]>>;
+  addExperience: () => void;
+  removeExperience: (id: number) => void;
+}
+
+export interface EducationSectionProps extends BaseSectionProps {
+  educations: CVEducation[];
+  setEducations: React.Dispatch<React.SetStateAction<CVEducation[]>>;
+  addEducation: () => void;
+  removeEducation: (id: number) => void;
+}
+
+export interface SkillsSectionProps extends BaseSectionProps {
+  skills: CVSkill[];
+  setSkills: React.Dispatch<React.SetStateAction<CVSkill[]>>;
+  addSkill: () => void;
+  removeSkill: (id: number) => void;
+}
+
+export interface LanguagesSectionProps extends BaseSectionProps {
+  languages: CVLanguage[];
+  setLanguages: React.Dispatch<React.SetStateAction<CVLanguage[]>>;
+  addLanguage: () => void;
+  removeLanguage: (id: number) => void;
+}
+
+export interface NameSectionProps extends BaseSectionProps {
+  nameAlignment: 'left' | 'center' | 'right';
+  nameFontSize: number;
+}
+
+export interface PhotoSectionProps extends BaseSectionProps {
+  photoAlignment: 'left' | 'center' | 'right';
+  photoSize: 'small' | 'medium' | 'large';
+  photoShape: 'circle' | 'square' | 'rounded';
+  photoZoom: number;
+  photoPositionX: number;
+  photoPositionY: number;
+  photoRotation: number;
+  photoObjectFit: 'contain' | 'cover';
+}
+
+export type ProfileSectionProps = BaseSectionProps;
+
+export type ContactSectionProps = BaseSectionProps;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CustomSelect } from './CustomSelect';
-import { Columns, RectangleVertical, AlignLeft, AlignCenter, AlignRight, Circle, Square, Plus, Minus, ZoomIn, ZoomOut, RotateCw, Move, RotateCcw, Maximize, Frame } from 'lucide-react';
+import { Columns, RectangleVertical, AlignLeft, AlignCenter, AlignRight, Circle, Square, Plus, Minus, ZoomIn, ZoomOut, RotateCw, Move, RotateCcw, Maximize, Frame, Eye, EyeOff } from 'lucide-react';
 
 interface StyleControlsProps {
   customFont: string;
@@ -36,6 +36,8 @@ interface StyleControlsProps {
   availableColors: Array<{ name: string; value: string; category: string }>;
   selectedSection?: string | null;
   hasPhoto?: boolean;
+  sections?: Array<{ id: string; name: string; visible: boolean }>;
+  toggleSectionVisibility?: (sectionId: string) => void;
 }
 
 export const StyleControls: React.FC<StyleControlsProps> = ({
@@ -70,7 +72,9 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
   availableFonts,
   availableColors,
   selectedSection,
-  hasPhoto
+  hasPhoto,
+  sections,
+  toggleSectionVisibility
 }) => {
   const handleResetAdjustments = () => {
     setPhotoZoom?.(100);
@@ -372,40 +376,78 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
   // Déterminer si on affiche la couleur texte (pas pour la section nom)
   const showTextColor = selectedSection !== 'name';
 
+  // Afficher les contrôles de visibilité des sections quand aucune section n'est sélectionnée
+  if (selectedSection === null && sections && toggleSectionVisibility) {
+    console.log('Sections in StyleControls:', sections);
+    return (
+      <div className="bg-violet-50 rounded-lg shadow-sm p-4 mb-4 -mt-2 -ml-2 -mr-2">
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Visibilité des sections</h3>
+          <div className="grid grid-cols-1 gap-2">
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                onClick={() => {
+  console.log('Toggle section:', section.id, 'current visibility:', section.visible);
+  toggleSectionVisibility(section.id);
+}}
+                className={`flex items-center gap-2 p-2 rounded-md transition-all duration-200 text-left ${
+                  section.visible
+                    ? 'bg-white text-gray-700 hover:bg-gray-50'
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                }`}
+                title={section.visible ? 'Masquer la section' : 'Afficher la section'}
+              >
+                {section.visible ? (
+                  <Eye className="w-4 h-4 text-green-600" />
+                ) : (
+                  <EyeOff className="w-4 h-4 text-gray-400" />
+                )}
+                <span className="text-sm font-medium truncate">{section.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Pour toutes les autres sections, afficher les contrôles appropriés
   return (
     <div className="bg-violet-50 rounded-lg shadow-sm p-4 mb-4 -mt-2 -ml-2 -mr-2">
-      <div className="flex items-start gap-4">
-        <div className="flex-shrink-0">
-          <label className="block text-sm font-medium mb-2">Police</label>
-          <div className="w-[120px]">
-            <CustomSelect
-              value={customFont}
-              onChange={setCustomFont}
-              options={fontOptions}
-            />
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0">
+            <label className="block text-sm font-medium mb-2">Police</label>
+            <div className="w-[120px]">
+              <CustomSelect
+                value={customFont}
+                onChange={setCustomFont}
+                options={fontOptions}
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="flex-shrink-0">
-          <label className="block text-sm font-medium mb-2">Mise en page</label>
-          <div className="flex items-center justify-start h-[32px]">
-            <button
-              onClick={() => setLayoutColumns?.(layoutColumns === 1 ? 2 : 1)}
-              className="top-0 flex items-center justify-center w-10 h-[30px] rounded-md text-sm font-medium transition-all bg-violet-500 text-white shadow-md hover:bg-violet-600 hover:shadow-lg"
-              title={layoutColumns === 1 ? "Passer à deux colonnes" : "Passer à une colonne"}
-            >
-              {layoutColumns === 1 ? (
-                <Columns className="w-4 h-4" />
-              ) : (
-                <RectangleVertical className="w-4 h-4" />
-              )}
-            </button>
+          <div className="flex-shrink-0">
+            <label className="block text-sm font-medium mb-2">Mise en page</label>
+            <div className="flex items-center justify-start h-[32px]">
+              <button
+                onClick={() => setLayoutColumns?.(layoutColumns === 1 ? 2 : 1)}
+                className="top-0 flex items-center justify-center w-10 h-[30px] rounded-md text-sm font-medium transition-all bg-violet-500 text-white shadow-md hover:bg-violet-600 hover:shadow-lg"
+                title={layoutColumns === 1 ? "Passer à deux colonnes" : "Passer à une colonne"}
+              >
+                {layoutColumns === 1 ? (
+                  <Columns className="w-4 h-4" />
+                ) : (
+                  <RectangleVertical className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
         {showNameAlignment && (
-          <>
+          <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
               <label className="block text-sm font-medium mb-2">Alignement nom</label>
               <div className="flex gap-1">
@@ -466,35 +508,12 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
 
-        <div className="flex-shrink-0">
-          <label className="block text-sm font-medium mb-2">Couleur titres</label>
-          <div className="flex gap-1">
-            {availableColors.reduce((acc, color) => {
-              if (!acc.find(c => c.category === color.category)) {
-                acc.push(color);
-              }
-              return acc;
-            }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
-              <button
-                key={color.category}
-                onClick={() => setTitleColor(color.value)}
-                className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${titleColor === color.value
-                  ? 'border-violet-500 shadow-lg ring-2 ring-violet-200'
-                  : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                style={{ backgroundColor: `#${color.value}` }}
-                title={color.name}
-              />
-            ))}
-          </div>
-        </div>
-
-        {showTextColor && (
-          <div className="flex-shrink-0">
-            <label className="block text-sm font-medium mb-2">Couleur texte</label>
+        <div className="flex flex-col gap-4">
+          <div className="flex-shrink-0 w-full">
+            <label className="block text-sm font-medium mb-2">Couleur titres</label>
             <div className="flex gap-1">
               {availableColors.reduce((acc, color) => {
                 if (!acc.find(c => c.category === color.category)) {
@@ -504,8 +523,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
               }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
                 <button
                   key={color.category}
-                  onClick={() => setCustomColor(color.value)}
-                  className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${customColor === color.value
+                  onClick={() => setTitleColor(color.value)}
+                  className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${titleColor === color.value
                     ? 'border-violet-500 shadow-lg ring-2 ring-violet-200'
                     : 'border-gray-300 hover:border-gray-400'
                     }`}
@@ -515,7 +534,32 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
               ))}
             </div>
           </div>
-        )}
+
+          {showTextColor && (
+            <div className="flex-shrink-0 w-full">
+              <label className="block text-sm font-medium mb-2">Couleur texte</label>
+              <div className="flex gap-1">
+                {availableColors.reduce((acc, color) => {
+                  if (!acc.find(c => c.category === color.category)) {
+                    acc.push(color);
+                  }
+                  return acc;
+                }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
+                  <button
+                    key={color.category}
+                    onClick={() => setCustomColor(color.value)}
+                    className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${customColor === color.value
+                      ? 'border-violet-500 shadow-lg ring-2 ring-violet-200'
+                      : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    style={{ backgroundColor: `#${color.value}` }}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

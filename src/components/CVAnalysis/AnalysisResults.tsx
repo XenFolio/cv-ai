@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, AlertTriangle, XCircle, Brain, Target, Award, Download, RefreshCw, Loader2, ChevronDown } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { CheckCircle, AlertTriangle, XCircle, Brain, Target, Award, Download, RefreshCw, Loader2, ChevronDown, Briefcase, Activity } from 'lucide-react';
 import { CVAnalysisResponse } from '../../hooks/useOpenAI';
-import { DocumentType } from './CVAnalysis';
+import { DocumentType } from '../../hooks/useCVLibrary';
 import html2pdf from 'html2pdf.js';
+import AdvancedATSScoring from './AdvancedATSScoring';
 
 interface AnalysisResultsProps {
   results: CVAnalysisResponse;
@@ -11,9 +13,26 @@ interface AnalysisResultsProps {
   documentType?: DocumentType;
   onOptimize?: () => void;
   isOptimizing?: boolean;
+  onJobSearch?: (keywords: string[]) => void;
+  industry?: string;
+  experienceLevel?: string;
+  jobTitle?: string;
+  showAdvanced?: boolean;
 }
 
-export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results, fileName, originalContent, documentType = 'cv', onOptimize, isOptimizing = false }) => {
+export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
+  results,
+  fileName,
+  originalContent,
+  documentType = 'cv',
+  onOptimize,
+  isOptimizing = false,
+  onJobSearch,
+  industry = 'Technology',
+  experienceLevel = 'Mid-level',
+  jobTitle = 'Professional',
+  showAdvanced = true
+}) => {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
@@ -644,8 +663,77 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results, fileN
     `;
   };
 
+  // Générer les métadonnées dynamiques
+  const documentLabel = documentType === 'cv' ? 'CV' : 'lettre de motivation';
+  const scoreCategory = results.overallScore >= 85 ? 'Excellent' : results.overallScore >= 70 ? 'Bon' : 'À améliorer';
+  const pageTitle = `Analyse ${documentLabel} - Score ATS ${results.overallScore}% | ${fileName}`;
+  const pageDescription = `Analyse complète de votre ${documentLabel} avec un score ATS de ${results.overallScore}%. ${results.recommendations.length} recommandations personnalisées pour optimiser votre candidature.`;
+  const keywords = [
+    'analyse CV',
+    'ATS',
+    'optimisation CV',
+    'score ATS',
+    documentType === 'cv' ? 'curriculum vitae' : 'lettre de motivation',
+    'recrutement',
+    'candidature',
+    'IA',
+    'recommandations',
+    ...results.keywords.found.slice(0, 5)
+  ].join(', ');
+
   return (
-    <div className="space-y-8">
+    <>
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta name="keywords" content={keywords} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:site_name" content="CV ATS Assistant" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        
+        {/* Additional SEO meta tags */}
+        <meta name="robots" content="noindex, nofollow" />
+        <meta name="author" content="CV ATS Assistant" />
+        <meta name="application-name" content="CV ATS Assistant" />
+        <meta name="theme-color" content="#7c3aed" />
+        
+        {/* Structured data for better SEO */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "AnalysisReport",
+            "name": pageTitle,
+            "description": pageDescription,
+            "author": {
+              "@type": "Organization",
+              "name": "CV ATS Assistant"
+            },
+            "dateCreated": new Date().toISOString(),
+            "about": {
+              "@type": "Document",
+              "name": fileName,
+              "category": documentType === 'cv' ? 'Resume' : 'CoverLetter'
+            },
+            "result": {
+              "@type": "Rating",
+              "ratingValue": results.overallScore,
+              "bestRating": 100,
+              "worstRating": 0,
+              "description": `Score ATS de ${results.overallScore}% - ${scoreCategory}`
+            }
+          })}
+        </script>
+      </Helmet>
+      
+      <div className="space-y-8">
       {/* Overall Score Card */}
       <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-gray-200/30">
         <div className="text-center mb-6">
@@ -842,8 +930,12 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results, fileN
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <button className="bg-gradient-to-br from-violet-500 to-pink-500 text-white p-6 rounded-2xl hover:from-violet-600 hover:to-pink-600 transition-all duration-200 hover:scale-105 text-left">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <button 
+          onClick={onOptimize}
+          disabled={isOptimizing}
+          className="bg-gradient-to-br from-violet-500 to-pink-500 text-white p-6 rounded-2xl hover:from-violet-600 hover:to-pink-600 transition-all duration-200 hover:scale-105 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <Target className="w-8 h-8 mb-3" />
           <h4 className="font-semibold mb-2">Optimiser Automatiquement</h4>
           <p className="text-sm text-white/90">Laissez l'IA appliquer les améliorations</p>
@@ -860,7 +952,36 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ results, fileN
           <h4 className="font-semibold mb-2">Créer Version Optimisée</h4>
           <p className="text-sm text-white/90">Générer un nouveau {documentType === 'cv' ? 'CV' : 'lettre'} amélioré</p>
         </button>
+
+        <button 
+          onClick={() => onJobSearch?.(results.keywords.found)}
+          className="bg-gradient-to-br from-orange-500 to-red-500 text-white p-6 rounded-2xl hover:from-orange-600 hover:to-red-600 transition-all duration-200 hover:scale-105 text-left"
+        >
+          <Briefcase className="w-8 h-8 mb-3" />
+          <h4 className="font-semibold mb-2">Rechercher des Emplois</h4>
+          <p className="text-sm text-white/90">Trouvez des offres correspondant à votre profil</p>
+        </button>
       </div>
+
+      {/* Advanced Scoring Section */}
+      {showAdvanced && (
+        <div className="mt-8">
+          <div className="flex items-center space-x-2 mb-6">
+            <Activity className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-xl font-bold text-gray-900">Analyse Avancée ATS</h3>
+            <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
+              Premium
+            </span>
+          </div>
+          <AdvancedATSScoring
+            results={results}
+            industry={industry}
+            experienceLevel={experienceLevel}
+            jobTitle={jobTitle}
+          />
+        </div>
+      )}
     </div>
+    </>
   );
 };

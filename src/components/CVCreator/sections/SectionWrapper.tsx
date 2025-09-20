@@ -38,7 +38,8 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative group ${isDragging ? 'opacity-50' : ''} ${className} cursor-pointer hover:bg-violet-50 hover:border hover:border-violet-200 rounded transition-all duration-200`}
+      data-section
+      className={`relative group ${isDragging ? 'opacity-50' : ''} ${className} cursor-pointer hover:bg-violet-50 hover:border hover:border-violet-200 rounded transition-all duration-200 h-full flex flex-col`}
       onClick={(e) => {
         // Ne pas déclencher si on clique sur la poignée de drag
         if ((e.target as HTMLElement).closest('[data-drag-handle]')) {
@@ -62,7 +63,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
       </div>
       
       {/* Contenu de la section */}
-      <div className={`${position === 'right' ? 'pr-2' : 'pl-2'} pt-1`}>
+      <div className={`${position === 'right' ? 'pr-2' : 'pl-2'} pt-1 flex-1`}>
         {children}
       </div>
     </div>
