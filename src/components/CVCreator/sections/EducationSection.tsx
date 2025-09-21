@@ -90,13 +90,16 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
             onMouseLeave={() => setTitleHovered(false)}
           >
             <h4
-              className="text-md font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded whitespace-nowrap transition-colors duration-200"
+              className="text-md font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
               onClick={() => setEditingField('educationTitle')}
-              style={{ color: `#${titleColor}` }}
+              style={{
+                color: `#${titleColor}`,
+                width: `${Math.max(editableContent.educationTitle.length * 8 + 20, 200)}px`
+              }}
             >
               {editableContent.educationTitle}
             </h4>
-            <div className={`flex gap-1 ml-auto transition-opacity duration-200 ${titleHovered ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`flex gap-1 transition-opacity duration-200 ${titleHovered ? 'opacity-100' : 'opacity-0'}`}>
               <AIButton
                 isLoading={isLoading}
                 onClick={() => generateWithAI('educationTitle', editableContent.educationTitle)}

@@ -121,7 +121,7 @@ const LayerContainer: React.FC<LayerContainerProps> = ({
   onContract,
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: `layer-${layer}`, disabled });
-  
+
   // Vérifier s'il y a une section en pleine largeur dans ce layer
   const hasFullWidthSection = sections.some(s => s.width === "full");
   const fullWidthSection = sections.find(s => s.width === "full");
@@ -137,13 +137,13 @@ const LayerContainer: React.FC<LayerContainerProps> = ({
             ? "border border-gray-200"
             : "hover:border-2 hover:border-violet-500 hover:border-dashed"}
       `}
-      style={{ minHeight: "60px" }}
+      style={{ minHeight: "auto" }}
     >
       {children}
-      
-      {/* Bouton contract en bas du layer */}
+
+      {/* Bouton contract en haut à droite */}
       {hasFullWidthSection && fullWidthSection && onContract && (
-        <div className="flex justify-end mt-2 pb-2 pr-2">
+        <div className="absolute top-0 right-2 pr-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -174,8 +174,8 @@ const InterLayerDropZone: React.FC<{ index: number; isDragging: boolean }> = ({ 
       <div
         className={`
           w-full h-full rounded-full transition-all duration-300
-          ${isOver 
-            ? "bg-gradient-to-r from-violet-400 to-purple-400 scale-y-200 shadow-md" 
+          ${isOver
+            ? "bg-gradient-to-r from-violet-400 to-purple-400 scale-y-200 shadow-md"
             : "bg-gray-400 hover:bg-violet-300"}
           ${isDragging ? "animate-pulse" : ""}
         `}
@@ -185,7 +185,7 @@ const InterLayerDropZone: React.FC<{ index: number; isDragging: boolean }> = ({ 
         <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-violet-600 text-white text-xs px-1 py-0.5 rounded shadow-md whitespace-nowrap z-50">
           Déposer ici pour créer un nouveau layer
         </div>
-      )} 
+      )}
     </div>
   );
 };
@@ -252,7 +252,7 @@ const EmptySlot: React.FC<EmptySlotProps> = ({
       ref={setNodeRef}
       className={`
         ${half ? "w-1/2" : "w-full"}
-        min-h-[60px] rounded-md border-2 border-dashed 
+        min-h-[40px] height-auto rounded-md border-2 border-dashed 
         flex items-center justify-center text-gray-400 text-xs italic relative
         transition-colors
         ${isOver ? "border-violet-500 bg-violet-50" : "border-gray-300 bg-gray-50"}
@@ -263,7 +263,7 @@ const EmptySlot: React.FC<EmptySlotProps> = ({
       {onExpand && (
         <button
           onClick={onExpand}
-          className="absolute bottom-2 right-0 z-20 p-1 rounded-full hover:bg-gray-100 pointer-events-auto"
+          className="absolute top-0 right-3 z-20 p-1 rounded-full hover:bg-gray-100 pointer-events-auto"
           title="Étendre en pleine largeur"
         >
           <Maximize2 className="w-4 h-4 text-gray-500 hover:text-violet-600" />
@@ -344,7 +344,7 @@ export const DraggableSections: React.FC = () => {
     if (typeof over.id === "string" && over.id.startsWith("inter-layer-")) {
       // drop entre 2 layers → crée un nouveau layer pour cette section seulement
       const idx = parseInt(over.id.replace("inter-layer-", ""), 10);
-      
+
       // Créer un nouveau layer spécifiquement pour cette section
       next = sections.map((s) => {
         if (s.id === active.id) {
