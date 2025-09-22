@@ -31,8 +31,8 @@ function isBoolean(v: unknown): v is boolean {
 function isLeftRight(v: unknown): v is "left" | "right" {
   return v === "left" || v === "right";
 }
-function isWidth(v: unknown): v is "full" | "half" {
-  return v === "full" || v === "half";
+function isWidth(v: unknown): v is "full" | "half" | "1/3" | "2/3" {
+  return v === "full" || v === "half" || v === "1/3" || v === "2/3";
 }
 
 /* ------------- Migration anciens schémas ------------- */
@@ -111,7 +111,7 @@ function cleanupLayersPure(sections: SectionConfig[]): SectionConfig[] {
 
     if (limited.length === 2) {
       limited.forEach((s, i) =>
-        result.push({ ...s, layer: newLayer, order: i, width: "half" })
+        result.push({ ...s, layer: newLayer, order: i, width: s.width || "half" })
       );
     } else if (limited.length === 1) {
       const s = limited[0];
@@ -119,8 +119,8 @@ function cleanupLayersPure(sections: SectionConfig[]): SectionConfig[] {
         ...s,
         layer: newLayer,
         order: s.order ?? 0,
-        // 🔒 préserver la width choisie (half ou full)
-        width: s.width ?? (limited.length === 1 ? "full" : "half"),
+        // 🔒 préserver la width choisie (full, half, 1/3, 2/3)
+        width: s.width || "full",
       });
     }
 

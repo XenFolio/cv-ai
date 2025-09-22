@@ -100,7 +100,40 @@ export const CVCreator: React.FC = () => {
   const [photoPositionY, setPhotoPositionY] = useState<number>(0);
   const [photoRotation, setPhotoRotation] = useState<number>(0);
   const [photoObjectFit, setPhotoObjectFit] = useState<'contain' | 'cover'>('contain');
+  const [sectionSpacing, setSectionSpacing] = useState<0 | 1 | 2 | 3 | 4>(1);
+  const [columnRatio, setColumnRatio] = useState<'1/2-1/2' | '1/3-2/3' | '2/3-1/3'>('1/2-1/2');
   const [error, setError] = useState<string | null>(null);
+  // État pour les couleurs de section
+  const [sectionColors, setSectionColors] = useState<Record<string, {
+    background: string;
+    title: string;
+    content: string;
+    input: string;
+    button: string;
+    aiButton: string;
+    separator: string;
+    border: string;
+  }>>({});
+
+  // Fonction pour mettre à jour les couleurs d'un élément de section
+  const updateSectionElementColor = useCallback((sectionId: string, elementType: 'background' | 'title' | 'content' | 'input' | 'button' | 'aiButton' | 'separator' | 'border', color: string) => {
+    setSectionColors(prev => ({
+      ...prev,
+      [sectionId]: {
+        ...prev[sectionId],
+        [elementType]: color
+      }
+    }));
+  }, []);
+
+  // Fonction de compatibilité pour l'ancien système
+  const updateSectionColor = useCallback((sectionId: string, type: 'foreground' | 'background', color: string) => {
+    if (type === 'foreground') {
+      updateSectionElementColor(sectionId, 'title', color);
+    } else {
+      updateSectionElementColor(sectionId, 'background', color);
+    }
+  }, [updateSectionElementColor]);
 
   // Hook pour la gestion des sections
   const {
@@ -353,6 +386,15 @@ export const CVCreator: React.FC = () => {
       if (savedData.nameFontSize) {
         setNameFontSize(savedData.nameFontSize);
       }
+      if (savedData.selectedTemplateName) {
+        setSelectedTemplateName(savedData.selectedTemplateName);
+      }
+      if (savedData.selectedTemplate) {
+        setSelectedTemplate(savedData.selectedTemplate);
+      }
+      if (savedData.sectionColors) {
+        setSectionColors(savedData.sectionColors);
+      }
       // Restaurer les sections et layers dans le hook useCVSections
       if (savedData.sections && Array.isArray(savedData.sections)) {
         console.log('Restauration des sections:', savedData.sections);
@@ -392,7 +434,10 @@ export const CVCreator: React.FC = () => {
         photoSize,
         photoShape,
         nameFontSize,
-        sections: currentSections
+        sections: currentSections,
+        sectionColors: sectionColors || {},
+        selectedTemplateName,
+        selectedTemplate
       };
       
       saveToLocalStorage(dataToSave);
@@ -412,6 +457,9 @@ export const CVCreator: React.FC = () => {
     photoSize,
     photoShape,
     nameFontSize,
+    sectionColors,
+    selectedTemplateName,
+    selectedTemplate,
     saveToLocalStorage,
     autoSaveEnabled
   ]);
@@ -598,9 +646,9 @@ export const CVCreator: React.FC = () => {
       description: "Un modèle visuel et audacieux pour les métiers artistiques.",
       category: "Créatif",
       atsScore: 70,
-      preview: "bg-gradient-to-br from-pink-100 to-rose-100",
+      preview: "bg-gradient-to-br from-yellow-100 to-amber-100",
       image: "/images/creatif.png",
-      theme: { primaryColor: "2563EB", font: "Helvetica" },
+      theme: { primaryColor: "49332c", font: "Helvetica" },
       layoutColumns: 1,
       sectionTitles: {
         profileTitle: "À PROPOS DE MOI",
@@ -711,7 +759,7 @@ export const CVCreator: React.FC = () => {
       description: "Style élégant avec des accents émeraude pour un look professionnel moderne.",
       category: "Moderne",
       atsScore: 94,
-      preview: "bg-gradient-to-br from-emerald-100 to-green-100",
+      preview: "bg-[#fbf9f4]",
       image: "/images/emeraude.png",
       theme: { primaryColor: "10B981", font: "Georgia" },
       layoutColumns: 1,
@@ -932,6 +980,10 @@ export const CVCreator: React.FC = () => {
     setPhotoRotation,
     photoObjectFit,
     setPhotoObjectFit,
+    sectionSpacing,
+    setSectionSpacing,
+    columnRatio,
+    setColumnRatio,
 
     // UI state
     editingField,
@@ -939,6 +991,7 @@ export const CVCreator: React.FC = () => {
     selectedSection,
     setSelectedSection,
     selectedTemplateName,
+    selectedTemplate,
     // Sections state
     sections,
     toggleSectionVisibility,
@@ -946,6 +999,10 @@ export const CVCreator: React.FC = () => {
     cleanupLayers,
     expandSection,
     contractSection,
+    sectionColors,
+    setSectionColors,
+    updateSectionColor,
+    updateSectionElementColor,
 
     // Actions
     addExperience,
@@ -1001,9 +1058,9 @@ export const CVCreator: React.FC = () => {
         )}
       </section>
 
-      <div className="p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="p-2 grid grid-cols-1 lg:grid-cols-12 gap-1">
 
-        <div className="lg:col-span-8 flex gap-4">
+        <div className="lg:col-span-9 flex gap-2">
           {/* Contrôles de style à gauche */}
           <aside className="w-80 flex-shrink-0">
             <StyleControls
@@ -1015,6 +1072,8 @@ export const CVCreator: React.FC = () => {
               setTitleColor={setTitleColor}
               layoutColumns={layoutColumns}
               setLayoutColumns={setLayoutColumns}
+              sectionSpacing={sectionSpacing}
+              setSectionSpacing={setSectionSpacing}
               nameAlignment={nameAlignment}
               setNameAlignment={setNameAlignment}
               photoAlignment={photoAlignment}
@@ -1047,13 +1106,13 @@ export const CVCreator: React.FC = () => {
           {/* Aperçu dynamique en temps réel */}
           <section className="flex-1">
             <CVPreviewDragDrop
-              setSectionsOrder={() => setSectionsOrderFunc}
+              setSectionsOrder={setSectionsOrderFunc}
             />
           </section>
 
         </div>
 
-        <aside className="lg:col-span-4">
+        <aside className="lg:col-span-3">
           <CVTemplateCarousel
           templates={templates}
           selectedTemplate={selectedTemplate}

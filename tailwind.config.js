@@ -3,6 +3,17 @@ const plugin = require('tailwindcss/plugin')
 
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  safelist: [
+    'w-1/2',
+    'w-1/3',
+    'w-2/3',
+    'w-full',
+    'space-y-0',
+    'space-y-1',
+    'space-y-2',
+    'space-y-3',
+    'space-y-4'
+  ],
   theme: {
     extend: {},
   },

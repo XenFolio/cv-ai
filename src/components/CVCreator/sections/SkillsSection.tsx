@@ -18,6 +18,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { CVContent, CVSkill } from '../types';
 import { useSkills, type Skill } from '../../../hooks/useSkills';
+import { useCVCreator } from '../CVCreatorContext.hook';
 
 interface SkillsSectionProps {
   editableContent: CVContent;
@@ -26,13 +27,13 @@ interface SkillsSectionProps {
   setSkills: React.Dispatch<React.SetStateAction<CVSkill[]>>;
   editingField: string | null;
   setEditingField: React.Dispatch<React.SetStateAction<string | null>>;
-  customColor: string;
   titleColor: string;
   addSkill: () => void;
   removeSkill: (id: number) => void;
   generateWithAI: (field: string, currentContent?: string) => Promise<void>;
   isLoading: boolean;
   templateName?: string;
+  sectionId?: string;
 }
 
 const AIButton: React.FC<{
@@ -74,7 +75,16 @@ const SortableSkill: React.FC<{
   onFinishEdit: () => void;
   onRemove: () => void;
   onAIGenerate: () => void;
-  customColor: string;
+  skillColor: string;
+  colors: {
+    title: string;
+    content: string;
+    input: string;
+    button: string;
+    aiButton: string;
+    separator: string;
+    border: string;
+  };
   isLoading: boolean;
   isLast: boolean;
   showSeparator: boolean;
@@ -89,7 +99,8 @@ const SortableSkill: React.FC<{
   onFinishEdit,
   onRemove,
   onAIGenerate,
-  customColor,
+  skillColor,
+  colors,
   isLoading,
   isLast,
   showSeparator,
@@ -150,7 +161,7 @@ const SortableSkill: React.FC<{
         <div className="flex items-center">
           {/* Point devant la compétence si les colonnes sont actives */}
           {showBulletPoint && (
-            <span className="text-sm mr-2" style={{ color: `#${customColor}` }}>
+            <span className="text-sm mr-2" style={{ color: `#${skillColor}` }}>
               •
             </span>
           )}
@@ -162,13 +173,16 @@ const SortableSkill: React.FC<{
               onChange={(e) => onUpdate(e.target.value)}
               onBlur={onFinishEdit}
               onKeyDown={(e) => e.key === 'Enter' && onFinishEdit()}
-              className="text-sm border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
-              style={{ width: `${Math.max(skill.content.length * 8 + 20, 100)}px` }}
+              className="text-sm border-b focus:outline-none focus:border-violet-500 bg-transparent min-w-0 max-w-full"
+              style={{
+                width: `${Math.min(Math.max(skill.content.length * 8 + 20, 80), 150)}px`,
+                borderColor: colors.border ? `#${colors.border}` : '#d1d5db'
+              }}
               autoFocus
             />
           ) : (
             <span
-              className={`text-sm cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors duration-200 ${isSelected ? 'bg-violet-50 border border-violet-200' : ''}`}
+              className={`text-sm cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors duration-200 truncate max-w-full inline-block ${isSelected ? 'bg-violet-50 border border-violet-200' : ''}`}
               onClick={(e) => {
                 e.stopPropagation();
                 if (isSelected) {
@@ -177,7 +191,10 @@ const SortableSkill: React.FC<{
                   onSelect();
                 }
               }}
-              style={{ color: `#${customColor}` }}
+              style={{ 
+                color: `#${skillColor}`,
+                maxWidth: '150px'
+              }}
               title={isSelected ? "Clic pour éditer" : "Clic pour sélectionner"}
             >
               {skill.content}
@@ -188,7 +205,7 @@ const SortableSkill: React.FC<{
 
       {/* Séparateur - seulement en mode libre */}
       {showSeparator && !isLast && (
-        <span className="text-sm text-gray-400 mx-1" style={{ color: `#${customColor}` }}>
+        <span className="text-sm text-gray-400 mx-1" style={{ color: `#${skillColor}` }}>
           •
         </span>
       )}
@@ -203,14 +220,27 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   setSkills,
   editingField,
   setEditingField,
-  customColor,
   titleColor,
   addSkill,
   removeSkill,
   generateWithAI,
   isLoading,
-  templateName
+  templateName,
+  sectionId
 }) => {
+  const { sectionColors } = useCVCreator();
+
+  // Couleurs personnalisées pour la section
+  const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
+  const colors = {
+    title: sectionColorSettings?.title || titleColor,
+    content: sectionColorSettings?.content || '000000',
+    input: sectionColorSettings?.input || '000000',
+    button: sectionColorSettings?.button || '6b7280',
+    aiButton: sectionColorSettings?.aiButton || '9333ea',
+    separator: sectionColorSettings?.separator || 'd1d5db',
+    border: sectionColorSettings?.border || 'd1d5db',
+  };
   const { getSkillsByCategory, getAvailableCategories, searchSkills, loading: skillsLoading } = useSkills();
   const [showSkillsLibrary, setShowSkillsLibrary] = useState(false);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -331,24 +361,14 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
               onChange={(e) => setEditableContent(prev => ({ ...prev, skillsTitle: e.target.value }))}
               onBlur={() => setEditingField(null)}
               onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-              className="text-md font-semibold border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
-              style={{ width: `${Math.max(editableContent.skillsTitle.length * 8 + 20, 200)}px` }}
+              className="text-sm font-semibold border-b focus:outline-none focus:border-violet-500 bg-transparent"
+              style={{
+                width: `${Math.max(editableContent.skillsTitle.length * 7 + 20, 180)}px`,
+                color: `#${colors.title}`,
+                borderColor: colors.border ? `#${colors.border}` : '#d1d5db'
+              }}
               autoFocus
             />
-            <button
-              onClick={() => setShowSkillsLibrary(!showSkillsLibrary)}
-              className="p-1 text-blue-600 hover:text-blue-800 transition-all duration-200 hover:scale-110"
-              title="Bibliothèque de compétences"
-            >
-              <Database className="w-4 h-4" />
-            </button>
-            <button
-              onClick={addSkill}
-              className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
-              title="Ajouter une compétence"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
           </div>
         ) : (
           <div
@@ -357,9 +377,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
             onMouseLeave={() => setTitleHovered(false)}
           >
             <h4
-              className="text-md font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
+              className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
               onClick={() => setEditingField('skillsTitle')}
-              style={{ color: `#${titleColor}` }}
+              style={{ color: `#${colors.title}` }}
             >
               {editableContent.skillsTitle}
             </h4>
@@ -374,7 +394,11 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
               <select
                 value={skillsLayout}
                 onChange={(e) => setSkillsLayout(e.target.value as 'free' | '1col' | '2col' | '3col')}
-                className="p-1 text-xs border border-gray-300 rounded text-gray-600 hover:text-gray-800 focus:outline-none focus:border-violet-500 w-auto min-w-fit"
+                className="p-1 text-xs border rounded text-gray-600 hover:text-gray-800 focus:outline-none focus:border-violet-500 w-auto min-w-fit"
+                style={{
+                  borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+                  color: `#${colors.input}`
+                }}
                 title="Mise en page des compétences"
               >
                 <option value="free">Libre</option>
@@ -415,9 +439,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
               <div
                 className={
                   skillsLayout === 'free' ? 'flex flex-wrap items-center gap-1' :
-                  skillsLayout === '1col' ? 'grid grid-cols-1 gap-2' :
-                  skillsLayout === '2col' ? 'grid grid-cols-2 gap-2' :
-                  'grid grid-cols-3 gap-2'
+                  skillsLayout === '1col' ? 'flex flex-col gap-1' :
+                  skillsLayout === '2col' ? 'grid grid-cols-2 gap-1' :
+                  'grid grid-cols-3 gap-1'
                 }
                 onClick={(e) => e.stopPropagation()}
               >
@@ -436,7 +460,8 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                       setSelectedSkillId(null);
                     }}
                     onAIGenerate={() => generateWithAI('skillContent', skill.content)}
-                    customColor={customColor}
+                    skillColor={colors.content}
+                    colors={colors}
                     isLoading={isLoading}
                     isLast={index === skills.length - 1}
                     showSeparator={skillsLayout === 'free'}
@@ -448,21 +473,28 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
           </DndContext>
         </div>
 
-      {/* Bibliothèque de compétences */}
+      {/* Bibliothèque de compétences - Version compacte */}
       {showSkillsLibrary && (
-        <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-white shadow-lg relative z-10">
-          <div className="flex items-center justify-between mb-3">
-            <h5 className="font-medium text-gray-700">Bibliothèque de compétences</h5>
+        <div
+          className="mt-2 p-3 border rounded-lg bg-white shadow-lg relative z-10"
+          style={{
+            borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+            maxHeight: '300px',
+            overflow: 'hidden'
+          }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h5 className="font-medium text-gray-700 text-sm">Bibliothèque</h5>
             <button
               onClick={() => setShowSkillsLibrary(false)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 text-lg leading-none"
             >
               ×
             </button>
           </div>
 
           {/* Barre de recherche */}
-          <div className="mb-3">
+          <div className="mb-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
@@ -470,7 +502,11 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                 placeholder="Rechercher une compétence..."
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-violet-500"
+                className="w-full pl-10 pr-4 py-2 border rounded-md text-sm focus:outline-none focus:border-violet-500"
+              style={{
+                borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+                color: `#${colors.input}`
+              }}
               />
             </div>
           </div>
@@ -484,7 +520,11 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                   <button
                     key={skill.id}
                     onClick={() => addSkillFromLibrary(skill)}
-                    className="text-left p-2 text-sm border border-gray-200 rounded hover:bg-violet-50 hover:border-violet-300 transition-colors"
+                    className="text-left p-2 text-sm border rounded hover:bg-violet-50 hover:border-violet-300 transition-colors"
+                style={{
+                  borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+                  color: `#${colors.content}`
+                }}
                     title={skill.description}
                   >
                     <div className="font-medium">{skill.name}</div>
@@ -505,8 +545,12 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-violet-500 bg-white cursor-pointer"
-              style={{ minHeight: '36px' }}
+              className="w-full p-2 border rounded-md text-sm focus:outline-none focus:border-violet-500 bg-white cursor-pointer"
+            style={{
+              borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+              color: `#${colors.input}`,
+              minHeight: '36px'
+            }}
             >
               {availableCategories.length > 0 ? (
                 availableCategories.map((category) => (
@@ -553,7 +597,11 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                 <button
                   key={skill.id}
                   onClick={() => addSkillFromLibrary(skill)}
-                  className="text-left p-2 text-sm border border-gray-200 rounded hover:bg-violet-50 hover:border-violet-300 transition-colors"
+                  className="text-left p-2 text-sm border rounded hover:bg-violet-50 hover:border-violet-300 transition-colors"
+                style={{
+                  borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+                  color: `#${colors.content}`
+                }}
                   title={skill.description}
                 >
                   <div className="font-medium">{skill.name}</div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, Plus, Minus } from 'lucide-react';
 import type { CVContent, CVLanguage } from '../types';
+import { useCVCreator } from '../CVCreatorContext.hook';
 
 interface LanguagesSectionProps {
   editableContent: CVContent;
@@ -9,12 +10,12 @@ interface LanguagesSectionProps {
   setLanguages: React.Dispatch<React.SetStateAction<CVLanguage[]>>;
   editingField: string | null;
   setEditingField: React.Dispatch<React.SetStateAction<string | null>>;
-  customColor: string;
   titleColor: string;
   addLanguage: () => void;
   removeLanguage: (id: number) => void;
   generateWithAI: (field: string, currentContent?: string) => Promise<void>;
   isLoading: boolean;
+  sectionId?: string;
 }
 
 const AIButton: React.FC<{
@@ -52,13 +53,19 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
   setLanguages,
   editingField,
   setEditingField,
-  customColor,
   titleColor,
   addLanguage,
   removeLanguage,
   generateWithAI,
-  isLoading
+  isLoading,
+  sectionId
 }) => {
+  const { sectionColors } = useCVCreator();
+
+  // Couleurs personnalisées pour la section
+  const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
+  const textColor = sectionColorSettings?.title || titleColor;
+  const contentColor = sectionColorSettings?.content || '000000';
   const [titleHovered, setTitleHovered] = React.useState(false);
   const [hoveredLangId, setHoveredLangId] = React.useState<number | null>(null);
   return (
@@ -71,17 +78,13 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
             onChange={(e) => setEditableContent(prev => ({ ...prev, languagesTitle: e.target.value }))}
             onBlur={() => setEditingField(null)}
             onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-            className="text-md font-semibold border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
-            style={{ width: `${Math.max(editableContent.languagesTitle.length * 8 + 20, 200)}px` }}
+            className="text-sm font-semibold border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
+            style={{
+              width: `${Math.max(editableContent.languagesTitle.length * 7 + 20, 180)}px`,
+              color: `#${textColor}`
+            }}
             autoFocus
           />
-          <button
-            onClick={addLanguage}
-            className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
-            title="Ajouter une langue"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
         </div>
       ) : (
         <div
@@ -90,9 +93,9 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
           onMouseLeave={() => setTitleHovered(false)}
         >
           <h4
-            className="text-md font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
+            className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
             onClick={() => setEditingField('languagesTitle')}
-            style={{ color: `#${titleColor}` }}
+            style={{ color: `#${textColor}` }}
           >
             {editableContent.languagesTitle}
           </h4>
@@ -154,7 +157,7 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
                 <p
                   className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
                   onClick={() => setEditingField(`languageName-${lang.id}`)}
-                  style={{ color: `#${customColor}`, width: `${Math.max(lang.name.length * 8 + 20, 80)}px` }}
+                  style={{ color: `#${contentColor}`, width: `${Math.max(lang.name.length * 8 + 20, 80)}px` }}
                 >
                   {lang.name}
                 </p>
@@ -183,7 +186,7 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
                 <p
                   className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
                   onClick={() => setEditingField(`languageLevel-${lang.id}`)}
-                  style={{ color: `#${customColor}`, width: `${Math.max(lang.level.length * 8 + 40, 100)}px` }}
+                  style={{ color: `#${contentColor}`, width: `${Math.max(lang.level.length * 8 + 40, 100)}px` }}
                 >
                   ({lang.level})
                 </p>

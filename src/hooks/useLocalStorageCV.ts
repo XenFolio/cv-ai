@@ -1,6 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { CVContent, CVExperience, CVSkill, CVLanguage, CVEducation, SectionConfig } from '../components/CVCreator/types';
 
+// Type pour les couleurs granulaires par section
+interface SectionColors {
+  background: string;
+  title: string;
+  content: string;
+  input: string;
+  button: string;
+  aiButton: string;
+  separator: string;
+  border: string;
+}
+
 interface CVData {
   editableContent: CVContent;
   experiences: CVExperience[];
@@ -17,6 +29,9 @@ interface CVData {
   photoShape?: 'circle' | 'square' | 'rounded';
   nameFontSize?: number;
   sections: SectionConfig[];
+  sectionColors: Record<string, SectionColors>;
+  selectedTemplateName: string;
+  selectedTemplate: string | null;
   lastSaved: string;
 }
 

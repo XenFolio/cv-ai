@@ -17,7 +17,7 @@ import {
   sortableKeyboardCoordinates,
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
-import { RotateCcw, Move, Maximize2, Minimize2 } from "lucide-react";
+import { RotateCcw, Move, Minimize2 } from "lucide-react";
 // import { useCVSections } from "../../hooks/useCVSections";
 // import { cleanupLayersPure } from "../../hooks/useCVSections";
 import { useCVCreator } from "./CVCreatorContext.hook";
@@ -32,6 +32,8 @@ import {
   LanguagesSection,
   SectionWrapper,
 } from "./sections";
+import { EmptySlot } from "./EmptySlot";
+import { InterLayerDropZone } from "./InterLayerDropZone";
 import type {
   SectionConfig,
 } from "./types";
@@ -130,7 +132,7 @@ const LayerContainer: React.FC<LayerContainerProps> = ({
     <div
       ref={setNodeRef}
       className={`
-        group relative w-full rounded-lg p-0 transition-all duration-200
+        group relative w-full p-0 transition-all duration-200
         ${isDragging && !disabled && isOver
           ? "border-2 border-green-400 border-dashed bg-green-50"
           : isDragging
@@ -149,7 +151,7 @@ const LayerContainer: React.FC<LayerContainerProps> = ({
               e.stopPropagation();
               onContract(fullWidthSection.id);
             }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded-full hover:bg-gray-100 pointer-events-auto"
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-gray-100 pointer-events-auto"
             title="Revenir en deux colonnes"
           >
             <Minimize2 className="w-4 h-4 text-gray-500 hover:text-violet-600" />
@@ -160,42 +162,13 @@ const LayerContainer: React.FC<LayerContainerProps> = ({
   );
 };
 
-const InterLayerDropZone: React.FC<{ index: number; isDragging: boolean }> = ({ index, isDragging }) => {
-  const { setNodeRef, isOver } = useDroppable({ id: `inter-layer-${index}` });
-  return (
-    <div
-      ref={setNodeRef}
-      className={`
-        w-full my-2 transition-all duration-300 ease-in-out relative
-        ${isDragging ? "opacity-100" : "opacity-0 hover:opacity-50"}
-        ${isDragging ? "h-3" : "h-1"}
-      `}
-    >
-      <div
-        className={`
-          w-full h-full rounded-full transition-all duration-300
-          ${isOver
-            ? "bg-gradient-to-r from-violet-400 to-purple-400 scale-y-200 shadow-md"
-            : "bg-gray-400 hover:bg-violet-300"}
-          ${isDragging ? "animate-pulse" : ""}
-        `}
-      />
-      {/* Indicateur textuel lors du hover */}
-      {isOver && isDragging && (
-        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-violet-600 text-white text-xs px-1 py-0.5 rounded shadow-md whitespace-nowrap z-50">
-          Déposer ici pour créer un nouveau layer
-        </div>
-      )}
-    </div>
-  );
-};
 
 /* ---------------- SectionDroppable ---------------- */
 
 interface SectionDroppableProps {
   section: SectionConfig;
   isDragging: boolean;
-  activeSection: string | null;
+  activeSection: string | undefined;
   children: React.ReactNode;
   forceHalf?: boolean;
 }
@@ -208,13 +181,27 @@ const SectionDroppable: React.FC<SectionDroppableProps> = ({
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: section.id });
 
-  const widthClass = forceHalf || section.width === "half" ? "w-1/2" : "w-full";
+  const getWidthClass = () => {
+    if (forceHalf) return "w-1/2";
+    switch (section.width) {
+      case "half": return "w-1/2";
+      case "1/3": return "w-1/3";
+      case "2/3": return "w-2/3";
+      case "full":
+      default: return "w-full";
+    }
+  };
+  const widthClass = getWidthClass();
+
+  // Padding cohérent pour tous les conteneurs de sections
+  const paddingClass = "px-0";
 
   return (
     <div
       ref={setNodeRef}
       className={`
-        ${widthClass} h-full
+        ${widthClass}
+        ${paddingClass}
         relative transition-colors
         ${isOver ? "bg-violet-50" : ""}
       `}
@@ -231,52 +218,15 @@ const SectionDroppable: React.FC<SectionDroppableProps> = ({
   );
 };
 
-/* ---------------- EmptySlot ---------------- */
-
-interface EmptySlotProps {
-  half?: boolean;
-  onExpand?: () => void;
-  id: string;
-  isDragging?: boolean;
-}
-const EmptySlot: React.FC<EmptySlotProps> = ({
-  half = false,
-  onExpand,
-  id,
-  isDragging,
-}) => {
-  const { setNodeRef, isOver } = useDroppable({ id });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`
-        ${half ? "w-1/2" : "w-full"}
-        min-h-[40px] height-auto rounded-md border-2 border-dashed 
-        flex items-center justify-center text-gray-400 text-xs italic relative
-        transition-colors
-        ${isOver ? "border-violet-500 bg-violet-50" : "border-gray-300 bg-gray-50"}
-        ${isDragging ? "opacity-100" : "opacity-50"}
-      `}
-    >
-      Emplacement vide
-      {onExpand && (
-        <button
-          onClick={onExpand}
-          className="absolute top-0 right-3 z-20 p-1 rounded-full hover:bg-gray-100 pointer-events-auto"
-          title="Étendre en pleine largeur"
-        >
-          <Maximize2 className="w-4 h-4 text-gray-500 hover:text-violet-600" />
-        </button>
-      )}
-    </div>
-  );
-};
 
 
 /* ---------------- Composant principal ---------------- */
 
-export const DraggableSections: React.FC = () => {
+interface DraggableSectionsProps {
+  setSectionsOrder: (sections: SectionConfig[]) => void;
+}
+
+export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSectionsOrder }) => {
   const {
     editableContent,
     setEditableContent,
@@ -290,7 +240,6 @@ export const DraggableSections: React.FC = () => {
     setEducations,
     editingField,
     setEditingField,
-    customColor,
     titleColor,
     addExperience,
     removeExperience,
@@ -314,14 +263,17 @@ export const DraggableSections: React.FC = () => {
     photoObjectFit,
     setSelectedSection,
     sections,
-    setSectionsOrder,
+    sectionColors,
     cleanupLayers,
     expandSection,
     contractSection,
+    selectedTemplate,
+    sectionSpacing,
+    columnRatio,
   } = useCVCreator();
 
   const [isDragging, setIsDragging] = React.useState(false);
-  const [activeSection, setActiveSection] = React.useState<string | null>(null);
+  const [activeSection, setActiveSection] = React.useState<string | undefined>(undefined);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -336,20 +288,21 @@ export const DraggableSections: React.FC = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setIsDragging(false);
-    setActiveSection(null);
+    setActiveSection(undefined);
     if (!over) return;
 
     let next: SectionConfig[] = [];
 
     if (typeof over.id === "string" && over.id.startsWith("inter-layer-")) {
       // drop entre 2 layers → crée un nouveau layer pour cette section seulement
-      const idx = parseInt(over.id.replace("inter-layer-", ""), 10);
+      const isLeftPart = over.id.endsWith("-left");
+      const idx = parseInt(over.id.replace("inter-layer-", "").replace("-left", "").replace("-right", ""), 10);
 
       // Créer un nouveau layer spécifiquement pour cette section
       next = sections.map((s) => {
         if (s.id === active.id) {
           // La section draggée va dans le nouveau layer
-          return { ...s, layer: idx + 1, order: 0, width: "full" };
+          return { ...s, layer: idx + 1, order: isLeftPart ? 0 : 1, width: "half" };
         }
         // Décaler les autres layers vers le bas
         else if (s.layer > idx) {
@@ -381,6 +334,28 @@ export const DraggableSections: React.FC = () => {
       if (a && b) {
         if (a.layer === b.layer) {
           next = swapInSameLayer(sections, a.id, b.id);
+          // Ajuster les largeurs pour conserver le ratio après le swap
+          next = next.map((s) => {
+            if (s.id === a.id) {
+              return {
+                ...s,
+                // Conserver le ratio en ajustant la largeur selon la nouvelle position
+                width: b.order === 0 ?
+                  (columnRatio === '1/3-2/3' ? '1/3' as const : columnRatio === '2/3-1/3' ? '2/3' as const : 'half' as const) :
+                  (columnRatio === '1/3-2/3' ? '2/3' as const : columnRatio === '2/3-1/3' ? '1/3' as const : 'half' as const)
+              };
+            }
+            if (s.id === b.id) {
+              return {
+                ...s,
+                // Conserver le ratio en ajustant la largeur selon la nouvelle position
+                width: a.order === 0 ?
+                  (columnRatio === '1/3-2/3' ? '1/3' as const : columnRatio === '2/3-1/3' ? '2/3' as const : 'half' as const) :
+                  (columnRatio === '1/3-2/3' ? '2/3' as const : columnRatio === '2/3-1/3' ? '1/3' as const : 'half' as const)
+              };
+            }
+            return s;
+          });
         } else {
           // b = cible ; si b est full → split ; sinon, on se met en face
           next = sections.map((s) => {
@@ -415,10 +390,27 @@ export const DraggableSections: React.FC = () => {
     setEditableContent,
     editingField,
     setEditingField,
-    customColor,
     titleColor,
     generateWithAI,
     isLoading,
+  };
+
+
+
+  // Fonction pour obtenir la couleur de la section gauche d'un layer
+  const getLayerLeftColor = (layerSections: SectionConfig[]): string | undefined => {
+    if (layerSections.length === 0) return undefined;
+
+    const leftSection = layerSections.find(s => s.order === 0);
+    return leftSection ? sectionColors[leftSection.id]?.background : undefined;
+  };
+
+  // Fonction pour obtenir la couleur de la section droite d'un layer
+  const getLayerRightColor = (layerSections: SectionConfig[]): string | undefined => {
+    if (layerSections.length === 0) return undefined;
+
+    const rightSection = layerSections.find(s => s.order === 1);
+    return rightSection ? sectionColors[rightSection.id]?.background : undefined;
   };
 
   // Fonction de callback pour la sélection de section
@@ -432,7 +424,7 @@ export const DraggableSections: React.FC = () => {
     if (!section) return null;
     return (
       <div
-        className="bg-white border-2 border-violet-500 rounded-lg p-2 shadow-lg flex items-center gap-2"
+        className="bg-white border-2 border-violet-500 p-2 shadow-lg flex items-center gap-2"
         style={{ minHeight: "30px", maxWidth: "120px" }}
       >
         <Move className="w-3 h-3 text-violet-600" />
@@ -462,7 +454,7 @@ export const DraggableSections: React.FC = () => {
   // utilitaire de rendu de contenu
   const renderContent = (id: string) => {
     switch (id) {
-      case "name": return <NameSection {...commonSectionProps} nameAlignment={nameAlignment} nameFontSize={nameFontSize} />;
+      case "name": return <NameSection {...commonSectionProps} nameAlignment={nameAlignment} nameFontSize={nameFontSize} isCreativeTemplate={selectedTemplate === "2"} sectionId="name" />;
       case "photo": return (
         <PhotoSection
           editableContent={editableContent}
@@ -478,8 +470,8 @@ export const DraggableSections: React.FC = () => {
           photoObjectFit={photoObjectFit}
         />
       );
-      case "profile": return <ProfileSection {...commonSectionProps} />;
-      case "contact": return <ContactSection {...commonSectionProps} />;
+      case "profile": return <ProfileSection {...commonSectionProps} sectionId="profile" />;
+      case "contact": return <ContactSection {...commonSectionProps} sectionId="contact" />;
       case "experience": return (
         <ExperienceSection
           {...commonSectionProps}
@@ -487,6 +479,7 @@ export const DraggableSections: React.FC = () => {
           setExperiences={setExperiences}
           addExperience={addExperience}
           removeExperience={removeExperience}
+          sectionId="experience"
         />
       );
       case "education": return (
@@ -496,6 +489,7 @@ export const DraggableSections: React.FC = () => {
           setEducations={setEducations}
           addEducation={addEducation}
           removeEducation={removeEducation}
+          sectionId="education"
         />
       );
       case "skills": return (
@@ -505,6 +499,8 @@ export const DraggableSections: React.FC = () => {
           setSkills={setSkills}
           addSkill={addSkill}
           removeSkill={removeSkill}
+          sectionId="skills"
+          templateName={selectedTemplate ?? undefined}
         />
       );
       case "languages": return (
@@ -514,6 +510,7 @@ export const DraggableSections: React.FC = () => {
           setLanguages={setLanguages}
           addLanguage={addLanguage}
           removeLanguage={removeLanguage}
+          sectionId="languages"
         />
       );
       default: return null;
@@ -525,7 +522,7 @@ export const DraggableSections: React.FC = () => {
       <div className="flex justify-end mb-2">
         <button
           onClick={() => setSectionsOrder(cleanupLayers(sections))}
-          className="flex items-center gap-1 px-2 py-0 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-all duration-200"
+          className="flex items-center gap-1 px-2 py-0 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-all duration-200"
           title="Réinitialiser l'ordre des sections"
         >
           <RotateCcw className="w-3 h-3" />
@@ -539,11 +536,19 @@ export const DraggableSections: React.FC = () => {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="space-y-1">
+        <div className={sectionSpacing === 0 ? "" : `space-y-${sectionSpacing}`}>
           {Array.from(layersMap.entries())
             .sort(([a], [b]) => a - b)
             .map(([layer, { capacity, sections: layerSections }], index, arr) => {
               const sorted = [...layerSections].sort((a, b) => a.order - b.order);
+
+              // Obtenir les couleurs des couches adjacentes pour l'inter-layer
+              const currentLayerLeftColor = getLayerLeftColor(sorted);
+              const currentLayerRightColor = getLayerRightColor(sorted);
+
+              const nextLayerKey = index + 1 < arr.length ? arr[index + 1][0] : null;
+              const nextLayer = nextLayerKey ? layersMap.get(nextLayerKey) : null;
+              const nextLayerLeftColor = nextLayer ? getLayerLeftColor(nextLayer.sections) : undefined;
 
               return (
                 <React.Fragment key={layer}>
@@ -556,7 +561,7 @@ export const DraggableSections: React.FC = () => {
                   >
                     <SortableContext items={sorted.map((s) => s.id)} strategy={rectSortingStrategy}>
                       {capacity === 2 ? (
-                        <div className="flex items-stretch gap-2">
+                        <div className="flex items-stretch relative "> {/* Espace négatif pour permettre l'intersection */}
                           {(() => {
                             const left = sorted.find((s) => s.order === 0);
                             const right = sorted.find((s) => s.order === 1);
@@ -568,9 +573,18 @@ export const DraggableSections: React.FC = () => {
                                 section={left}
                                 isDragging={isDragging}
                                 activeSection={activeSection}
-                                forceHalf={!right}
+                                forceHalf={!right && columnRatio !== '1/3-2/3' && columnRatio !== '2/3-1/3'}
                               >
-                                <SectionWrapper id={left.id} title={left.name} position="left" onSectionClick={handleSectionClick}>
+                                <SectionWrapper
+                                  id={left.id}
+                                  title={left.name}
+                                  position="left"
+                                  onSectionClick={handleSectionClick}
+                                  hasAdjacentSection={true}
+                                  adjacentSectionColor={right ? sectionColors[right.id]?.background : undefined}
+                                  hasIntersection={!!right}
+                                  width={left.width}
+                                >
                                   {renderContent(left.id)}
                                 </SectionWrapper>
                               </SectionDroppable>
@@ -579,7 +593,7 @@ export const DraggableSections: React.FC = () => {
                                 key={`empty-${layer}-0`}
                                 id={`empty-${layer}-0`}
                                 isDragging={isDragging}
-                                half
+                                width={columnRatio === '1/3-2/3' ? '1/3' : columnRatio === '2/3-1/3' ? '2/3' : 'half'}
                                 onExpand={right ? () => expandSection(right.id) : undefined}
                               />
                             );
@@ -591,9 +605,18 @@ export const DraggableSections: React.FC = () => {
                                 section={right}
                                 isDragging={isDragging}
                                 activeSection={activeSection}
-                                forceHalf={!left}
+                                forceHalf={!left && columnRatio !== '1/3-2/3' && columnRatio !== '2/3-1/3'}
                               >
-                                <SectionWrapper id={right.id} title={right.name} position="right" onSectionClick={handleSectionClick}>
+                                <SectionWrapper
+                                  id={right.id}
+                                  title={right.name}
+                                  position="right"
+                                  onSectionClick={handleSectionClick}
+                                  hasAdjacentSection={!!left}
+                                  adjacentSectionColor={left ? sectionColors[left.id]?.background : undefined}
+                                  hasIntersection={!!left}
+                                  width={right.width}
+                                >
                                   {renderContent(right.id)}
                                 </SectionWrapper>
                               </SectionDroppable>
@@ -602,7 +625,7 @@ export const DraggableSections: React.FC = () => {
                                 key={`empty-${layer}-1`}
                                 id={`empty-${layer}-1`}
                                 isDragging={isDragging}
-                                half
+                                width={columnRatio === '1/3-2/3' ? '2/3' : columnRatio === '2/3-1/3' ? '1/3' : 'half'}
                                 onExpand={left ? () => expandSection(left.id) : undefined}
                               />
                             );
@@ -617,7 +640,7 @@ export const DraggableSections: React.FC = () => {
                         </div>
                       ) : (
                         // capacité 1 : rendu plein
-                        <div className="flex items-stretch">
+                        <div className="flex items-stretch relative ">
                           {sorted.map((section) => (
                             <SectionDroppable
                               key={section.id}
@@ -628,8 +651,9 @@ export const DraggableSections: React.FC = () => {
                               <SectionWrapper
                                 id={section.id}
                                 title={section.name}
-                                position="left"
                                 onSectionClick={handleSectionClick}
+                                isFullWidth={section.width === "full"}
+                                width={section.width}
                               >
                                 {renderContent(section.id)}
                               </SectionWrapper>
@@ -641,7 +665,15 @@ export const DraggableSections: React.FC = () => {
                   </LayerContainer>
 
                   {index < arr.length - 1 && (
-                    <InterLayerDropZone key={`inter-${index}`} index={index + 1} isDragging={isDragging} />
+                    <InterLayerDropZone
+                      key={`inter-${index}`}
+                      index={index + 1}
+                      isDragging={isDragging}
+                      aboveLayerLeftColor={currentLayerLeftColor}
+                      aboveLayerRightColor={currentLayerRightColor}
+                      belowLayerLeftColor={nextLayerLeftColor}
+                      columnRatio={columnRatio}
+                    />
                   )}
                 </React.Fragment>
               );

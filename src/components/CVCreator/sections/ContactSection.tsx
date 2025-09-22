@@ -1,16 +1,17 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
 import type { CVContent } from '../types';
+import { useCVCreator } from '../CVCreatorContext.hook';
 
 interface ContactSectionProps {
   editableContent: CVContent;
   setEditableContent: React.Dispatch<React.SetStateAction<CVContent>>;
   editingField: string | null;
   setEditingField: React.Dispatch<React.SetStateAction<string | null>>;
-  customColor: string;
   titleColor: string;
   generateWithAI: (field: string, content?: string) => Promise<void>;
   isLoading: boolean;
+  sectionId?: string;
 }
 
 export const ContactSection: React.FC<ContactSectionProps> = ({
@@ -18,11 +19,17 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   setEditableContent,
   editingField,
   setEditingField,
-  customColor,
   titleColor,
   generateWithAI,
   isLoading,
+  sectionId
 }) => {
+  const { sectionColors } = useCVCreator();
+
+  // Couleurs personnalisées pour la section
+  const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
+  const textColor = sectionColorSettings?.title || titleColor;
+  const contentColor = sectionColorSettings?.content || '000000';
   return (
     <div className="mt-0">
       <div className="group flex items-center gap-2">
@@ -31,10 +38,10 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           value={editableContent.contactTitle}
           onChange={(e) => setEditableContent(prev => ({ ...prev, contactTitle: e.target.value }))}
           placeholder="Nom de la section (ex: Contact)"
-          className="text-md font-semibold border-b border-transparent hover:border-gray-300 focus:border-violet-500 focus:outline-none bg-transparent transition-colors duration-200 flex-1"
+          className="text-sm font-semibold border-b border-transparent hover:border-gray-300 focus:border-violet-500 focus:outline-none bg-transparent transition-colors duration-200 flex-1"
           style={{ 
-            color: `#${titleColor}`,
-            width: `${Math.max(editableContent.contactTitle.length * 8 + 20, 200)}px` 
+            color: `#${textColor}`,
+            width: `${Math.max(editableContent.contactTitle.length * 7 + 20, 180)}px` 
           }}
         />
         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -72,41 +79,20 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
               setEditingField(null);
             }
           }}
-          className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-violet-500 resize-none"
+          className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-violet-500 resize-none text-[0.8rem]"
           rows={3}
           autoFocus
         />
       ) : (
-        <div className="group relative">
+        <div className="group relative mt-2">
           <div
-            className="cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200 whitespace-pre-wrap"
+            className="text-[0.85rem] cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200 whitespace-pre-wrap"
             onClick={() => setEditingField('contact')}
-            style={{ color: `#${customColor}` }}
+            style={{ color: `#${contentColor}` }}
           >
             {editableContent.contact || 'Cliquez pour ajouter vos informations de contact'}
           </div>
-          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button
-              onClick={() => generateWithAI('contact', editableContent.contact)}
-              disabled={isLoading}
-              className="p-1 text-violet-600 hover:text-violet-800 disabled:opacity-50"
-              title="Améliorer avec IA"
-            >
-              {isLoading ? (
-                <div className="flex space-x-1">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="w-2 h-2 bg-violet-600 rounded-full animate-bounce"
-                      style={{ animationDelay: `${i * 0.2}s` }}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <Sparkles className="w-4 h-4" />
-              )}
-            </button>
-          </div>
+          
         </div>
       )}
     </div>

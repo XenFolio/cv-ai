@@ -1,16 +1,17 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
 import type { CVContent } from '../types';
+import { useCVCreator } from '../CVCreatorContext.hook';
 
 interface ProfileSectionProps {
   editableContent: CVContent;
   setEditableContent: React.Dispatch<React.SetStateAction<CVContent>>;
   editingField: string | null;
   setEditingField: React.Dispatch<React.SetStateAction<string | null>>;
-  customColor: string;
   titleColor: string;
   generateWithAI: (field: string, currentContent?: string) => Promise<void>;
   isLoading: boolean;
+  sectionId?: string;
 }
 
 const AIButton: React.FC<{
@@ -46,11 +47,21 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   setEditableContent,
   editingField,
   setEditingField,
-  customColor,
   titleColor,
   generateWithAI,
-  isLoading
+  isLoading,
+  sectionId
 }) => {
+  const { sectionColors } = useCVCreator();
+
+  // Couleurs personnalisées pour la section
+  const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
+  const colors = {
+    title: sectionColorSettings?.title || titleColor,
+    content: sectionColorSettings?.content || '000000',
+    input: sectionColorSettings?.input || '000000',
+    border: sectionColorSettings?.border || 'd1d5db',
+  };
   return (
     <div className="mt-0">
       {editingField === 'profileTitle' ? (
@@ -60,16 +71,20 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
           onChange={(e) => setEditableContent(prev => ({ ...prev, profileTitle: e.target.value }))}
           onBlur={() => setEditingField(null)}
           onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-          className="text-md font-semibold border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
-          style={{ width: `${Math.max(editableContent.profileTitle.length * 8 + 20, 200)}px` }}
+          className="text-sm font-semibold border-b focus:outline-none focus:border-violet-500 bg-transparent"
+          style={{
+            color: `#${colors.title}`,
+            borderColor: `#${colors.border}`,
+            width: `${Math.max(editableContent.profileTitle.length * 7 + 20, 180)}px`
+          }}
           autoFocus
         />
       ) : (
         <div className="group flex items-center gap-2">
           <h4
-            className="text-md font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
+            className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
             onClick={() => setEditingField('profileTitle')}
-            style={{ color: `#${titleColor}` }}
+            style={{ color: `#${colors.title}` }}
           >
             {editableContent.profileTitle}
           </h4>
@@ -88,7 +103,11 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
           value={editableContent.profileContent}
           onChange={(e) => setEditableContent(prev => ({ ...prev, profileContent: e.target.value }))}
           onBlur={() => setEditingField(null)}
-          className="text-sm w-full border border-gray-400 focus:outline-none focus:border-violet-500 p-1 rounded"
+          className="text-sm w-full border focus:outline-none focus:border-violet-500 p-1 rounded"
+          style={{
+            borderColor: `#${colors.border}`,
+            color: `#${colors.input}`
+          }}
           autoFocus
           rows={3}
         />
@@ -97,7 +116,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
           <p
             className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded flex-1 transition-colors duration-200 line-clamp-3"
             onClick={() => setEditingField('profileContent')}
-            style={{ color: `#${customColor}` }}
+            style={{ color: `#${colors.content}` }}
           >
             {editableContent.profileContent}
           </p>

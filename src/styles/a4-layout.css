@@ -1,0 +1,65 @@
+/* 
+ * Styles pour le format A4
+ * Dimensions: 210mm x 297mm
+ * Ratio: 1:1.414 (√2)
+ */
+
+.a4-container {
+  aspect-ratio: 1 / 1.414; /* Ratio A4 exact */
+  width: 100%;
+  max-width: 595px; /* 210mm à 72 DPI */
+  min-height: 842px; /* 297mm à 72 DPI */
+  box-sizing: border-box;
+}
+
+.a4-preview {
+  aspect-ratio: 1 / 1.414;
+  width: 100%;
+  max-width: 595px;
+  min-height: 842px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.a4-content {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+/* Responsive A4 containers */
+@media (max-width: 640px) {
+  .a4-container,
+  .a4-preview {
+    max-width: 100%;
+    min-height: auto;
+    height: auto;
+  }
+}
+
+@media print {
+  .a4-container,
+  .a4-preview {
+    width: 210mm;
+    height: 297mm;
+    max-width: none;
+    min-height: 297mm;
+  }
+}
+
+/* Classes utilitaires pour les dimensions A4 */
+.w-a4 {
+  width: 595px;
+  max-width: 100%;
+}
+
+.h-a4 {
+  height: 842px;
+}
+
+.aspect-a4 {
+  aspect-ratio: 1 / 1.414;
+}
+
+/* Classes de largeur pour les sections - Tailwind les fournit déjà */

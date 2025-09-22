@@ -47,7 +47,8 @@ export interface SectionConfig {
   visible: boolean;
   layer: number;
   order: number;                // ordre dans le layer (0 = gauche, 1 = droite)
-  width?: "full" | "half";      // largeur visuelle
+  width?: "full" | "half" | "1/3" | "2/3";      // largeur visuelle
+  alignment?: 'left' | 'center' | 'right';     // alignement du contenu
 }
 
 

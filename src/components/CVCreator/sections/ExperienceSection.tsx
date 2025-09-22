@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, Plus, Minus } from 'lucide-react';
 import type { CVContent, CVExperience } from '../types';
+import { useCVCreator } from '../CVCreatorContext.hook';
 
 interface ExperienceSectionProps {
   editableContent: CVContent;
@@ -9,12 +10,12 @@ interface ExperienceSectionProps {
   setExperiences: React.Dispatch<React.SetStateAction<CVExperience[]>>;
   editingField: string | null;
   setEditingField: React.Dispatch<React.SetStateAction<string | null>>;
-  customColor: string;
   titleColor: string;
   addExperience: () => void;
   removeExperience: (id: number) => void;
   generateWithAI: (field: string, currentContent?: string) => Promise<void>;
   isLoading: boolean;
+  sectionId?: string;
 }
 
 const AIButton: React.FC<{
@@ -52,13 +53,19 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
   setExperiences,
   editingField,
   setEditingField,
-  customColor,
   titleColor,
   addExperience,
   removeExperience,
   generateWithAI,
-  isLoading
+  isLoading,
+  sectionId
 }) => {
+  const { sectionColors } = useCVCreator();
+
+  // Couleurs personnalisées pour la section
+  const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
+  const textColor = sectionColorSettings?.title || titleColor;
+  const contentColor = sectionColorSettings?.content || '000000';
   const [titleHovered, setTitleHovered] = React.useState(false);
   const [hoveredExpId, setHoveredExpId] = React.useState<number | null>(null);
   return (
@@ -71,8 +78,11 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
             onChange={(e) => setEditableContent(prev => ({ ...prev, experienceTitle: e.target.value }))}
             onBlur={() => setEditingField(null)}
             onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-            className="text-md font-semibold border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
-            style={{ width: `${Math.max(editableContent.experienceTitle.length * 8 + 20, 200)}px` }}
+            className="text-sm font-semibold border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
+            style={{
+              width: `${Math.max(editableContent.experienceTitle.length * 7 + 20, 180)}px`,
+              color: `#${textColor}`
+            }}
             autoFocus
           />
           <button
@@ -90,9 +100,9 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
           onMouseLeave={() => setTitleHovered(false)}
         >
           <h4
-            className="text-md font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded whitespace-nowrap transition-colors duration-200"
+            className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded whitespace-nowrap transition-colors duration-200"
             onClick={() => setEditingField('experienceTitle')}
-            style={{ color: `#${titleColor}` }}
+            style={{ color: `#${textColor}` }}
           >
             {editableContent.experienceTitle}
           </h4>
@@ -150,7 +160,7 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
               <p
                 className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded flex-1 font-bold transition-colors duration-200"
                 onClick={() => setEditingField(`experienceContent-${exp.id}`)}
-                style={{ color: `#${customColor}` }}
+                style={{ color: `#${contentColor}` }}
               >
                 {exp.content}
               </p>
@@ -171,7 +181,7 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
               <p
                 className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded flex-1 transition-colors duration-200"
                 onClick={() => setEditingField(`experienceDetails-${exp.id}`)}
-                style={{ color: `#${customColor}` }}
+                style={{ color: `#${contentColor}` }}
               >
                 {exp.details}
               </p>

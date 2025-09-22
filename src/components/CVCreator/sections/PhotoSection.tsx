@@ -230,7 +230,7 @@ export const PhotoSection: React.FC<PhotoSectionProps> = ({
       {/* Instructions - seulement si pas de photo */}
       {!editableContent.photo && (
         <div className="mt-2 text-xs text-gray-500 text-center">
-          Formats acceptés : JPG, PNG, GIF • Taille max : 5MB
+          Formats acceptés : JPG, PNG, GIF <br /> Taille max : 5MB
         </div>
       )}
     </>

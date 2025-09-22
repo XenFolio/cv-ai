@@ -1,6 +1,134 @@
 import React from 'react';
 import { CustomSelect } from './CustomSelect';
-import { Columns, RectangleVertical, AlignLeft, AlignCenter, AlignRight, Circle, Square, Plus, Minus, ZoomIn, ZoomOut, RotateCw, Move, RotateCcw, Maximize, Frame, Eye, EyeOff } from 'lucide-react';
+import { Columns, RectangleVertical, AlignLeft, AlignCenter, AlignRight, Circle, Square, Plus, Minus, ZoomIn, ZoomOut, RotateCw, Move, RotateCcw, Maximize, Frame, Eye, EyeOff, Palette, ChevronDown, ChevronRight, MinusCircle, PlusCircle } from 'lucide-react';
+import { useCVCreator } from './CVCreatorContext.hook';
+
+// Fonction pour convertir hex en RGB
+const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 0, g: 0, b: 0 };
+};
+
+// Fonction pour convertir RGB en hex
+const rgbToHex = (r: number, g: number, b: number): string => {
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+};
+
+// Fonction pour générer des variations de couleur
+const generateColorVariations = (baseHex: string): Array<{ name: string; value: string; category: string }> => {
+  const rgb = hexToRgb(baseHex);
+  const variations = [];
+
+  // Version blanc (très clair)
+  variations.push({ name: 'Blanc', value: 'ffffff', category: 'blanc' });
+
+  // Version pastel (très claire)
+  const pastel = rgbToHex(
+    Math.min(255, rgb.r + 100),
+    Math.min(255, rgb.g + 100),
+    Math.min(255, rgb.b + 100)
+  );
+  variations.push({ name: 'Pastel', value: pastel.replace('#', ''), category: 'pastel' });
+
+  // Version claire
+  const light = rgbToHex(
+    Math.min(255, rgb.r + 60),
+    Math.min(255, rgb.g + 60),
+    Math.min(255, rgb.b + 60)
+  );
+  variations.push({ name: 'Clair', value: light.replace('#', ''), category: 'clair' });
+
+  // Version medium (couleur originale)
+  variations.push({ name: 'Original', value: baseHex.replace('#', ''), category: 'original' });
+
+  // Version foncée
+  const dark = rgbToHex(
+    Math.max(0, rgb.r - 40),
+    Math.max(0, rgb.g - 40),
+    Math.max(0, rgb.b - 40)
+  );
+  variations.push({ name: 'Foncé', value: dark.replace('#', ''), category: 'fonce' });
+
+  // Version très foncée
+  const veryDark = rgbToHex(
+    Math.max(0, rgb.r - 80),
+    Math.max(0, rgb.g - 80),
+    Math.max(0, rgb.b - 80)
+  );
+  variations.push({ name: 'Très foncé', value: veryDark.replace('#', ''), category: 'tres-fonce' });
+
+  return variations;
+};
+
+// Interface pour définir les couleurs d'une section
+interface SectionColors {
+  background?: string;
+  title?: string;
+  content?: string;
+}
+
+// Composant ColorToneSelector
+const ColorToneSelector: React.FC<{
+  baseColor: string;
+  element: 'background' | 'title' | 'content';
+  onColorSelect: (color: string) => void;
+  currentColors: SectionColors;
+}> = ({ baseColor, element, onColorSelect, currentColors }) => {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const variations = generateColorVariations(baseColor);
+
+  const currentValue = currentColors[element] || (element === 'background' ? 'transparent' : 'ffffff');
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${
+          currentValue === baseColor.replace('#', '') ? 'border-violet-500 shadow-md' : 'border-gray-300'
+        }`}
+        style={{ backgroundColor: baseColor }}
+        title={`Tons de ${baseColor}`}
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          {isExpanded ? (
+            <ChevronDown className="w-3 h-3 text-white drop-shadow-md" />
+          ) : (
+            <ChevronRight className="w-3 h-3 text-white drop-shadow-md" />
+          )}
+        </div>
+      </button>
+
+      {isExpanded && (
+        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[180px]">
+          <div className="text-xs font-medium text-gray-700 mb-2">Variations de ton</div>
+          <div className="grid grid-cols-6 gap-1">
+            {variations.map((variation) => (
+              <button
+                key={`${baseColor}-${variation.category}`}
+                onClick={() => {
+                  onColorSelect(variation.value);
+                  setIsExpanded(false);
+                }}
+                className={`w-6 h-6 rounded border transition-all duration-200 hover:scale-110 ${
+                  currentValue === variation.value ? 'border-violet-500 shadow-md' : 'border-gray-300'
+                }`}
+                style={{ backgroundColor: `#${variation.value}` }}
+                title={variation.name}
+              />
+            ))}
+          </div>
+          <div className="mt-2 text-xs text-gray-500">
+            {variations.map(v => v.name).join(' → ')}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface StyleControlsProps {
   customFont: string;
@@ -11,6 +139,8 @@ interface StyleControlsProps {
   setTitleColor: (color: string) => void;
   layoutColumns?: number;
   setLayoutColumns?: (columns: number) => void;
+  sectionSpacing?: 0 | 1 | 2 | 3 | 4;
+  setSectionSpacing?: (spacing: 0 | 1 | 2 | 3 | 4) => void;
   nameAlignment?: 'left' | 'center' | 'right';
   setNameAlignment?: (alignment: 'left' | 'center' | 'right') => void;
   photoAlignment?: 'left' | 'center' | 'right';
@@ -38,6 +168,10 @@ interface StyleControlsProps {
   hasPhoto?: boolean;
   sections?: Array<{ id: string; name: string; visible: boolean }>;
   toggleSectionVisibility?: (sectionId: string) => void;
+  pageMarginHorizontal?: number;
+  setPageMarginHorizontal?: (margin: number) => void;
+  pageMarginVertical?: number;
+  setPageMarginVertical?: (margin: number) => void;
 }
 
 export const StyleControls: React.FC<StyleControlsProps> = ({
@@ -74,8 +208,14 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
   selectedSection,
   hasPhoto,
   sections,
-  toggleSectionVisibility
+  toggleSectionVisibility,
+  pageMarginHorizontal = 20,
+  setPageMarginHorizontal,
+  pageMarginVertical = 20,
+  setPageMarginVertical
 }) => {
+  const { sectionColors, updateSectionElementColor, sectionSpacing, setSectionSpacing, setSectionsOrder, sections: contextSections, cleanupLayers, columnRatio, setColumnRatio } = useCVCreator();
+
   const handleResetAdjustments = () => {
     setPhotoZoom?.(100);
     setPhotoPositionX?.(0);
@@ -93,13 +233,13 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
   if (selectedSection === 'photo') {
     if (!hasPhoto) {
       return (
-        <div className="bg-violet-50 rounded-lg shadow-sm p-4 mb-4 -mt-2 -ml-2 -mr-2 text-center text-sm text-gray-500">
+        <div className="bg-violet-50 rounded-lg shadow-sm p-3 mb-4 -mt-2 -ml-1 -mr-1 text-center text-sm text-gray-500">
           Veuillez d'abord télécharger une photo pour voir les options de style.
         </div>
       );
     }
     return (
-      <div className="bg-violet-50 rounded-lg shadow-sm p-4 mb-4 -mt-2 -ml-2 -mr-2">
+      <div className="bg-violet-50 rounded-lg shadow-sm p-3 mb-4 -mt-2 -ml-1 -mr-1">
         {/* Première ligne de contrôles */}
         <div className="flex items-start gap-4 mb-4">
           <div className="flex-shrink-0">
@@ -376,36 +516,272 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
   // Déterminer si on affiche la couleur texte (pas pour la section nom)
   const showTextColor = selectedSection !== 'name';
 
-  // Afficher les contrôles de visibilité des sections quand aucune section n'est sélectionnée
+  // Afficher les contrôles généraux quand aucune section n'est sélectionnée
   if (selectedSection === null && sections && toggleSectionVisibility) {
     console.log('Sections in StyleControls:', sections);
     return (
-      <div className="bg-violet-50 rounded-lg shadow-sm p-4 mb-4 -mt-2 -ml-2 -mr-2">
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Visibilité des sections</h3>
-          <div className="grid grid-cols-1 gap-2">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => {
-  console.log('Toggle section:', section.id, 'current visibility:', section.visible);
-  toggleSectionVisibility(section.id);
-}}
-                className={`flex items-center gap-2 p-2 rounded-md transition-all duration-200 text-left ${
-                  section.visible
-                    ? 'bg-white text-gray-700 hover:bg-gray-50'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                }`}
-                title={section.visible ? 'Masquer la section' : 'Afficher la section'}
-              >
-                {section.visible ? (
-                  <Eye className="w-4 h-4 text-green-600" />
-                ) : (
-                  <EyeOff className="w-4 h-4 text-gray-400" />
+      <div className="bg-violet-50 rounded-lg shadow-sm p-3 mb-4 -mt-2 -ml-1 -mr-1">
+        <div className="space-y-4">
+          {/* Contrôles principaux */}
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium mb-2">Police</label>
+              <div className="w-[120px]">
+                <CustomSelect
+                  value={customFont}
+                  onChange={setCustomFont}
+                  options={fontOptions}
+                />
+              </div>
+            </div>
+
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium mb-2">Mise en page</label>
+              <div className="flex items-center gap-2 h-[32px]">
+                <button
+                  onClick={() => {
+                    const newColumns = layoutColumns === 1 ? 2 : 1;
+                    setLayoutColumns?.(newColumns);
+                    
+                    // Ajuster automatiquement la disposition des sections selon le ratio de colonnes
+                    if (contextSections && setSectionsOrder) {
+                      if (newColumns === 2) {
+                        // Passer en mode 2 colonnes selon le ratio sélectionné
+                        const updatedSections = contextSections.map(section => {
+                          if (section.id === 'name' || section.id === 'profile') {
+                            return { ...section, width: 'full' as const };
+                          } else {
+                            // Appliquer le ratio de colonnes
+                            if (columnRatio === '1/3-2/3') {
+                              // Alternance 1/3 et 2/3
+                              return { ...section, width: section.order === 0 ? '1/3' as const : '2/3' as const };
+                            } else {
+                              // Par défaut 1/2-1/2
+                              return { ...section, width: 'half' as const };
+                            }
+                          }
+                        });
+                        setSectionsOrder(cleanupLayers(updatedSections));
+                      } else {
+                        // Passer en mode 1 colonne : toutes les sections en full
+                        const updatedSections = contextSections.map(section => ({
+                          ...section,
+                          width: 'full' as const
+                        }));
+                        setSectionsOrder(cleanupLayers(updatedSections));
+                      }
+                    }
+                  }}
+                  className="flex items-center justify-center w-10 h-[30px] rounded-md text-sm font-medium transition-all bg-violet-500 text-white shadow-md hover:bg-violet-600 hover:shadow-lg"
+                  title={layoutColumns === 1 ? "Passer à deux colonnes" : "Passer à une colonne"}
+                >
+                  {layoutColumns === 1 ? (
+                    <Columns className="w-4 h-4" />
+                  ) : (
+                    <RectangleVertical className="w-4 h-4" />
+                  )}
+                </button>
+
+                {/* Combo ratio colonnes - visible seulement en mode 2 colonnes */}
+                {layoutColumns === 2 && (
+                  <div className="w-[100px]">
+                    <CustomSelect
+                      value={columnRatio}
+                      onChange={(value) => {
+                        console.log('Changing column ratio from', columnRatio, 'to', value);
+                        const newRatio = value as '1/2-1/2' | '1/3-2/3' | '2/3-1/3';
+                        setColumnRatio(newRatio);
+                        
+                        // Appliquer immédiatement le nouveau ratio aux sections existantes
+                        if (contextSections && setSectionsOrder) {
+                          const updatedSections = contextSections.map(section => {
+                            if (section.id === 'name' || section.id === 'profile') {
+                              return { ...section, width: 'full' as const };
+                            } else {
+                              // Appliquer le nouveau ratio à toutes les autres sections
+                              if (newRatio === '1/3-2/3') {
+                                return { ...section, width: section.order === 0 ? '1/3' as const : '2/3' as const };
+                              } else if (newRatio === '2/3-1/3') {
+                                return { ...section, width: section.order === 0 ? '2/3' as const : '1/3' as const };
+                              } else {
+                                return { ...section, width: 'half' as const };
+                              }
+                            }
+                          });
+                          console.log('Updated sections with new ratio:', updatedSections);
+                          setSectionsOrder(cleanupLayers(updatedSections));
+                        }
+                      }}
+                      options={[
+                        { value: '1/2-1/2', label: '1/2-1/2' },
+                        { value: '1/3-2/3', label: '1/3-2/3' },
+                        { value: '2/3-1/3', label: '2/3-1/3' }
+                      ]}
+                    />
+                  </div>
                 )}
-                <span className="text-sm font-medium truncate">{section.name}</span>
-              </button>
-            ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Contrôle d'espacement sur ligne séparée */}
+          {setSectionSpacing && (
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium mb-2">Espacement entre sections</label>
+                <div className="flex gap-1">
+                  {[0, 1, 2, 3, 4].map((spacing) => (
+                    <button
+                      key={spacing}
+                      onClick={() => setSectionSpacing(spacing as 0 | 1 | 2 | 3 | 4)}
+                      className={`px-2 py-1 rounded text-xs transition-all duration-200 ${
+                        sectionSpacing === spacing
+                          ? 'bg-violet-500 text-white shadow-md'
+                          : 'bg-white text-gray-600 hover:bg-violet-100'
+                      }`}
+                      title={`Espacement ${spacing === 0 ? 'nul' : spacing === 1 ? 'minimal' : spacing === 2 ? 'petit' : spacing === 3 ? 'moyen' : 'grand'}`}
+                    >
+                      {spacing}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Contrôles de marges de la page */}
+          {(setPageMarginHorizontal || setPageMarginVertical) && (
+            <div className="flex items-start gap-4 pt-4 border-t border-violet-200">
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium mb-2 flex items-center gap-1">
+                  <Maximize className="w-4 h-4" />
+                  Marges page
+                </label>
+                <div className="space-y-2">
+                  {/* Marge horizontale */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-600 w-16">Horizontal</span>
+                    <button
+                      onClick={() => setPageMarginHorizontal?.(Math.max((pageMarginHorizontal || 20) - 5, 0))}
+                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                      title="Réduire la marge horizontale"
+                    >
+                      <MinusCircle className="w-3 h-3" />
+                    </button>
+                    <span className="px-2 py-1 text-xs bg-white rounded border text-gray-700 min-w-[32px] text-center">
+                      {pageMarginHorizontal || 20}
+                    </span>
+                    <button
+                      onClick={() => setPageMarginHorizontal?.(Math.min((pageMarginHorizontal || 20) + 5, 50))}
+                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                      title="Augmenter la marge horizontale"
+                    >
+                      <PlusCircle className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  {/* Marge verticale */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-600 w-16">Vertical</span>
+                    <button
+                      onClick={() => setPageMarginVertical?.(Math.max((pageMarginVertical || 20) - 5, 0))}
+                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                      title="Réduire la marge verticale"
+                    >
+                      <MinusCircle className="w-3 h-3" />
+                    </button>
+                    <span className="px-2 py-1 text-xs bg-white rounded border text-gray-700 min-w-[32px] text-center">
+                      {pageMarginVertical || 20}
+                    </span>
+                    <button
+                      onClick={() => setPageMarginVertical?.(Math.min((pageMarginVertical || 20) + 5, 50))}
+                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                      title="Augmenter la marge verticale"
+                    >
+                      <PlusCircle className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Contrôles de couleurs globales */}
+          <div className="flex flex-col gap-4 pt-4 border-t border-violet-200">
+            <div className="flex-shrink-0 w-full">
+              <label className="block text-sm font-medium mb-2">Couleur titres</label>
+              <div className="flex gap-1">
+                {availableColors.reduce((acc, color) => {
+                  if (!acc.find(c => c.category === color.category)) {
+                    acc.push(color);
+                  }
+                  return acc;
+                }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
+                  <button
+                    key={color.category}
+                    onClick={() => setTitleColor(color.value)}
+                    className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${titleColor === color.value
+                      ? 'border-violet-500 shadow-lg ring-2 ring-violet-200'
+                      : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    style={{ backgroundColor: `#${color.value}` }}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-shrink-0 w-full">
+              <label className="block text-sm font-medium mb-2">Couleur texte</label>
+              <div className="flex gap-1">
+                {availableColors.reduce((acc, color) => {
+                  if (!acc.find(c => c.category === color.category)) {
+                    acc.push(color);
+                  }
+                  return acc;
+                }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
+                  <button
+                    key={color.category}
+                    onClick={() => setCustomColor(color.value)}
+                    className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${customColor === color.value
+                      ? 'border-violet-500 shadow-lg ring-2 ring-violet-200'
+                      : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    style={{ backgroundColor: `#${color.value}` }}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Visibilité des sections */}
+          <div className="pt-4 border-t border-violet-200">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Visibilité des sections</h3>
+            <div className="grid grid-cols-1 gap-2">
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => {
+    console.log('Toggle section:', section.id, 'current visibility:', section.visible);
+    toggleSectionVisibility(section.id);
+  }}
+                  className={`flex items-center gap-2 p-2 rounded-md transition-all duration-200 text-left ${
+                    section.visible
+                      ? 'bg-white text-gray-700 hover:bg-gray-50'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                  title={section.visible ? 'Masquer la section' : 'Afficher la section'}
+                >
+                  {section.visible ? (
+                    <Eye className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-gray-400" />
+                  )}
+                  <span className="text-sm font-medium truncate">{section.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -414,7 +790,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
 
   // Pour toutes les autres sections, afficher les contrôles appropriés
   return (
-    <div className="bg-violet-50 rounded-lg shadow-sm p-4 mb-4 -mt-2 -ml-2 -mr-2">
+    <div className="bg-violet-50 rounded-lg shadow-sm p-3 mb-4 -mt-2 -ml-1 -mr-1">
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0">
@@ -428,11 +804,37 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
             </div>
           </div>
 
-          <div className="flex-shrink-0">
-            <label className="block text-sm font-medium mb-2">Mise en page</label>
+          {selectedSection === null && (
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium mb-2">Mise en page</label>
             <div className="flex items-center justify-start h-[32px]">
               <button
-                onClick={() => setLayoutColumns?.(layoutColumns === 1 ? 2 : 1)}
+                onClick={() => {
+                  const newColumns = layoutColumns === 1 ? 2 : 1;
+                  setLayoutColumns?.(newColumns);
+                  
+                  // Ajuster automatiquement la disposition des sections
+                  if (contextSections && setSectionsOrder) {
+                    if (newColumns === 2) {
+                      // Passer en mode 2 colonnes : garder nom et profile en full, reste en half
+                      const updatedSections = contextSections.map(section => {
+                        if (section.id === 'name' || section.id === 'profile') {
+                          return { ...section, width: 'full' as const };
+                        } else {
+                          return { ...section, width: 'half' as const };
+                        }
+                      });
+                      setSectionsOrder(cleanupLayers(updatedSections));
+                    } else {
+                      // Passer en mode 1 colonne : toutes les sections en full
+                      const updatedSections = contextSections.map(section => ({
+                        ...section,
+                        width: 'full' as const
+                      }));
+                      setSectionsOrder(cleanupLayers(updatedSections));
+                    }
+                  }
+                }}
                 className="top-0 flex items-center justify-center w-10 h-[30px] rounded-md text-sm font-medium transition-all bg-violet-500 text-white shadow-md hover:bg-violet-600 hover:shadow-lg"
                 title={layoutColumns === 1 ? "Passer à deux colonnes" : "Passer à une colonne"}
               >
@@ -443,7 +845,30 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 )}
               </button>
             </div>
-          </div>
+            </div>
+          )}
+
+          {selectedSection === null && setSectionSpacing && (
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium mb-2">Espacement sections</label>
+              <div className="flex gap-1">
+                {[0, 1, 2, 3, 4].map((spacing) => (
+                  <button
+                    key={spacing}
+                    onClick={() => setSectionSpacing(spacing as 0 | 1 | 2 | 3 | 4)}
+                    className={`px-2 py-1 rounded text-xs transition-all duration-200 ${
+                      sectionSpacing === spacing
+                        ? 'bg-violet-500 text-white shadow-md'
+                        : 'bg-white text-gray-600 hover:bg-violet-100'
+                    }`}
+                    title={`Espacement ${spacing === 0 ? 'nul' : spacing === 1 ? 'minimal' : spacing === 2 ? 'petit' : spacing === 3 ? 'moyen' : 'grand'}`}
+                  >
+                    {spacing}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {showNameAlignment && (
@@ -511,6 +936,78 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
           </div>
         )}
 
+        {/* Contrôles d'alignement pour les sections (sauf photo et nom) */}
+        {selectedSection && selectedSection !== 'photo' && selectedSection !== 'name' && (
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium mb-2">Alignement section</label>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => {
+                    // Mettre à jour l'alignement de la section dans la configuration
+                    if (contextSections && setSectionsOrder) {
+                      const updatedSections = contextSections.map(section =>
+                        section.id === selectedSection
+                          ? { ...section, alignment: 'left' as const }
+                          : section
+                      );
+                      setSectionsOrder(updatedSections);
+                    }
+                  }}
+                  className={`p-1 rounded transition-all duration-200 ${
+                    contextSections?.find(s => s.id === selectedSection)?.alignment === 'left'
+                      ? 'bg-violet-500 text-white shadow-md'
+                      : 'bg-white text-gray-600 hover:bg-violet-100'
+                  }`}
+                  title="Aligner à gauche"
+                >
+                  <AlignLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (contextSections && setSectionsOrder) {
+                      const updatedSections = contextSections.map(section =>
+                        section.id === selectedSection
+                          ? { ...section, alignment: 'center' as const }
+                          : section
+                      );
+                      setSectionsOrder(updatedSections);
+                    }
+                  }}
+                  className={`p-1 rounded transition-all duration-200 ${
+                    contextSections?.find(s => s.id === selectedSection)?.alignment === 'center' || !contextSections?.find(s => s.id === selectedSection)?.alignment
+                      ? 'bg-violet-500 text-white shadow-md'
+                      : 'bg-white text-gray-600 hover:bg-violet-100'
+                  }`}
+                  title="Centrer"
+                >
+                  <AlignCenter className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (contextSections && setSectionsOrder) {
+                      const updatedSections = contextSections.map(section =>
+                        section.id === selectedSection
+                          ? { ...section, alignment: 'right' as const }
+                          : section
+                      );
+                      setSectionsOrder(updatedSections);
+                    }
+                  }}
+                  className={`p-1 rounded transition-all duration-200 ${
+                    contextSections?.find(s => s.id === selectedSection)?.alignment === 'right'
+                      ? 'bg-violet-500 text-white shadow-md'
+                      : 'bg-white text-gray-600 hover:bg-violet-100'
+                  }`}
+                  title="Aligner à droite"
+                >
+                  <AlignRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col gap-4">
           <div className="flex-shrink-0 w-full">
             <label className="block text-sm font-medium mb-2">Couleur titres</label>
@@ -559,8 +1056,270 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
               </div>
             </div>
           )}
+
+          {/* Contrôles de couleur personnalisés pour la section sélectionnée */}
+          {selectedSection && selectedSection !== 'photo' && (
+            <div className="flex-shrink-0 w-full border-t border-violet-200 pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Palette className="w-4 h-4 text-violet-600" />
+                <label className="block text-sm font-medium text-violet-700">
+                  Couleurs personnalisées - {getSectionName(selectedSection)}
+                </label>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                {/* Couleur de fond */}
+                <div>
+                  <label className="block text-xs text-gray-600 mb-2">Fond</label>
+                  <div className="flex gap-1 flex-wrap">
+                    {[
+                      { name: 'Transparent', value: 'transparent' },
+                      { name: 'Blanc', value: 'ffffff' },
+                      { name: 'Gris clair', value: 'f3f4f6' },
+                      { name: 'Jaune clair', value: 'fef3c7' },
+                      { name: 'Bleu clair', value: 'dbeafe' },
+                      { name: 'Vert clair', value: 'dcfce7' },
+                      { name: 'Rose clair', value: 'fce7f3' },
+                      { name: 'Violet clair', value: 'f3e8ff' },
+                      { name: 'Orange clair', value: 'fed7aa' },
+                      { name: 'Dégradé bleu', value: 'linear-gradient(to right, #3b82f6, #1d4ed8)' },
+                      { name: 'Dégradé violet', value: 'linear-gradient(to right, #8b5cf6, #6d28d9)' },
+                      { name: 'Dégradé vert', value: 'linear-gradient(to right, #10b981, #059669)' },
+                      { name: 'Dégradé rose', value: 'linear-gradient(to right, #ec4899, #be185d)' },
+                      { name: 'Dégradé orange', value: 'linear-gradient(to right, #f59e0b, #d97706)' }
+                    ].map((color) => {
+                      const currentColors = sectionColors[selectedSection] || { background: '' };
+                      return (
+                        <button
+                          key={`bg-${color.value}`}
+                          onClick={() => updateSectionElementColor(selectedSection, 'background', color.value)}
+                          className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 relative ${
+                            currentColors.background === color.value ? 'border-violet-500 shadow-md ring-2 ring-violet-200' : 'border-gray-300'
+                          } ${color.value === 'transparent' ? '!bg-transparent' : color.value.includes('gradient') ? '' : ''}`}
+                          style={{ backgroundColor: color.value === 'transparent' ? 'transparent' : color.value.includes('gradient') ? 'transparent' : `#${color.value}`, backgroundImage: color.value.includes('gradient') ? color.value : 'none' }}
+                          title={color.name}>
+                          {color.value === 'transparent' && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-4 h-0.5 bg-red-500 rotate-45 absolute"></div>
+                              <div className="w-4 h-0.5 bg-red-500 -rotate-45 absolute"></div>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+
+                    {/* Sélecteurs de tons pour différentes couleurs */}
+                    <ColorToneSelector
+                      baseColor="#3b82f6"  // Bleu
+                      element="background"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'background', color)}
+                      currentColors={sectionColors[selectedSection] || { background: '' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#8b5cf6"  // Violet
+                      element="background"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'background', color)}
+                      currentColors={sectionColors[selectedSection] || { background: '' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#10b981"  // Vert
+                      element="background"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'background', color)}
+                      currentColors={sectionColors[selectedSection] || { background: '' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#ec4899"  // Rose
+                      element="background"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'background', color)}
+                      currentColors={sectionColors[selectedSection] || { background: '' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#f59e0b"  // Orange
+                      element="background"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'background', color)}
+                      currentColors={sectionColors[selectedSection] || { background: '' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#ef4444"  // Rouge
+                      element="background"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'background', color)}
+                      currentColors={sectionColors[selectedSection] || { background: '' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#6b7280"  // Gris
+                      element="background"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'background', color)}
+                      currentColors={sectionColors[selectedSection] || { background: '' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#14b8a6"  // Turquoise
+                      element="background"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'background', color)}
+                      currentColors={sectionColors[selectedSection] || { background: '' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Couleur des titres */}
+                <div>
+                  <label className="block text-xs text-gray-600 mb-2">Titres</label>
+                  <div className="flex gap-1 flex-wrap">
+                    {/* Blanc comme option par défaut */}
+                    <button
+                      key="title-white"
+                      onClick={() => updateSectionElementColor(selectedSection, 'title', 'ffffff')}
+                      className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${
+                        (sectionColors[selectedSection]?.title || '000000') === 'ffffff' ? 'border-violet-500 shadow-md' : 'border-gray-300'
+                      }`}
+                      style={{ backgroundColor: '#ffffff' }}
+                      title="Blanc"
+                    />
+
+                    {/* Couleurs de base pour les titres */}
+                    {availableColors.slice(0, 3).map((color) => {
+                      const currentColors = sectionColors[selectedSection] || { title: 'ffffff' };
+                      return (
+                        <button
+                          key={`title-${color.value}`}
+                          onClick={() => updateSectionElementColor(selectedSection, 'title', color.value)}
+                          className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${
+                            currentColors.title === color.value ? 'border-violet-500 shadow-md' : 'border-gray-300'
+                          }`}
+                          style={{ backgroundColor: `#${color.value}` }}
+                          title={color.name}
+                        />
+                      );
+                    })}
+
+                    {/* Sélecteurs de tons pour les titres */}
+                    <ColorToneSelector
+                      baseColor="#000000"  // Noir
+                      element="title"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'title', color)}
+                      currentColors={sectionColors[selectedSection] || { title: 'ffffff' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#1f2937"  // Gris foncé
+                      element="title"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'title', color)}
+                      currentColors={sectionColors[selectedSection] || { title: 'ffffff' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#3b82f6"  // Bleu
+                      element="title"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'title', color)}
+                      currentColors={sectionColors[selectedSection] || { title: 'ffffff' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#8b5cf6"  // Violet
+                      element="title"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'title', color)}
+                      currentColors={sectionColors[selectedSection] || { title: 'ffffff' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#10b981"  // Vert
+                      element="title"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'title', color)}
+                      currentColors={sectionColors[selectedSection] || { title: 'ffffff' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#ef4444"  // Rouge
+                      element="title"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'title', color)}
+                      currentColors={sectionColors[selectedSection] || { title: 'ffffff' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Couleur du contenu */}
+                <div>
+                  <label className="block text-xs text-gray-600 mb-2">Contenu</label>
+                  <div className="flex gap-1 flex-wrap">
+                    {/* Blanc comme option par défaut */}
+                    <button
+                      key="content-white"
+                      onClick={() => updateSectionElementColor(selectedSection, 'content', 'ffffff')}
+                      className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${
+                        (sectionColors[selectedSection]?.content || '000000') === 'ffffff' ? 'border-violet-500 shadow-md' : 'border-gray-300'
+                      }`}
+                      style={{ backgroundColor: '#ffffff' }}
+                      title="Blanc"
+                    />
+
+                    {/* Couleurs de base pour le contenu */}
+                    {availableColors.slice(0, 3).map((color) => {
+                      const currentColors = sectionColors[selectedSection] || { content: 'ffffff' };
+                      return (
+                        <button
+                          key={`content-${color.value}`}
+                          onClick={() => updateSectionElementColor(selectedSection, 'content', color.value)}
+                          className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${
+                            currentColors.content === color.value ? 'border-violet-500 shadow-md' : 'border-gray-300'
+                          }`}
+                          style={{ backgroundColor: `#${color.value}` }}
+                          title={color.name}
+                        />
+                      );
+                    })}
+
+                    {/* Sélecteurs de tons pour le contenu */}
+                    <ColorToneSelector
+                      baseColor="#000000"  // Noir
+                      element="content"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'content', color)}
+                      currentColors={sectionColors[selectedSection] || { content: 'ffffff' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#6b7280"  // Gris moyen
+                      element="content"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'content', color)}
+                      currentColors={sectionColors[selectedSection] || { content: 'ffffff' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#1f2937"  // Gris foncé
+                      element="content"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'content', color)}
+                      currentColors={sectionColors[selectedSection] || { content: 'ffffff' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#3b82f6"  // Bleu
+                      element="content"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'content', color)}
+                      currentColors={sectionColors[selectedSection] || { content: 'ffffff' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#10b981"  // Vert
+                      element="content"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'content', color)}
+                      currentColors={sectionColors[selectedSection] || { content: 'ffffff' }}
+                    />
+                    <ColorToneSelector
+                      baseColor="#8b5cf6"  // Violet
+                      element="content"
+                      onColorSelect={(color) => updateSectionElementColor(selectedSection, 'content', color)}
+                      currentColors={sectionColors[selectedSection] || { content: 'ffffff' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
+};
+
+// Helper function to get section display name
+const getSectionName = (sectionId: string): string => {
+  const sectionNames: Record<string, string> = {
+    'name': 'Nom',
+    'profile': 'Profil',
+    'contact': 'Contact',
+    'experience': 'Expériences',
+    'education': 'Formations',
+    'skills': 'Compétences',
+    'languages': 'Langues'
+  };
+  return sectionNames[sectionId] || sectionId;
 };
