@@ -102,6 +102,8 @@ export const CVCreator: React.FC = () => {
   const [photoObjectFit, setPhotoObjectFit] = useState<'contain' | 'cover'>('contain');
   const [sectionSpacing, setSectionSpacing] = useState<0 | 1 | 2 | 3 | 4>(1);
   const [columnRatio, setColumnRatio] = useState<'1/2-1/2' | '1/3-2/3' | '2/3-1/3'>('1/2-1/2');
+  const [pageMarginHorizontal, setPageMarginHorizontal] = useState<number>(20);
+  const [pageMarginVertical, setPageMarginVertical] = useState<number>(20);
   const [error, setError] = useState<string | null>(null);
   // État pour les couleurs de section
   const [sectionColors, setSectionColors] = useState<Record<string, {
@@ -984,6 +986,10 @@ export const CVCreator: React.FC = () => {
     setSectionSpacing,
     columnRatio,
     setColumnRatio,
+    pageMarginHorizontal,
+    setPageMarginHorizontal,
+    pageMarginVertical,
+    setPageMarginVertical,
 
     // UI state
     editingField,
@@ -1025,33 +1031,33 @@ export const CVCreator: React.FC = () => {
 
   return (
     <CVCreatorProvider value={contextValue}>
-      <main className="w-full min-h-screen bg-gray-50">
-        <header className="py-8 px-4">
-          <h1 className="heading-gradient text-center">Créateur de CV</h1>
+      <main className="w-full min-h-screen bg-gray-50 dark:bg-gray-900">
+        <header className="pb-2 px-4 pt-1">
+          <h1 className="text-2xl font-bold heading-gradient text-center">Créateur de CV</h1>
         </header>
 
       {/* Indicateur de sauvegarde automatique */}
-      <section className="flex justify-center items-center gap-4 mb-0 p-1 bg-gray-50 rounded-lg mx-4">
+      <section className="flex justify-center items-center gap-4 mb-0 p-1 bg-gray-50 dark:bg-gray-800 rounded-lg mx-4">
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               type="checkbox"
               checked={autoSaveEnabled}
               onChange={(e) => setAutoSaveEnabled(e.target.checked)}
-              className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+              className="rounded border-gray-300 text-violet-600 focus:ring-violet-500 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-600 dark:hover:border-gray-500 dark:focus:ring-gray-500"
             />
             Sauvegarde automatique
           </label>
         </div>
 
         {lastSaved && (
-          <time className="text-xs text-gray-500">
+          <time className="text-xs text-gray-500 dark:text-gray-400">
             Dernière sauvegarde : {lastSaved.toLocaleTimeString()}
           </time>
         )}
 
         {hasLocalData() && (
-          <div className="text-xs text-green-600 flex items-center gap-1">
+          <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
             <span className="w-2 h-2 bg-green-500 rounded-full inline-block" aria-hidden="true"></span>
             Données sauvegardées localement
           </div>

@@ -17,6 +17,7 @@ export default {
   theme: {
     extend: {},
   },
+  darkMode: 'class',
   plugins: [
     plugin(function ({ addComponents }) {
       addComponents({

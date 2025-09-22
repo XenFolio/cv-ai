@@ -1,11 +1,9 @@
 
+@import './styles/a4-layout.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-
-
-@import './styles/a4-layout.css';
 
 @media (max-width: 1155px) {
   .center-below-1156px {
