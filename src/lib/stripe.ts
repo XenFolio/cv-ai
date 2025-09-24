@@ -56,26 +56,9 @@ export async function createCheckoutSession(params: CreateCheckoutSessionParams)
 
 // Function to get subscription plans
 export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-  try {
-    const response = await fetch('/api/stripe/subscription-plans', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      console.warn('Failed to fetch plans from API, using defaults');
-      // Return default plans if API fails
-      return getDefaultPlans();
-    }
-
-    const data = await response.json();
-    return Array.isArray(data) ? data : getDefaultPlans();
-  } catch (error) {
-    console.warn('Error fetching subscription plans, using defaults:', error);
-    return getDefaultPlans();
-  }
+  // Skip API call and use default plans directly
+  console.log('Using default subscription plans');
+  return getDefaultPlans();
 }
 
 // Default subscription plans

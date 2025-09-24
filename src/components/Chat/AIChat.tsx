@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useImperativeHandle } from "react";
-import { ArrowLeft, Send, User, Bot, Loader2, AlertCircle, Mic, Volume2, VolumeX, CheckCircle2, Copy, Sparkles, ChevronRight } from "lucide-react";
+import { ArrowLeft,  User, Bot, Loader2, AlertCircle, Mic, Volume2, VolumeX, CheckCircle2, Copy, Sparkles, ChevronRight } from "lucide-react";
+import { BackButton } from '../UI/BackButton';
+import { TextMessage } from '../UI/TextMessage';
 import { useOpenAI } from "../../hooks/useOpenAI";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -24,9 +26,7 @@ interface ChatProps {
 
 const clsx = (...tokens: Array<string | false | null | undefined>) => tokens.filter(Boolean).join(" ");
 
-const VisuallyHidden: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="sr-only">{children}</span>
-);
+
 
 // ---------- HEADER ----------
 const ChatHeader: React.FC<{ 
@@ -40,14 +40,10 @@ const ChatHeader: React.FC<{
   description: string;
 }> = ({ onBack, speechSupported, isListening, voiceEnabled, isSpeaking, onCancelSpeak, title, description }) => (
     <header className="flex items-center justify-between p-4 border-b border-violet-100 bg-white/70 backdrop-blur-sm">
-      <button
+      <BackButton
         onClick={onBack}
-        className="border rounded-lg border-transparent p-2 flex items-center space-x-2 text-violet-600 hover:text-violet-700 font-medium transition-colors hover:border-violet-400"
-        aria-label="Retour au Coaching"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span>Retour au Coaching</span>
-      </button>
+        text="Retour"
+      />
 
       <div className="text-center">
         <h2 className="text-lg font-bold text-gray-800">{title}</h2>
@@ -418,13 +414,13 @@ const ChatMessageBubble = React.memo<BubbleProps & {
         </div>
       )}
 
-      <div className="flex flex-col">
+      <div className={clsx("flex flex-col", isUser && "justify-end mt-3")}>
         <div
           className={clsx(
-            "relative max-w-xl md:max-w-2xl leading-relaxed rounded-2xl px-4 py-3 shadow-lg transition-all duration-200 group-hover:shadow-xl",
+            "relative max-w-xl md:max-w-2xl leading-relaxed rounded-2xl px-4 py-2 shadow-lg transition-all duration-200 group-hover:shadow-xl",
             isUser
-              ? "bg-gradient-to-br from-violet-600 to-purple-700 text-white rounded-br-lg before:absolute before:-right-2 before:bottom-0 before:border-[8px] before:border-transparent before:border-b-violet-600 before:border-r-3"
-              : "bg-gradient-to-br from-white to-gray-50 text-gray-800 rounded-bl-lg border border-gray-200 before:absolute before:-left-2 before:bottom-0 before:border-[8px] before:border-transparent before:border-b-white before:border-l-3"
+              ? "bg-gradient-to-br from-violet-600 to-purple-700 text-white rounded-tr-lg before:absolute before:-right-2 before:top-0 before:border-[8px] before:border-transparent before:border-t-violet-600 before:border-r-3"
+              : "bg-gradient-to-br from-white to-gray-50 text-gray-800 rounded-tl-lg border border-gray-200 before:absolute before:-left-2 before:top-0 before:border-[8px] before:border-transparent before:border-t-violet-50 before:border-l-3"
           )}
         >
           {/* Background pattern overlay */}
@@ -456,10 +452,7 @@ const ChatMessageBubble = React.memo<BubbleProps & {
               />
             </div>
 
-            {/* Sparkle effect for bot messages */}
-            {!isUser && (
-              <div className="absolute -top-1 -left-1 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full opacity-60 animate-ping" />
-            )}
+            
           </div>
         </div>
 
@@ -607,38 +600,15 @@ const ChatComposer = React.memo(
 
     return (
       <footer className="p-4 border-t border-violet-100 bg-white/70 backdrop-blur-sm">
-        <form
-          onSubmit={(e) => { e.preventDefault(); if (!disabled) send(); }}
+        <TextMessage
+          value={input}
+          onChange={setInput}
+          onSubmit={send}
+          placeholder="Posez une question sur votre CV… (Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne)"
+          disabled={disabled}
+          maxLength={4000}
           className="flex items-end gap-3"
-        >
-          <div className="relative flex-1">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (!disabled && input.trim()) {
-                    send();
-                  }
-                }
-              }}
-              placeholder="Posez une question sur votre CV… (Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne)"
-              className="w-full px-4 py-3 pr-24 border border-gray-200 rounded-xl hover:border-violet-400 focus:outline-2 focus:outline-violet-500 resize-none"
-              rows={1}
-              maxLength={4000}
-              disabled={disabled}
-            />
-            <button
-              type="submit"
-              disabled={disabled || !input.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-lg"
-            >
-              <Send size={18} />
-              <VisuallyHidden>Envoyer</VisuallyHidden>
-            </button>
-          </div>
-        </form>
+        />
       </footer>
     );
   })

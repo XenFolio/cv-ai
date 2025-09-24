@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Bot, Shield, Bell, User, Palette, Key, RefreshCw, Database } from 'lucide-react';
+import { Bot, Shield, Bell, User, Palette, Key, RefreshCw, Database } from 'lucide-react';
+import { BackButton } from '../UI/BackButton';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useProfile } from '../../hooks/useProfile';
 import { ProfileForm } from '../Profile/ProfileForm';
@@ -1091,13 +1092,11 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <button
+        <BackButton
           onClick={onBack}
+          text="Retour"
           className="flex items-center space-x-2 text-violet-600 hover:text-violet-700 font-medium transition-all duration-200 hover:bg-violet-50 hover:border-violet-200 border border-transparent rounded-lg px-3 py-2 hover:shadow-sm"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Retour</span>
-        </button>
+        />
         
         <div className="flex items-center space-x-3">
           <button

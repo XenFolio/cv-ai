@@ -48,6 +48,7 @@ const navItems: NavItem[] = [
     label: 'Coach IA',
     icon: Brain,
     dropdown: [
+      { id: 'coaching', label: 'Coaching Personnalisé', icon: Brain },
       { id: 'chat-cv', label: 'Conseils CV', icon: FileText },
       { id: 'chat-general', label: 'Carrière', icon: MessageSquare },
     ]

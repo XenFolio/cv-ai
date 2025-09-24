@@ -40,6 +40,7 @@ const {
 
 // Import direct pour SubscriptionPlans (pas de lazy loading pour les tarifs)
 import { SubscriptionPlans } from './components/Subscription/SubscriptionPlans';
+import { Coaching } from './components/Coaching/Coaching';
 
 // Composant pour l'authentification Supabase
 const SupabaseAppContent: React.FC = () => {
@@ -205,6 +206,8 @@ const SupabaseAppContent: React.FC = () => {
           return <AIDashboard />;
         case 'tarifs':
           return <SubscriptionPlans />;
+        case 'coaching':
+          return <Coaching onNavigate={handleTabChange} />;
         default:
           return <Dashboard onNavigate={handleTabChange} />;
       }
@@ -234,6 +237,7 @@ const SupabaseAppContent: React.FC = () => {
       jobs: 'des offres d\'emploi',
       'ai-dashboard': 'du coach IA',
       tarifs: 'des tarifs',
+      coaching: 'du coaching IA',
       'cv-designer-test': 'du CV Designer test'
     };
     return displayNames[tab] || 'du contenu';

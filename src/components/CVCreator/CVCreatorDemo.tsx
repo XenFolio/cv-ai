@@ -1,6 +1,7 @@
 import React from 'react';
-import { ArrowLeft, FileText, Sparkles } from 'lucide-react';
+import { FileText, Sparkles } from 'lucide-react';
 import { CVCreator } from './CVCreator';
+import { BackButton } from '../UI/BackButton';
 
 interface CVCreatorDemoProps {
   onBack: () => void;
@@ -22,13 +23,11 @@ export const CVCreatorDemo: React.FC<CVCreatorDemoProps> = ({ onBack }) => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-4">
-                <button
+                <BackButton
                   onClick={onBack}
-                  className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Retour
-                </button>
+                  text="Retour"
+                  className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+                />
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-violet-500 via-pink-500 to-violet-500 rounded-lg flex items-center justify-center">
                     <FileText className="w-4 h-4 text-white" />
