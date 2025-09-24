@@ -11,13 +11,13 @@ export interface JobOffer {
     currency: string;
     period: 'hour' | 'month' | 'year';
   };
-  contractType: 'CDI' | 'CDD' | 'Stage' | 'Freelance' | 'Alternance';
+  contractType: 'CDI' | 'CDD' | 'Stage' | 'Freelance' | 'Alternance' | 'Temps partiel';
   experience: 'Débutant' | 'Junior' | 'Confirmé' | 'Senior' | 'Expert';
   remote: boolean;
   publishedAt: Date;
   expiresAt?: Date;
   url: string;
-  source: 'indeed' | 'linkedin' | 'welcometothejungle' | 'apec' | 'pole-emploi' | 'other';
+  source: 'indeed' | 'linkedin' | 'welcometothejungle' | 'apec' | 'pole-emploi' | 'github' | 'careerjet' | 'themuse' | 'adzuna' | 'jsearch' | 'activejobsdb' | 'other';
   tags: string[];
   companyLogo?: string;
   applicationCount?: number;

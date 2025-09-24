@@ -15,17 +15,43 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Séparation manuelle des chunks pour optimiser le chargement
-        manualChunks: {
+        manualChunks: (id) => {
           // Vendors React (chargés une seule fois)
-          'react-vendor': ['react', 'react-dom'],
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'react-vendor';
+          }
           // Composants UI (icônes, composants d'interface)
-          'ui-vendor': ['lucide-react'],
+          if (id.includes('node_modules/lucide-react')) {
+            return 'ui-vendor';
+          }
           // Utilitaires d'état et de gestion
-          'utils': ['zustand', '@tanstack/react-query'],
+          if (id.includes('node_modules/zustand') || id.includes('node_modules/@tanstack/react-query')) {
+            return 'utils';
+          }
           // Supabase et authentification
-          'auth-vendor': ['@supabase/supabase-js'],
+          if (id.includes('node_modules/@supabase')) {
+            return 'auth-vendor';
+          }
+          // Librairies PDF et documents
+          if (id.includes('node_modules/jspdf') || id.includes('node_modules/html2pdf')) {
+            return 'pdf-vendor';
+          }
           // Librairies de traitement de documents
-          'document-vendor': ['html2canvas', 'jspdf', 'docx', 'mammoth'],
+          if (id.includes('node_modules/html2canvas') || id.includes('node_modules/docx') || id.includes('node_modules/mammoth')) {
+            return 'document-vendor';
+          }
+          // Librairies markdown
+          if (id.includes('node_modules/react-markdown') || id.includes('node_modules/remark')) {
+            return 'markdown-vendor';
+          }
+          // Stripe
+          if (id.includes('node_modules/@stripe')) {
+            return 'stripe-vendor';
+          }
+          // D'autres vendors importants
+          if (id.includes('node_modules/') && !id.includes('node_modules/@types')) {
+            return 'vendor';
+          }
         },
       },
     },
@@ -38,8 +64,14 @@ export default defineConfig({
         // Supprimer les console.log en production
         drop_console: true,
         drop_debugger: true,
+        // Optimisations supplémentaires
+        pure_funcs: ['console.debug'],
       },
     },
+    // Activer le CSS code splitting
+    cssCodeSplit: true,
+    // Sourcemaps en production pour le debugging
+    sourcemap: false,
   },
   optimizeDeps: {
     // Pré-bundler les dépendances critiques

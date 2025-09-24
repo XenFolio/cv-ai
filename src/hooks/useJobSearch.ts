@@ -19,7 +19,15 @@ interface UseJobSearchReturn {
 }
 
 export const useJobSearch = (): UseJobSearchReturn => {
-  const [jobs, setJobs] = useState<JobOffer[]>([]);
+  // Initialiser avec les jobs du localStorage s'ils existent
+  const [jobs, setJobs] = useState<JobOffer[]>(() => {
+    try {
+      const savedJobs = localStorage.getItem('jobSearchResults');
+      return savedJobs ? JSON.parse(savedJobs) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -40,11 +48,17 @@ export const useJobSearch = (): UseJobSearchReturn => {
       if (response.success && response.data) {
         const { jobs: newJobs, totalCount, totalPages, hasMore } = response.data;
         
+        let updatedJobs;
         if (page === 1) {
-          setJobs(newJobs);
+          updatedJobs = newJobs;
+          setJobs(updatedJobs);
         } else {
-          setJobs(prev => [...prev, ...newJobs]);
+          updatedJobs = [...jobs, ...newJobs];
+          setJobs(updatedJobs);
         }
+
+        // Sauvegarder dans le localStorage
+        localStorage.setItem('jobSearchResults', JSON.stringify(updatedJobs));
         
         setTotalCount(totalCount);
         setCurrentPage(page);
@@ -81,6 +95,9 @@ export const useJobSearch = (): UseJobSearchReturn => {
     setStats(null);
     setError(null);
     setLastFilters(null);
+
+    // Supprimer du localStorage
+    localStorage.removeItem('jobSearchResults');
   }, []);
 
   // Actualiser les résultats
@@ -107,6 +124,9 @@ export const useJobSearch = (): UseJobSearchReturn => {
         setCurrentPage(1);
         setTotalPages(totalPages);
         setHasMore(hasMore);
+
+        // Sauvegarder dans le localStorage
+        localStorage.setItem('jobSearchResults', JSON.stringify(similarJobs));
         
         // Mettre à jour les filtres pour permettre le loadMore
         setLastFilters({
@@ -139,6 +159,12 @@ export const useJobSearch = (): UseJobSearchReturn => {
       'welcometothejungle': 0,
       'apec': 0,
       'pole-emploi': 0,
+      'github': 0,
+      'careerjet': 0,
+      'themuse': 0,
+      'adzuna': 0,
+      'jsearch': 0,
+      'activejobsdb': 0,
       'other': 0
     };
 

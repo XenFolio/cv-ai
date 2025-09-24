@@ -1,37 +1,46 @@
 import React, { useState } from 'react';
-import { 
-  MapPin, 
+import {
+  MapPin,
   Euro,
-  ExternalLink, 
-  Building, 
+  ExternalLink,
+  Building,
   Calendar,
   Tag,
   ChevronDown,
   ChevronUp,
   Bookmark,
-  Share2
+  Share2,
+  Brain
 } from 'lucide-react';
 import { JobOffer } from '../../types/jobs';
 
 interface JobCardProps {
   job: JobOffer;
+  onAnalyze?: (jobId: string) => void;
 }
 
-export const JobCard: React.FC<JobCardProps> = ({ job }) => {
+export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
   // Formatage de la date
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+    // Vérifier si la date est valide
+    if (isNaN(dateObj.getTime())) {
+      return 'Date non disponible';
+    }
+
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffTime = Math.abs(now.getTime() - dateObj.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 1) return 'Aujourd\'hui';
     if (diffDays === 2) return 'Hier';
     if (diffDays <= 7) return `Il y a ${diffDays} jours`;
     if (diffDays <= 30) return `Il y a ${Math.ceil(diffDays / 7)} semaines`;
-    return date.toLocaleDateString('fr-FR');
+    return dateObj.toLocaleDateString('fr-FR');
   };
 
   // Formatage du salaire
@@ -60,7 +69,8 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
       'CDD': 'bg-blue-100 text-blue-700',
       'Stage': 'bg-purple-100 text-purple-700',
       'Freelance': 'bg-orange-100 text-orange-700',
-      'Alternance': 'bg-pink-100 text-pink-700'
+      'Alternance': 'bg-pink-100 text-pink-700',
+      'Temps partiel': 'bg-cyan-100 text-cyan-700'
     };
     return colors[contractType] || 'bg-gray-100 text-gray-700';
   };
@@ -73,9 +83,34 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
       'welcometothejungle': 'bg-green-100 text-green-700',
       'apec': 'bg-red-100 text-red-700',
       'pole-emploi': 'bg-yellow-100 text-yellow-700',
+      'github': 'bg-gray-900 text-white',
+      'careerjet': 'bg-indigo-100 text-indigo-700',
+      'themuse': 'bg-purple-100 text-purple-700',
+      'adzuna': 'bg-pink-100 text-pink-700',
+      'jsearch': 'bg-cyan-100 text-cyan-700',
+      'activejobsdb': 'bg-emerald-100 text-emerald-700',
       'other': 'bg-gray-100 text-gray-700'
     };
     return colors[source] || 'bg-gray-100 text-gray-700';
+  };
+
+  // Nom complet de la source
+  const getSourceName = (source: JobOffer['source']) => {
+    const names = {
+      'indeed': 'Indeed',
+      'linkedin': 'LinkedIn',
+      'welcometothejungle': 'Welcome to the Jungle',
+      'apec': 'APEC',
+      'pole-emploi': 'Pôle Emploi',
+      'github': 'GitHub Jobs',
+      'careerjet': 'CareerJet',
+      'activejobsdb': 'Active Jobs DB',
+      'themuse': 'The Muse',
+      'adzuna': 'Adzuna',
+      'jsearch': 'JSearch',
+      'other': 'Autre'
+    };
+    return names[source] || 'Autre';
   };
 
   // Gestion de la sauvegarde
@@ -96,7 +131,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
           text: `${job.title} chez ${job.company} - ${job.location}`,
           url: job.url
         });
-      } catch (err) {
+      } catch  {
         // Fallback si le partage échoue
         copyToClipboard();
       }
@@ -140,15 +175,23 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
             <button
               onClick={handleSave}
               className={`p-2 rounded-lg transition-colors ${
-                isSaved 
-                  ? 'bg-violet-100 text-violet-600' 
+                isSaved
+                  ? 'bg-violet-100 text-violet-600'
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }`}
               title={isSaved ? 'Retirer des favoris' : 'Ajouter aux favoris'}
             >
               <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
             </button>
-            
+
+            <button
+              onClick={() => onAnalyze?.(`${job.source}-${job.id}`)}
+              className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-200"
+              title="Analyser cette offre"
+            >
+              <Brain className="w-4 h-4" />
+            </button>
+
             <button
               onClick={handleShare}
               className="p-2 bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors"
@@ -192,7 +235,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
           </span>
           
           <span className={`px-2 py-1 rounded-full text-xs ${getSourceBadgeColor(job.source)}`}>
-            {job.source}
+            {getSourceName(job.source)}
           </span>
           
           <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
@@ -249,12 +292,10 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
 
           <a
             href={job.url}
-            target="_blank"
-            rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-lg hover:from-violet-600 hover:to-pink-600 transition-all duration-200 text-sm"
           >
             <ExternalLink className="w-4 h-4" />
-            Postuler
+            Voir l'offre
           </a>
         </div>
       </div>
@@ -290,7 +331,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wide">Publié le</span>
-                <p className="text-sm text-gray-900">{job.publishedAt.toLocaleDateString('fr-FR')}</p>
+                <p className="text-sm text-gray-900">{formatDate(job.publishedAt)}</p>
               </div>
               
               {job.applicationCount && (

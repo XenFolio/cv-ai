@@ -1,4 +1,4 @@
-import { CVAnalysisResponse, UserInfo } from '../hooks/useOpenAI';
+import { CVAnalysisResponse } from '../hooks/useOpenAI';
 
 export interface UserProfile {
   id: string;
@@ -162,7 +162,6 @@ class PersonalizedAIService {
   private userProfile: UserProfile | null = null;
   private marketData: Map<string, MarketInsight> = new Map();
   private suggestions: PersonalizedSuggestion[] = [];
-  private learningPaths: LearningPath[] = [];
 
   private constructor() {
     this.initializeMarketData();
@@ -323,7 +322,7 @@ class PersonalizedAIService {
         actionSteps: careerPath.recommendedActions,
         resources: this.findResourcesForCareerPath(careerPath),
         estimatedTimeToComplete: careerPath.timeline,
-        difficulty: careerPath.transitionDifficulty,
+        difficulty: this.mapTransitionDifficultyToDifficulty(careerPath.transitionDifficulty),
         marketDemand: {
           demand_level: 'high',
           growth_projection: 'Stable',
@@ -574,7 +573,7 @@ class PersonalizedAIService {
       ]
     };
 
-    return resources[style as keyof typeof resources] || resources.reading;
+    return (resources[style as keyof typeof resources] || resources.reading) as Resource[];
   }
 
   private getNetworkingResources(): Resource[] {
@@ -612,6 +611,16 @@ class PersonalizedAIService {
 
     const skillLower = skill.toLowerCase();
     return learningTimes[skillLower] || '3-6 mois';
+  }
+
+  private mapTransitionDifficultyToDifficulty(transitionDifficulty: 'easy' | 'medium' | 'hard'): 'beginner' | 'intermediate' | 'advanced' {
+    const mapping: Record<string, 'beginner' | 'intermediate' | 'advanced'> = {
+      'easy': 'beginner',
+      'medium': 'intermediate',
+      'hard': 'advanced'
+    };
+
+    return mapping[transitionDifficulty];
   }
 
   private generateCareerPath(currentRole: string, targetRole: string): CareerPath | null {
@@ -672,7 +681,7 @@ class PersonalizedAIService {
   }
 
   // Public methods
-  async getPersonalizedSuggestions(profileId?: string): Promise<PersonalizedSuggestion[]> {
+  async getPersonalizedSuggestions(): Promise<PersonalizedSuggestion[]> {
     if (!this.userProfile) {
       throw new Error('User profile not initialized');
     }
@@ -705,7 +714,7 @@ class PersonalizedAIService {
   }
 
   private generateMilestones(skillGaps: string[]): Milestone[] {
-    return skillGaps.map((skill, index) => ({
+    return skillGaps.map((skill) => ({
       title: `Maîtriser ${skill}`,
       description: `Acquérir des compétences solides en ${skill}`,
       skills: [skill],

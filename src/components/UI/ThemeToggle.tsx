@@ -1,21 +1,20 @@
 import React from 'react';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
-import Button from './Button';
 
 const ThemeToggle: React.FC = () => {
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   const getThemeIcon = () => {
     switch (theme) {
       case 'light':
-        return <Sun className="w-4 h-4" />;
+        return <Sun className="w-5 h-5" />;
       case 'dark':
-        return <Moon className="w-4 h-4" />;
+        return <Moon className="w-5 h-5" />;
       case 'system':
-        return <Monitor className="w-4 h-4" />;
+        return <Monitor className="w-5 h-5" />;
       default:
-        return <Sun className="w-4 h-4" />;
+        return <Sun className="w-5 h-5" />;
     }
   };
 
@@ -33,17 +32,13 @@ const ThemeToggle: React.FC = () => {
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
+    <button
       onClick={toggleTheme}
-      icon={getThemeIcon()}
-      iconPosition="left"
-      className="text-gray-600 hover:text-indigo-600"
+      className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-500 transition-all duration-200"
       title={`Thème: ${getThemeLabel()}`}
     >
-      {getThemeLabel()}
-    </Button>
+      {getThemeIcon()}
+    </button>
   );
 };
 

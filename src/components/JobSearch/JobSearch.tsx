@@ -3,16 +3,18 @@ import { Helmet } from 'react-helmet-async';
 import { Search, MapPin, Filter, Briefcase, RefreshCw, TrendingUp } from 'lucide-react';
 import { useJobSearch } from '../../hooks/useJobSearch';
 import { JobSearchFilters } from '../../types/jobs';
-import { JobCard, JobFilters, JobStats } from './';
+import { JobCard, JobFilters, JobStats, RecentSearches } from './';
 
 interface JobSearchProps {
   initialKeywords?: string[];
   initialLocation?: string;
+  onAnalyzeJob?: (jobId: string) => void;
 }
 
-export const JobSearch: React.FC<JobSearchProps> = ({ 
-  initialKeywords = [], 
-  initialLocation = '' 
+export const JobSearch: React.FC<JobSearchProps> = ({
+  initialKeywords = [],
+  initialLocation = '',
+  onAnalyzeJob
 }) => {
   const {
     jobs,
@@ -75,6 +77,17 @@ export const JobSearch: React.FC<JobSearchProps> = ({
     }
   };
 
+  // Gestion de la sélection d'une recherche récente
+  const handleSelectRecentSearch = (selectedFilters: JobSearchFilters) => {
+    setFilters(selectedFilters);
+    searchJobs(selectedFilters);
+  };
+
+  // Gestion de l'analyse d'offre
+  const handleAnalyzeJob = (jobId: string) => {
+    onAnalyzeJob?.(jobId);
+  };
+
   return (
     <>
       <Helmet>
@@ -83,24 +96,24 @@ export const JobSearch: React.FC<JobSearchProps> = ({
         <meta name="keywords" content="recherche emploi, offres d'emploi, CV, candidature, recrutement" />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 pt-0 pb-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-500 to-pink-500 rounded-2xl mb-4">
-              <Briefcase className="w-8 h-8 text-white" />
+          <div className="text-center mb-2">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-violet-500 to-pink-500 rounded-2xl mb-4">
+              <Briefcase className="w-4 h-4 text-white" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-pink-400 bg-clip-text text-transparent mb-2">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-pink-400 bg-clip-text text-transparent mb-2">
               Recherche d'Emploi
             </h1>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <p className="text-sm text-gray-600 max-w-2xl mx-auto">
               Découvrez des opportunités professionnelles adaptées à votre profil
               {initialKeywords.length > 0 && ' basées sur votre CV analysé'}
             </p>
           </div>
 
           {/* Barre de recherche */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/30 mb-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-gray-200/30 mb-6">
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Champ de recherche */}
               <div className="flex-1 relative">
@@ -111,7 +124,7 @@ export const JobSearch: React.FC<JobSearchProps> = ({
                   value={filters.query || ''}
                   onChange={(e) => handleFiltersChange({ query: e.target.value })}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-0 focus:ring-violet-500 focus:border-transparent hover:border-violet-500 transition-all duration-200"
                 />
               </div>
 
@@ -124,7 +137,7 @@ export const JobSearch: React.FC<JobSearchProps> = ({
                   value={filters.location || ''}
                   onChange={(e) => handleFiltersChange({ location: e.target.value })}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-0 focus:ring-violet-500 focus:border-transparent hover:border-violet-500 transition-all duration-200"
                 />
               </div>
 
@@ -184,17 +197,12 @@ export const JobSearch: React.FC<JobSearchProps> = ({
             />
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Statistiques */}
-            <div className="lg:col-span-1">
-              {stats && <JobStats stats={stats} />}
-            </div>
-
-            {/* Résultats */}
-            <div className="lg:col-span-3">
-              {/* Barre d'informations */}
+          {/* Barre d'informations et recherches récentes */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Informations principales */}
+            <div className="lg:col-span-2">
               {(jobs.length > 0 || loading) && (
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <span className="text-gray-600">
                       {loading ? 'Recherche en cours...' : `${totalCount} offres trouvées`}
@@ -205,7 +213,7 @@ export const JobSearch: React.FC<JobSearchProps> = ({
                       </span>
                     )}
                   </div>
-                  
+
                   {jobs.length > 0 && (
                     <div className="flex gap-2">
                       <button
@@ -220,7 +228,26 @@ export const JobSearch: React.FC<JobSearchProps> = ({
                   )}
                 </div>
               )}
+            </div>
 
+            {/* Recherches récentes en largeur */}
+            <div className="lg:col-span-3">
+              <RecentSearches
+                onSelectSearch={handleSelectRecentSearch}
+              />
+            </div>
+          </div>
+
+          {/* Zone des résultats avec sidebar */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Sidebar gauche */}
+            <div className="lg:col-span-1 space-y-4">
+              {/* Statistiques */}
+              {stats && <JobStats stats={stats} />}
+            </div>
+
+            {/* Résultats centraux */}
+            <div className="lg:col-span-3">
               {/* Message d'erreur */}
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
@@ -237,7 +264,11 @@ export const JobSearch: React.FC<JobSearchProps> = ({
               {/* Liste des offres */}
               <div className="space-y-4">
                 {jobs.map((job) => (
-                  <JobCard key={job.id} job={job} />
+                  <JobCard
+                    key={`${job.source}-${job.id}`}
+                    job={job}
+                    onAnalyze={handleAnalyzeJob}
+                  />
                 ))}
               </div>
 

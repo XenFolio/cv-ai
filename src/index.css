@@ -5,6 +5,147 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Améliorations d'accessibilité WCAG 2.1 */
+
+/* Focus visible amélioré */
+*:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  * {
+    --tw-border-opacity: 1 !important;
+    --tw-text-opacity: 1 !important;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus navigation */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #6366f1;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+  z-index: 1000;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Text resizing support */
+.responsive-text {
+  font-size: clamp(0.875rem, 2vw, 1.125rem);
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Color contrast improvements */
+.text-high-contrast {
+  color: #111827 !important;
+}
+
+.bg-high-contrast {
+  background-color: #ffffff !important;
+}
+
+/* Dark mode high contrast */
+@media (prefers-color-scheme: dark) {
+  .text-high-contrast {
+    color: #f9fafb !important;
+  }
+
+  .bg-high-contrast {
+    background-color: #111827 !important;
+  }
+}
+
+/* Interactive elements improvements */
+button,
+[role="button"],
+input,
+select,
+textarea {
+  min-height: 44px; /* Minimum touch target size */
+}
+
+/* Hover and focus states */
+.interactive-element {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.interactive-element:hover {
+  @apply transform scale-105;
+}
+
+.interactive-element:focus-visible {
+  @apply ring-2 ring-indigo-500 ring-offset-2;
+}
+
+/* Loading states */
+.loading-skeleton {
+  @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;
+}
+
+/* Accessible table styles */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+@media (prefers-color-scheme: dark) {
+  th {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+
+  th,
+  td {
+    border-bottom-color: #374151;
+  }
+}
+
 @media (max-width: 1155px) {
   .center-below-1156px {
     align-self: center !important;
