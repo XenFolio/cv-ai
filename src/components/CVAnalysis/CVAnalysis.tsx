@@ -7,10 +7,11 @@ import { useOpenAI, CVAnalysisResponse } from '../../hooks/useOpenAI';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useCVLibrary, DocumentType } from '../../hooks/useCVLibrary';
 import { useAppStore } from '../../store/useAppStore';
-import {  ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Target } from 'lucide-react';
 import GradientSpinLoader from '../loader/GradientSpinLoader';
 import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
 import { NavigationIcons } from '../UI/iconsData';
+import MarketBenchmarkingService from '../../services/MarketBenchmarkingService';
 // Type local pour le composant CVAnalysis
 export type CVAnalysisDocumentType = 'cv' | 'lettre';
 
@@ -35,12 +36,46 @@ export const CVAnalysis: React.FC<CVAnalysisProps> = ({
   const [originalContent, setOriginalContent] = useState<string>('');
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showResults, setShowResults] = useState(false);
+
+  // ATS Pro Features
+  const [enableATSPro, setEnableATSPro] = useState(false);
+  const [jobDescription, setJobDescription] = useState('');
+  const [targetRole, setTargetRole] = useState('');
   const { analyzeFile, error } = useOpenAI();
   const { addActivity, addDocument, updateDocument } = useSupabase();
   const { addAnalyzedCV } = useCVLibrary();
   const setActiveTab = useAppStore(s => s.setActiveTab);
   const previewFile = useAppStore(s => s.previewFile);
   const setPreviewFile = useAppStore(s => s.setPreviewFile);
+
+  // Helper functions for market benchmarking
+  const detectIndustry = (text: string): string => {
+    const textLower = text.toLowerCase();
+    if (textLower.includes('software') || textLower.includes('developer') || textLower.includes('data')) {
+      return 'technology';
+    } else if (textLower.includes('finance') || textLower.includes('banking') || textLower.includes('accounting')) {
+      return 'finance';
+    } else if (textLower.includes('healthcare') || textLower.includes('medical') || textLower.includes('nurse')) {
+      return 'healthcare';
+    } else if (textLower.includes('marketing') || textLower.includes('sales') || textLower.includes('advertising')) {
+      return 'marketing';
+    }
+    return 'general';
+  };
+
+  const detectExperienceLevel = (role: string): 'junior' | 'mid' | 'senior' | 'lead' | 'executive' => {
+    const roleLower = role.toLowerCase();
+    if (roleLower.includes('junior') || roleLower.includes('entry') || roleLower.includes('débutant')) {
+      return 'junior';
+    } else if (roleLower.includes('senior') || roleLower.includes('lead') || roleLower.includes('principal')) {
+      return 'senior';
+    } else if (roleLower.includes('manager') || roleLower.includes('director')) {
+      return 'lead';
+    } else if (roleLower.includes('cto') || roleLower.includes('ceo') || roleLower.includes('vp')) {
+      return 'executive';
+    }
+    return 'mid';
+  };
 
   // Si un fichier est à prévisualiser depuis la bibliothèque, l'initialiser
   React.useEffect(() => {
@@ -58,18 +93,39 @@ export const CVAnalysis: React.FC<CVAnalysisProps> = ({
     try {
       console.log('Début de l\'analyse du fichier:', file.name, 'Type:', file.type);
       
-      // Analyser le fichier directement avec l'IA - OBLIGATOIRE
-      // L'extraction de contenu se fait dans le hook useOpenAI
-      const results = await analyzeFile(file, 'Développeur Full Stack');
+      // Analyser le fichier avec les options ATS Pro
+      const results = await analyzeFile(
+        file,
+        targetRole || 'Développeur Full Stack',
+        jobDescription,
+        enableATSPro
+      );
       
       console.log('Résultats de l\'analyse:', results);
       
       if (results) {
         console.log('Analyse réussie, affichage des résultats');
         setAnalysisResults(results);
-        
+
         // Stocker le contenu original pour l'affichage
         setOriginalContent(`Analyse du fichier: ${file.name}`);
+
+        // If ATS Pro is enabled, get market benchmarking
+        if (enableATSPro && (targetRole || jobDescription)) {
+          console.log('Récupération des données de benchmarking...');
+          try {
+            const benchmarkService = MarketBenchmarkingService.getInstance();
+            const industry = detectIndustry(targetRole || jobDescription || '');
+            const benchmark = await benchmarkService.getMarketBenchmark(
+              industry,
+              targetRole || 'Professional',
+              detectExperienceLevel(targetRole || '')
+            );
+            console.log('Benchmarking terminé:', benchmark);
+          } catch (benchmarkError) {
+            console.warn('Erreur lors du benchmarking:', benchmarkError);
+          }
+        }
         
         // Ajouter le CV/Lettre analysé à la bibliothèque et sauvegarder dans Supabase
         try {
@@ -402,7 +458,60 @@ export const CVAnalysis: React.FC<CVAnalysisProps> = ({
         </p>
       </div>
 
-      <CVUpload 
+      {/* ATS Pro Controls */}
+      <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-6 border border-violet-200">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl flex items-center justify-center">
+              <Target className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-violet-900">ATS Pro Analysis</h3>
+              <p className="text-sm text-violet-700">Advanced job market benchmarking and keyword optimization</p>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={enableATSPro}
+              onChange={(e) => setEnableATSPro(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-violet-500 peer-checked:to-purple-500"></div>
+          </label>
+        </div>
+
+        {enableATSPro && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-violet-900 mb-2">
+                Target Role
+              </label>
+              <input
+                type="text"
+                value={targetRole}
+                onChange={(e) => setTargetRole(e.target.value)}
+                placeholder="e.g., Senior Software Engineer"
+                className="w-full px-4 py-3 border border-violet-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-white/90 backdrop-blur-sm transition-all duration-200"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-violet-900 mb-2">
+                Job Description (Optional)
+              </label>
+              <textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Paste the job description for targeted analysis..."
+                rows={3}
+                className="w-full px-4 py-3 border border-violet-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-white/90 backdrop-blur-sm transition-all duration-200 resize-none"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <CVUpload
         onFileUpload={handleFileUpload}
         documentType={documentType}
         uploadDescription={config.uploadDescription}

@@ -5,6 +5,7 @@ import { CVAnalysisResponse } from '../../hooks/useOpenAI';
 import { DocumentType } from '../../hooks/useCVLibrary';
 import html2pdf from 'html2pdf.js';
 import AdvancedATSScoring from './AdvancedATSScoring';
+import { TrendingUp, BarChart3, Globe } from 'lucide-react';
 
 interface AnalysisResultsProps {
   results: CVAnalysisResponse;
@@ -167,13 +168,13 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             <div style="width: 100%; height: 100%; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
               <div style="text-align: center;">
                 <div style="font-size: 36px; font-weight: bold; color: ${getScoreColorHex(results.overallScore)};">${results.overallScore}%</div>
-                <div style="font-size: 12px; color: #6b7280; font-weight: 500;">Score ATS</div>
+                <div style="font-size: 12px; color: #6b7280; font-weight: 500;">Score de Compatibilité ATS</div>
               </div>
             </div>
           </div>
-          <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 0 0 10px 0;">Rapport d'Analyse ${documentType === 'cv' ? 'CV' : 'Lettre de motivation'}</h1>
+          <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 0 0 10px 0;">Rapport d'Analyse Professionnelle ${documentType === 'cv' ? 'CV' : 'Lettre de motivation'}</h1>
           <h2 style="font-size: 18px; color: #6b7280; margin: 0 0 15px 0;">${fileName}</h2>
-          <p style="color: #6b7280; margin: 0; font-size: 14px;">Analyse générée par IA OpenAI avec recommandations pour optimiser la compatibilité ATS</p>
+          <p style="color: #6b7280; margin: 0; font-size: 14px;">Analyse intelligente générée par IA avec recommandations personnalisées pour optimiser votre candidature</p>
         </div>
 
         <!-- Scores détaillés -->
@@ -215,7 +216,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #06b6d4); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
                 <span style="color: white; font-size: 16px;">🧠</span>
               </div>
-              <h3 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 0;">Recommandations IA</h3>
+              <h3 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 0;">Recommandations d'Optimisation</h3>
             </div>
             <div style="space-y: 10px;">
               ${results.recommendations.slice(0, 5).map((rec: string, index: number) => `
@@ -287,7 +288,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
-              <h4 style="font-size: 14px; font-weight: 600; color: #374151; margin: 0 0 10px 0;">🎯 Analyse des mots-clés</h4>
+              <h4 style="font-size: 14px; font-weight: 600; color: #374151; margin: 0 0 10px 0;">🎯 Analyse Stratégique des Mots-clés</h4>
               <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #6b7280;">
                 <li>Mots-clés trouvés: ${results.keywords.found.length}</li>
                 <li>Mots-clés manquants: ${results.keywords.missing.length}</li>
@@ -298,10 +299,10 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             <div>
               <h4 style="font-size: 14px; font-weight: 600; color: #374151; margin: 0 0 10px 0;">⚡ Performance par section</h4>
               <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #6b7280;">
-                <li>Meilleure section: ${Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'atsOptimization' ? 'Optimisation ATS' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'keywordMatch' ? 'Mots-clés' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'structure' ? 'Structure' : 'Contenu'} (${Math.max(...Object.values(results.sections) as number[])}%)</li>
-                <li>Section à prioriser: ${Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'atsOptimization' ? 'Optimisation ATS' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'keywordMatch' ? 'Mots-clés' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'structure' ? 'Structure' : 'Contenu'} (${Math.min(...Object.values(results.sections) as number[])}%)</li>
+                <li>Section la plus performante: ${Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'atsOptimization' ? 'Optimisation ATS' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'keywordMatch' ? 'Mots-clés' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'structure' ? 'Structure' : 'Contenu'} (${Math.max(...Object.values(results.sections) as number[])}%)</li>
+                <li>Section nécessitant une amélioration: ${Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'atsOptimization' ? 'Optimisation ATS' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'keywordMatch' ? 'Mots-clés' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'structure' ? 'Structure' : 'Contenu'} (${Math.min(...Object.values(results.sections) as number[])}%)</li>
                 <li>Écart max/min: ${Math.max(...Object.values(results.sections) as number[]) - Math.min(...Object.values(results.sections) as number[])}%</li>
-                <li>Homogénéité: ${Math.max(...Object.values(results.sections) as number[]) - Math.min(...Object.values(results.sections) as number[]) <= 15 ? 'Excellente' : Math.max(...Object.values(results.sections) as number[]) - Math.min(...Object.values(results.sections) as number[]) <= 25 ? 'Bonne' : 'À améliorer'}</li>
+                <li>Homogénéité: ${Math.max(...Object.values(results.sections) as number[]) - Math.min(...Object.values(results.sections) as number[]) <= 15 ? 'Excellente' : Math.max(...Object.values(results.sections) as number[]) - Math.min(...Object.values(results.sections) as number[]) <= 25 ? 'Bonne' : 'À optimiser'}</li>
               </ul>
             </div>
           </div>
@@ -327,7 +328,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           </div>
 
           <div>
-            <h4 style="font-size: 14px; font-weight: 600; color: #10b981; margin: 0 0 10px 0;">💡 Optimisations Futures (1 mois)</h4>
+            <h4 style="font-size: 14px; font-weight: 600; color: #10b981; margin: 0 0 10px 0;">💡 Améliorations Recommandées (court terme)</h4>
             <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #374151; line-height: 1.6;">
               ${results.improvements.filter(imp => imp.priority === 'low').slice(0, 3).map(imp => `<li><strong>${imp.title}:</strong> ${imp.description}</li>`).join('')}
             </ul>
@@ -434,7 +435,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             <div style="width: 100%; height: 100%; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
               <div style="text-align: center;">
                 <div style="font-size: 36px; font-weight: bold; color: ${getScoreColorHex(results.overallScore)};">${results.overallScore}%</div>
-                <div style="font-size: 12px; color: #6b7280; font-weight: 500;">Score ATS</div>
+                <div style="font-size: 12px; color: #6b7280; font-weight: 500;">Score de Compatibilité ATS</div>
               </div>
             </div>
           </div>
@@ -482,7 +483,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #06b6d4); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
                 <span style="color: white; font-size: 16px;">🧠</span>
               </div>
-              <h3 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 0;">Recommandations IA</h3>
+              <h3 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 0;">Recommandations d'Optimisation</h3>
             </div>
             <div style="space-y: 10px;">
               ${results.recommendations.slice(0, 5).map((rec: string, index: number) => `
@@ -554,7 +555,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
-              <h4 style="font-size: 14px; font-weight: 600; color: #374151; margin: 0 0 10px 0;">🎯 Analyse des mots-clés</h4>
+              <h4 style="font-size: 14px; font-weight: 600; color: #374151; margin: 0 0 10px 0;">🎯 Analyse Stratégique des Mots-clés</h4>
               <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #6b7280;">
                 <li>Mots-clés trouvés: ${results.keywords.found.length}</li>
                 <li>Mots-clés manquants: ${results.keywords.missing.length}</li>
@@ -565,10 +566,10 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             <div>
               <h4 style="font-size: 14px; font-weight: 600; color: #374151; margin: 0 0 10px 0;">⚡ Performance par section</h4>
               <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #6b7280;">
-                <li>Meilleure section: ${Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'atsOptimization' ? 'Optimisation ATS' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'keywordMatch' ? 'Mots-clés' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'structure' ? 'Structure' : 'Contenu'} (${Math.max(...Object.values(results.sections) as number[])}%)</li>
-                <li>Section à prioriser: ${Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'atsOptimization' ? 'Optimisation ATS' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'keywordMatch' ? 'Mots-clés' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'structure' ? 'Structure' : 'Contenu'} (${Math.min(...Object.values(results.sections) as number[])}%)</li>
+                <li>Section la plus performante: ${Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'atsOptimization' ? 'Optimisation ATS' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'keywordMatch' ? 'Mots-clés' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) > (a[1] as number) ? b : a)[0] === 'structure' ? 'Structure' : 'Contenu'} (${Math.max(...Object.values(results.sections) as number[])}%)</li>
+                <li>Section nécessitant une amélioration: ${Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'atsOptimization' ? 'Optimisation ATS' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'keywordMatch' ? 'Mots-clés' : Object.entries(results.sections).reduce((a, b) => (b[1] as number) < (a[1] as number) ? b : a)[0] === 'structure' ? 'Structure' : 'Contenu'} (${Math.min(...Object.values(results.sections) as number[])}%)</li>
                 <li>Écart max/min: ${Math.max(...Object.values(results.sections) as number[]) - Math.min(...Object.values(results.sections) as number[])}%</li>
-                <li>Homogénéité: ${Math.max(...Object.values(results.sections) as number[]) - Math.min(...Object.values(results.sections) as number[]) <= 15 ? 'Excellente' : Math.max(...Object.values(results.sections) as number[]) - Math.min(...Object.values(results.sections) as number[]) <= 25 ? 'Bonne' : 'À améliorer'}</li>
+                <li>Homogénéité: ${Math.max(...Object.values(results.sections) as number[]) - Math.min(...Object.values(results.sections) as number[]) <= 15 ? 'Excellente' : Math.max(...Object.values(results.sections) as number[]) - Math.min(...Object.values(results.sections) as number[]) <= 25 ? 'Bonne' : 'À optimiser'}</li>
               </ul>
             </div>
           </div>
@@ -594,7 +595,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           </div>
 
           <div>
-            <h4 style="font-size: 14px; font-weight: 600; color: #10b981; margin: 0 0 10px 0;">💡 Optimisations Futures (1 mois)</h4>
+            <h4 style="font-size: 14px; font-weight: 600; color: #10b981; margin: 0 0 10px 0;">💡 Améliorations Recommandées (court terme)</h4>
             <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #374151; line-height: 1.6;">
               ${results.improvements.filter(imp => imp.priority === 'low').slice(0, 3).map(imp => `<li><strong>${imp.title}:</strong> ${imp.description}</li>`).join('')}
             </ul>
@@ -665,7 +666,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
   // Générer les métadonnées dynamiques
   const documentLabel = documentType === 'cv' ? 'CV' : 'lettre de motivation';
-  const scoreCategory = results.overallScore >= 85 ? 'Excellent' : results.overallScore >= 70 ? 'Bon' : 'À améliorer';
+  const scoreCategory = results.overallScore >= 85 ? 'Excellent' : results.overallScore >= 70 ? 'Bon' : 'À optimiser';
   const pageTitle = `Analyse ${documentLabel} - Score ATS ${results.overallScore}% | ${fileName}`;
   const pageDescription = `Analyse complète de votre ${documentLabel} avec un score ATS de ${results.overallScore}%. ${results.recommendations.length} recommandations personnalisées pour optimiser votre candidature.`;
   const keywords = [
@@ -744,13 +745,13 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   <div className={`text-4xl font-bold ${getScoreColor(results.overallScore)}`}>
                     {results.overallScore}%
                   </div>
-                  <div className="text-sm text-gray-500 font-medium">Score ATS</div>
+                  <div className="text-sm text-gray-500 font-medium">Score de Compatibilité ATS</div>
                 </div>
               </div>
             </div>
           </div>
           
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Analyse Complète - <span  className=" text-xl text-gray-600">{fileName}</span></h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-2">Analyse Complète du CV - <span className="text-xl text-gray-600">{fileName}</span></h3>
           <p className="text-gray-500 mb-6">
             {documentType === 'cv' 
               ? 'Votre CV a été analysé par notre IA OpenAI avec des recommandations précises pour optimiser votre passage des filtres ATS'
@@ -875,7 +876,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
-            <h4 className="font-semibold text-gray-900">Recommandations IA</h4>
+            <h4 className="font-semibold text-gray-900">Recommandations d'Optimisation</h4>
           </div>
           
           <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -929,6 +930,262 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         </div>
       </div>
 
+      {/* ATS Pro Analysis Sections */}
+      {results.keywordAnalysis && (
+        <div className="space-y-6">
+          {/* Keyword Analysis */}
+          <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-6 border border-violet-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl flex items-center justify-center">
+                  <Target className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-violet-900">Analyse Sémantique Avancée</h3>
+                  <p className="text-sm text-violet-700">Correspondance mots-clés et optimisation</p>
+                </div>
+              </div>
+              <div className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-sm font-medium">
+                {results.keywordAnalysis?.densityOptimization?.current >= results.keywordAnalysis?.densityOptimization?.optimal ? 'Optimal' : 'À optimiser'}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Job Description Keywords */}
+              {results.keywordAnalysis.jobDescriptionKeywords.length > 0 && (
+                <div className="bg-white/70 rounded-xl p-4 border border-violet-100">
+                  <h4 className="font-medium text-violet-800 mb-3 flex items-center">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Mots-clés Poste Ciblé
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {results.keywordAnalysis.jobDescriptionKeywords.slice(0, 8).map((keyword, index) => (
+                      <span key={index} className="px-2 py-1 bg-violet-100 text-violet-700 rounded-md text-xs">
+                        {keyword}
+                      </span>
+                    ))}
+                    {results.keywordAnalysis.jobDescriptionKeywords.length > 8 && (
+                      <span className="px-2 py-1 bg-violet-50 text-violet-600 rounded-md text-xs">
+                        +{results.keywordAnalysis.jobDescriptionKeywords.length - 8}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Semantic Matches */}
+              <div className="bg-white/70 rounded-xl p-4 border border-violet-100">
+                <h4 className="font-medium text-violet-800 mb-3 flex items-center">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Correspondances Sémantiques
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {results.keywordAnalysis.semanticMatches.slice(0, 8).map((match, index) => (
+                    <span key={index} className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs">
+                      {match}
+                    </span>
+                  ))}
+                  {results.keywordAnalysis.semanticMatches.length > 8 && (
+                    <span className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded-md text-xs">
+                      +{results.keywordAnalysis.semanticMatches.length - 8}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Density Optimization */}
+            <div className="mt-4 bg-white/70 rounded-xl p-4 border border-violet-100">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-violet-800 flex items-center">
+                  <Award className="w-4 h-4 mr-2" />
+                  Optimisation Densité Mots-clés
+                </h4>
+                <div className="text-sm font-medium text-violet-700">
+                  {results.keywordAnalysis.densityOptimization.current}% / {results.keywordAnalysis.densityOptimization.optimal}%
+                </div>
+              </div>
+              <div className="w-full bg-violet-200 rounded-full h-2 mb-2">
+                <div
+                  className={`h-2 rounded-full transition-all duration-1000 ${
+                    results.keywordAnalysis.densityOptimization.current >= results.keywordAnalysis.densityOptimization.optimal
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                      : 'bg-gradient-to-r from-amber-500 to-orange-500'
+                  }`}
+                  style={{ width: `${Math.min(results.keywordAnalysis.densityOptimization.current, 100)}%` }}
+                />
+              </div>
+              {results.keywordAnalysis.densityOptimization.suggestions.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-sm text-violet-700 mb-2">Recommandations:</p>
+                  <ul className="text-xs text-violet-600 space-y-1">
+                    {results.keywordAnalysis.densityOptimization.suggestions.slice(0, 3).map((suggestion, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="mr-2">•</span>
+                        {suggestion}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Contextual Suggestions */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/30">
+            <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+              <Brain className="w-5 h-5 mr-2 text-indigo-600" />
+              Suggestions Contextuelles Intelligentes
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {results.keywordAnalysis.contextualSuggestions.skills.length > 0 && (
+                <div className="bg-indigo-50 rounded-xl p-4">
+                  <h4 className="font-medium text-indigo-800 mb-2">Compétences</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {results.keywordAnalysis.contextualSuggestions.skills.slice(0, 6).map((skill, index) => (
+                      <span key={index} className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-md text-xs">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {results.keywordAnalysis.contextualSuggestions.technologies.length > 0 && (
+                <div className="bg-blue-50 rounded-xl p-4">
+                  <h4 className="font-medium text-blue-800 mb-2">Technologies</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {results.keywordAnalysis.contextualSuggestions.technologies.slice(0, 6).map((tech, index) => (
+                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs">
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {results.keywordAnalysis.contextualSuggestions.certifications.length > 0 && (
+                <div className="bg-emerald-50 rounded-xl p-4">
+                  <h4 className="font-medium text-emerald-800 mb-2">Certifications</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {results.keywordAnalysis.contextualSuggestions.certifications.slice(0, 4).map((cert, index) => (
+                      <span key={index} className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs">
+                        {cert}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Market Benchmarking */}
+      {results.marketBenchmarking && (
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-200">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                <Globe className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-blue-900">Analyse Comparative du Marché</h3>
+                <p className="text-sm text-blue-700">Positionnement concurrentiel</p>
+              </div>
+            </div>
+            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+              results.marketBenchmarking.competitiveness === 'high'
+                ? 'bg-emerald-100 text-emerald-700'
+                : results.marketBenchmarking.competitiveness === 'medium'
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-rose-100 text-rose-700'
+            }`}>
+              {results.marketBenchmarking?.competitiveness === 'high' ? 'Très Compétitif' :
+               results.marketBenchmarking?.competitiveness === 'medium' ? 'Moyennement Compétitif' : 'Peu Compétitif'}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white/70 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">{results.marketBenchmarking?.percentile || 0}%</div>
+              <div className="text-sm text-blue-700">Percentile</div>
+            </div>
+            <div className="bg-white/70 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-emerald-600">{results.marketBenchmarking?.averageScore || 0}%</div>
+              <div className="text-sm text-emerald-700">Score Moyen du Marché</div>
+            </div>
+            <div className="bg-white/70 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-purple-600">{results.marketBenchmarking?.industry || 'N/A'}</div>
+              <div className="text-sm text-purple-700">Industrie</div>
+            </div>
+            <div className="bg-white/70 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-amber-600">
+                {results.marketBenchmarking?.percentile >= 80 ? 'Élevée' :
+                 results.marketBenchmarking?.percentile >= 60 ? 'Moyenne' : 'À améliorer'}
+              </div>
+              <div className="text-sm text-amber-700">Niveau de Compétitivité</div>
+            </div>
+          </div>
+
+          {/* Market Demand */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white/70 rounded-xl p-4 border border-blue-100">
+              <h4 className="font-medium text-blue-800 mb-3 flex items-center">
+                <TrendingUp className="w-4 h-4 mr-2 text-emerald-500" />
+                Compétences Très Demandées
+              </h4>
+              <div className="flex flex-wrap gap-1">
+                {results.marketBenchmarking?.marketDemand?.highDemand?.slice(0, 6).map((skill, index) => (
+                  <span key={index} className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white/70 rounded-xl p-4 border border-blue-100">
+              <h4 className="font-medium text-blue-800 mb-3 flex items-center">
+                <BarChart3 className="w-4 h-4 mr-2 text-blue-500" />
+                Compétences Émergentes
+              </h4>
+              <div className="flex flex-wrap gap-1">
+                {results.marketBenchmarking?.marketDemand?.emerging?.slice(0, 6).map((skill, index) => (
+                  <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white/70 rounded-xl p-4 border border-blue-100">
+              <h4 className="font-medium text-blue-800 mb-3 flex items-center">
+                <Activity className="w-4 h-4 mr-2 text-rose-500" />
+                Compétences en Déclin
+              </h4>
+              <div className="flex flex-wrap gap-1">
+                {results.marketBenchmarking?.marketDemand?.declining?.slice(0, 4).map((skill, index) => (
+                  <span key={index} className="px-2 py-1 bg-rose-100 text-rose-700 rounded-md text-xs">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Improvement Areas */}
+          {results.marketBenchmarking?.yourPosition?.improvementAreas && results.marketBenchmarking.yourPosition.improvementAreas.length > 0 && (
+            <div className="mt-4 bg-white/70 rounded-xl p-4 border border-blue-100">
+              <h4 className="font-medium text-blue-800 mb-3">Axes d'Amélioration Prioritaires</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {results.marketBenchmarking.yourPosition.improvementAreas.slice(0, 6).map((area, index) => (
+                  <div key={index} className="flex items-start space-x-2">
+                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
+                    <span className="text-sm text-blue-700">{area}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <button 
@@ -968,7 +1225,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         <div className="mt-8">
           <div className="flex items-center space-x-2 mb-6">
             <Activity className="w-5 h-5 text-indigo-600" />
-            <h3 className="text-xl font-bold text-gray-900">Analyse Avancée ATS</h3>
+            <h3 className="text-xl font-bold text-gray-900">Analyse Détaillée ATS</h3>
             <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
               Premium
             </span>

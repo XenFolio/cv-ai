@@ -182,9 +182,13 @@ export const useCVLibrary = () => {
         fileData = new Uint8Array(arrayBuffer);
       }
 
+      // Generate a unique ID to avoid duplicate key constraints
+      const uniqueId = `doc_${profile.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       const { data, error } = await supabase
         .from('documents')
         .insert({
+          id: uniqueId,
           user_id: profile.id,
           doc_type: documentData.docType,
           name: documentData.name,
@@ -274,9 +278,12 @@ export const useCVLibrary = () => {
 
     try {
       // Sauvegarder dans Supabase comme addActivity fait pour activities
+      const uniqueId = `created_${profile.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       const { data, error } = await supabase
         .from('documents')
         .insert({
+          id: uniqueId,
           user_id: profile.id,
           doc_type: documentData.docType,
           name: documentData.name,
@@ -398,9 +405,12 @@ export const useCVLibrary = () => {
       }
 
       // Sauvegarde immédiate dans Supabase
+      const uniqueId = `downloaded_${profile.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       const { data, error } = await supabase
         .from('documents')
         .insert({
+          id: uniqueId,
           user_id: profile.id,
           doc_type: downloadRecord.docType,
           name: downloadRecord.name,

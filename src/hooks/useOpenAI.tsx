@@ -5,6 +5,7 @@ export interface CVAnalysisRequest {
   content: string;
   jobDescription?: string;
   targetRole?: string;
+  enableATSPro?: boolean; // Enable enhanced ATS Pro features
 }
 
 export interface CVAnalysisResponse {
@@ -28,6 +29,38 @@ export interface CVAnalysisResponse {
     description: string;
     priority: 'high' | 'medium' | 'low';
   }[];
+  // Enhanced ATS Pro features
+  keywordAnalysis?: {
+    jobDescriptionKeywords: string[];
+    semanticMatches: string[];
+    densityOptimization: {
+      current: number;
+      optimal: number;
+      suggestions: string[];
+    };
+    contextualSuggestions: {
+      skills: string[];
+      technologies: string[];
+      certifications: string[];
+    };
+  };
+  marketBenchmarking?: {
+    industry: string;
+    role: string;
+    averageScore: number;
+    percentile: number;
+    competitiveness: 'high' | 'medium' | 'low';
+    marketDemand: {
+      highDemand: string[];
+      emerging: string[];
+      declining: string[];
+    };
+    yourPosition?: {
+      percentile: number;
+      competitiveness: 'high' | 'medium' | 'low';
+      improvementAreas: string[];
+    };
+  };
 }
 
 export interface UserInfo {
@@ -55,6 +88,13 @@ export interface AISettings {
   apiKey: string;
   voiceRecognition: boolean;
   voiceSynthesis: boolean;
+}
+
+export interface CoverLetterResponse {
+  introduction: string;
+  body: string;
+  conclusion: string;
+  skillsHighlight: string[];
 }
 
 // Utility function to extract text from different file types
@@ -167,29 +207,99 @@ const getApiKey = (profile?: { openai_api_key?: string } | null): string | null 
   if (profile?.openai_api_key && profile.openai_api_key.trim().length > 0) {
     return profile.openai_api_key.trim();
   }
-  
+
   // Priorité 2: Fallback vers localStorage
-  return getApiKeyFromLocalStorage();
+  const localStorageKey = getApiKeyFromLocalStorage();
+  if (localStorageKey) {
+    return localStorageKey;
+  }
+
+  // Priorité 3: Fallback vers variable d'environnement (pour développement)
+  const envKey = import.meta.env.VITE_OPENAI_API_KEY;
+  if (envKey && envKey.trim().length > 0) {
+    return envKey.trim();
+  }
+
+  return null;
 };
 
-// Function to call OpenAI API for CV analysis
-const callOpenAIAPI = async (content: string, targetRole?: string, profile?: { openai_api_key?: string } | null): Promise<CVAnalysisResponse> => {
+
+
+// Enhanced function to extract keywords from job description
+const extractJobKeywords = async (jobDescription: string): Promise<{
+  technical: string[];
+  soft: string[];
+  certifications: string[];
+  tools: string[];
+}> => {
+  // This would typically use NLP libraries, for now we'll use regex patterns
+  const technicalPatterns = [
+    /JavaScript|TypeScript|Python|Java|C\+\+|C#|PHP|Ruby|Go|Rust|Swift|Kotlin/gi,
+    /React|Vue|Angular|Node\.js|Express|Django|Flask|Spring|Laravel|Symfony/gi,
+    /AWS|Azure|Google Cloud|Docker|Kubernetes|Jenkins|Git|CI\/CD|DevOps/gi,
+    /SQL|NoSQL|MongoDB|PostgreSQL|MySQL|Redis|Elasticsearch/gi,
+    /Machine Learning|AI|Data Science|Analytics|TensorFlow|PyTorch/gi
+  ];
+
+  const certificationPatterns = [
+    /AWS Certified|Google Cloud Professional|Microsoft Certified|Oracle Certified/gi,
+    /PMP|PRINCE2|Scrum Master|Agile|ITIL|Six Sigma/gi,
+    /CCNA|CCNP|CompTIA|Network\+|Security\+/gi
+  ];
+
+  const toolPatterns = [
+    /Jira|Confluence|Slack|Trello|Asana|Monday\.com|Notion|Figma/gi,
+    /Salesforce|HubSpot|Marketo|Adobe Creative Suite|Office 365/gi,
+    /Tableau|Power BI|Looker|Google Analytics|Excel|SPSS/gi
+  ];
+
+  const extractKeywords = (text: string, patterns: RegExp[]): string[] => {
+    const keywords = new Set<string>();
+    patterns.forEach(pattern => {
+      const matches = text.match(pattern);
+      if (matches) {
+        matches.forEach(match => keywords.add(match.toLowerCase()));
+      }
+    });
+    return Array.from(keywords);
+  };
+
+  // Extract soft skills using common patterns
+  const softSkillsPatterns = [
+    /leadership|communication|teamwork|problem.solving|project management/gi,
+    /analytical|creativity|adaptability|time.management|critical.thinking/gi,
+    /collaboration|negotiation|presentation|decision.making|interpersonal/gi
+  ];
+
+  return {
+    technical: extractKeywords(jobDescription, technicalPatterns),
+    soft: extractKeywords(jobDescription, softSkillsPatterns),
+    certifications: extractKeywords(jobDescription, certificationPatterns),
+    tools: extractKeywords(jobDescription, toolPatterns)
+  };
+};
+
+// Enhanced function to call OpenAI API for ATS Pro analysis
+const callOpenAIAPI = async (content: string, targetRole?: string, jobDescription?: string, profile?: { openai_api_key?: string } | null): Promise<CVAnalysisResponse> => {
   const apiKey = getApiKey(profile);
-  
+
+  // Only try OpenAI API - no mock data fallback
+  // Real API key is required now
   if (!apiKey) {
     throw new Error('Clé API OpenAI non configurée. Veuillez l\'ajouter dans les paramètres.');
   }
 
-  const prompt = `ANALYSE CV - FORMAT JSON OBLIGATOIRE
+  const prompt = `ANALYSE CV ATS PRO - FORMAT JSON OBLIGATOIRE
 
-Tu es un expert senior en recrutement ATS. Analyse ce CV et réponds UNIQUEMENT en JSON valide.
+Tu es un expert senior en recrutement ATS avec analyse de marché. Analyse ce CV et réponds UNIQUEMENT en JSON valide.
 
 ${targetRole ? `POSTE VISÉ : ${targetRole}` : 'ANALYSE GÉNÉRALE'}
+${jobDescription ? `\nDESCRIPTION DE POSTE :\n${jobDescription}` : ''}
 
 CV À ANALYSER :
 ${content}
 
-RÉPONSE OBLIGATOIRE - JSON UNIQUEMENT :
+RÉPONSE OBLIGATOIRE - JSON AVEC FONCTIONNALITÉS ATS PRO :
 {
   "overallScore": 85,
   "sections": {
@@ -233,10 +343,36 @@ RÉPONSE OBLIGATOIRE - JSON UNIQUEMENT :
       "description": "Description détaillée",
       "priority": "medium"
     }
-  ]
+  ],
+  "keywordAnalysis": {
+    "jobDescriptionKeywords": ["React", "Node.js", "TypeScript"],
+    "semanticMatches": ["JavaScript", "Frontend", "Backend"],
+    "densityOptimization": {
+      "current": 2.5,
+      "optimal": 4.0,
+      "suggestions": ["Ajouter plus d'occurrences des mots-clés principaux"]
+    },
+    "contextualSuggestions": {
+      "skills": ["Leadership", "Communication"],
+      "technologies": ["Docker", "AWS"],
+      "certifications": ["AWS Certified", "Scrum Master"]
+    }
+  },
+  "marketBenchmarking": {
+    "industry": "Technology",
+    "role": "Senior Developer",
+    "averageScore": 78,
+    "percentile": 85,
+    "competitiveness": "high",
+    "marketDemand": {
+      "highDemand": ["React", "TypeScript", "Cloud"],
+      "emerging": ["AI/ML", "Web3"],
+      "declining": ["Legacy systems"]
+    }
+  }
 }
 
-IMPORTANT : Réponds UNIQUEMENT avec le JSON, aucun autre texte.`;
+IMPORTANT : Réponds UNIQUEMENT avec le JSON ATS PRO complet, aucun autre texte.`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -682,7 +818,7 @@ export const useOpenAI = () => {
   const { profile } = useSupabase();
 
   const analyzeCVContent = async (request: CVAnalysisRequest): Promise<CVAnalysisResponse | null> => {
-    console.log('analyzeCVContent appelé');
+    console.log('analyzeCVContent appelé avec ATS Pro:', request.enableATSPro);
     setIsLoading(true);
     setError(null);
 
@@ -696,10 +832,45 @@ export const useOpenAI = () => {
       }
       console.log('Clé API trouvée');
 
+      // Enhanced analysis with job description keywords
+      let jobKeywords = null;
+      if (request.jobDescription && request.enableATSPro) {
+        console.log('Extraction des mots-clés de la description de poste...');
+        jobKeywords = await extractJobKeywords(request.jobDescription);
+        console.log('Mots-clés extraits:', jobKeywords);
+      }
+
       // Call OpenAI API for real analysis
       console.log('Appel de l\'API OpenAI...');
-      const analysisResult = await callOpenAIAPI(request.content, request.targetRole, profile);
+      const analysisResult = await callOpenAIAPI(
+        request.content,
+        request.targetRole,
+        request.jobDescription,
+        profile
+      );
       console.log('Réponse de l\'API OpenAI:', analysisResult);
+
+      // Enhance result with job description analysis if available
+      if (jobKeywords && request.enableATSPro && !analysisResult.keywordAnalysis) {
+        analysisResult.keywordAnalysis = {
+          jobDescriptionKeywords: [
+            ...jobKeywords.technical,
+            ...jobKeywords.certifications,
+            ...jobKeywords.tools
+          ],
+          semanticMatches: [],
+          densityOptimization: {
+            current: 2.5,
+            optimal: 4.0,
+            suggestions: ["Augmenter la fréquence des mots-clés techniques"]
+          },
+          contextualSuggestions: {
+            skills: jobKeywords.soft,
+            technologies: jobKeywords.technical,
+            certifications: jobKeywords.certifications
+          }
+        };
+      }
 
       setIsLoading(false);
       return analysisResult;
@@ -712,8 +883,8 @@ export const useOpenAI = () => {
     }
   };
 
-  const analyzeFile = async (file: File, targetRole?: string): Promise<CVAnalysisResponse | null> => {
-    console.log('analyzeFile appelé avec:', file.name, file.type);
+  const analyzeFile = async (file: File, targetRole?: string, jobDescription?: string, enableATSPro?: boolean): Promise<CVAnalysisResponse | null> => {
+    console.log('analyzeFile appelé avec:', file.name, file.type, 'ATS Pro:', enableATSPro);
     setIsLoading(true);
     setError(null);
 
@@ -722,14 +893,16 @@ export const useOpenAI = () => {
       // Extract text from file
       const content = await extractTextFromFile(file);
       console.log('Contenu extrait:', content.substring(0, 200) + '...');
-      
+
       console.log('Appel de analyzeCVContent...');
       // Analyze the extracted content with OpenAI
       const result = await analyzeCVContent({
         content,
-        targetRole
+        targetRole,
+        jobDescription,
+        enableATSPro
       });
-      
+
       console.log('Résultat de analyzeCVContent:', result);
       return result;
     } catch (err) {
@@ -778,7 +951,7 @@ export const useOpenAI = () => {
     }
   };
 
-  const generateCoverLetter = async (prompt: string): Promise<any> => {
+  const generateCoverLetter = async (prompt: string): Promise<CoverLetterResponse | null> => {
     setIsLoading(true);
     setError(null);
 
@@ -821,10 +994,11 @@ export const useOpenAI = () => {
       const aiResponse = data.choices[0].message.content.trim();
 
       try {
-        const parsedResponse = JSON.parse(aiResponse);
+        const parsedResponse: CoverLetterResponse = JSON.parse(aiResponse);
         setIsLoading(false);
         return parsedResponse;
       } catch (parseError) {
+        console.error('Erreur lors du parsing de la réponse:', parseError);
         // Fallback: return as plain text structure
         setIsLoading(false);
         return {
