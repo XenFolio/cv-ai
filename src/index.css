@@ -1,5 +1,6 @@
 
 @import './styles/a4-layout.css';
+@import './styles/animations.css';
 
 @tailwind base;
 @tailwind components;

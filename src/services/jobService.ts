@@ -176,7 +176,7 @@ class JobService {
     }
 
     try {
-      const query = this.buildJSearchQuery(filters);
+      const query = this.buildJSearchQuery(filters, page);
       const cacheKey = `jsearch-${JSON.stringify({ query, page })}`;
       
       // Vérifier le cache
@@ -185,7 +185,7 @@ class JobService {
         return { success: true, data: cached };
       }
 
-      const response = await fetch(`${JOB_APIS.jsearch.baseUrl}/search?${query}&page=${page}`, {
+      const response = await fetch(`${JOB_APIS.jsearch.baseUrl}/search?${query}`, {
         headers: JOB_APIS.jsearch.headers
       });
 
@@ -416,11 +416,11 @@ class JobService {
     const totalCount = successfulResults.reduce((sum, result) => sum + result.totalCount, 0);
 
     const finalResult: JobSearchResult = {
-      jobs: combinedJobs.slice(0, 50), // Augmenter à 50 par page
+      jobs: combinedJobs.slice(0, 20), // 20 par page
       totalCount,
       page,
-      totalPages: Math.ceil(totalCount / 50),
-      hasMore: combinedJobs.length > 50
+      totalPages: Math.ceil(totalCount / 20),
+      hasMore: combinedJobs.length > 20
     };
 
     // Sauvegarder le résultat dans le cache persistant
@@ -444,16 +444,16 @@ class JobService {
   }
 
   // Construction de la query pour JSearch
-  private buildJSearchQuery(filters: JobSearchFilters): string {
+  private buildJSearchQuery(filters: JobSearchFilters, page = 1): string {
     const params = new URLSearchParams();
 
     if (filters.query) params.append('query', filters.query);
     if (filters.location) params.append('location', filters.location);
     if (filters.remote) params.append('remote_jobs_only', 'true');
 
-    // Paramètres de base seulement pour éviter les erreurs
-    params.append('page', '1');
-    params.append('num_pages', '1'); // Réduit pour éviter les erreurs
+    // Paramètres pour la pagination - essayer d'obtenir plus de résultats
+    params.append('page', page.toString());
+    params.append('num_pages', '2'); // Augmenter pour obtenir plus de résultats
 
     return params.toString();
   }

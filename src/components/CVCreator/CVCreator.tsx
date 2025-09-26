@@ -10,6 +10,10 @@ import { CVPreviewDragDrop } from './CVPreviewDragDrop';
 import { StyleControls } from './StyleControls';
 import { CVTemplateCarousel } from './CVTemplateCarousel';
 import { CVCreatorProvider } from './CVCreatorContext.provider';
+import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
+import { useAppStore } from '../../store/useAppStore';
+import { NavigationIcons } from '../UI/iconsData';
+
 import type { CVExperience, CVSkill, CVLanguage, CVContent, CVEducation } from './types';
 
 interface SectionConfig {
@@ -82,6 +86,7 @@ const availableColors = [
 ];
 
 export const CVCreator: React.FC = () => {
+  const setActiveTab = useAppStore(s => s.setActiveTab);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [selectedTemplateName, setSelectedTemplateName] = useState<string>('');
   const [customFont, setCustomFont] = useState<string>('Calibri');
@@ -1032,37 +1037,74 @@ export const CVCreator: React.FC = () => {
   return (
     <CVCreatorProvider value={contextValue}>
       <main className="w-full min-h-screen bg-gray-50 dark:bg-gray-900">
-        <header className="pb-2 px-4 pt-1">
-          <h1 className="text-2xl font-bold heading-gradient text-center">Créateur de CV</h1>
+        {/* Header responsive */}
+        <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              
+              <BreadcrumbNavigation
+                items={[
+                  {
+                    label: 'Accueil',
+                    icon: NavigationIcons.Home,
+                    onClick: () => setActiveTab('dashboard')
+                  },
+                  {
+                    label: 'CV',
+                    onClick: () => setActiveTab('cv')
+                  },
+                  { label: 'Créateur de CV', current: true }
+                ]}
+                className="text-sm"
+                showHome={false}
+              />
+            </div>
+
+            {/* Actions rapides mobile */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => {
+                  const template = templates.find(t => t.id === selectedTemplate);
+                  if (template) generateDocx(template);
+                }}
+                className="p-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                aria-label="Télécharger le CV"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </header>
 
-      {/* Indicateur de sauvegarde automatique */}
-      <section className="flex justify-center items-center gap-4 mb-0 p-1 bg-gray-50 dark:bg-gray-800 rounded-lg mx-4">
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <input
-              type="checkbox"
-              checked={autoSaveEnabled}
-              onChange={(e) => setAutoSaveEnabled(e.target.checked)}
-              className="rounded border-gray-300 text-violet-600 focus:ring-violet-500 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-600 dark:hover:border-gray-500 dark:focus:ring-gray-500"
-            />
-            Sauvegarde automatique
-          </label>
-        </div>
-
-        {lastSaved && (
-          <time className="text-xs text-gray-500 dark:text-gray-400">
-            Dernière sauvegarde : {lastSaved.toLocaleTimeString()}
-          </time>
-        )}
-
-        {hasLocalData() && (
-          <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-            <span className="w-2 h-2 bg-green-500 rounded-full inline-block" aria-hidden="true"></span>
-            Données sauvegardées localement
+        {/* Indicateur de sauvegarde automatique */}
+        <section className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 mb-2 p-3 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg mx-2 sm:mx-4">
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoSaveEnabled}
+                onChange={(e) => setAutoSaveEnabled(e.target.checked)}
+                className="rounded border-gray-300 text-violet-600 focus:ring-violet-500 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-600 dark:hover:border-gray-500 dark:focus:ring-gray-500"
+              />
+              Sauvegarde auto
+            </label>
           </div>
-        )}
-      </section>
+
+          {lastSaved && (
+            <time className="text-xs text-gray-500 dark:text-gray-400">
+              Dernière sauvegarde : {lastSaved.toLocaleTimeString()}
+            </time>
+          )}
+
+          {hasLocalData() && (
+            <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" aria-hidden="true"></span>
+              Données sauvegardées
+            </div>
+          )}
+        </section>
 
       <div className="p-2 grid grid-cols-1 lg:grid-cols-12 gap-1">
 

@@ -91,7 +91,6 @@ function getDefaultPlans(): SubscriptionPlan[] {
         'Templates CV illimités',
         'Export PDF premium',
         'Optimisations IA illimitées',
-        'Support prioritaire',
         'Templates de lettre de motivation',
         'Préparation aux entretiens'
       ],

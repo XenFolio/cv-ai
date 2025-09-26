@@ -78,7 +78,7 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
     const loadingTimeout = setTimeout(() => {
       console.warn('Timeout de chargement atteint - forcer isLoading = false');
       setIsLoading(false);
-    }, 5000); // 5 secondes maximum au lieu de 10
+    }, 10000); // 10 secondes maximum
 
     // Récupérer la session initiale avec timeout
     const getInitialSession = async () => {
@@ -88,7 +88,7 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
         // Créer une promesse avec timeout pour getSession
         const sessionPromise = supabase!.auth.getSession();
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout getSession')), 3000)
+          setTimeout(() => reject(new Error('Timeout getSession')), 8000)
         );
         
         const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);

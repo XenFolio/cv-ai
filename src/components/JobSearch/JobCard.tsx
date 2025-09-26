@@ -10,7 +10,10 @@ import {
   ChevronUp,
   Bookmark,
   Share2,
-  Brain
+  Brain,
+  Clock,
+  Users,
+  Briefcase
 } from 'lucide-react';
 import { JobOffer } from '../../types/jobs';
 
@@ -27,7 +30,6 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
   const formatDate = (date: Date | string) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
 
-    // Vérifier si la date est valide
     if (isNaN(dateObj.getTime())) {
       return 'Date non disponible';
     }
@@ -46,10 +48,10 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
   // Formatage du salaire
   const formatSalary = (salary: JobOffer['salary']) => {
     if (!salary) return null;
-    
+
     const { min, max, currency, period } = salary;
     const periodText = period === 'year' ? '/an' : period === 'month' ? '/mois' : '/h';
-    
+
     if (min && max) {
       return `${min.toLocaleString()} - ${max.toLocaleString()} ${currency}${periodText}`;
     }
@@ -65,65 +67,26 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
   // Couleur du badge selon le type de contrat
   const getContractBadgeColor = (contractType: JobOffer['contractType']) => {
     const colors = {
-      'CDI': 'bg-green-100 text-green-700',
-      'CDD': 'bg-blue-100 text-blue-700',
-      'Stage': 'bg-purple-100 text-purple-700',
-      'Freelance': 'bg-orange-100 text-orange-700',
-      'Alternance': 'bg-pink-100 text-pink-700',
-      'Temps partiel': 'bg-cyan-100 text-cyan-700'
+      'CDI': 'bg-green-100 text-green-800',
+      'CDD': 'bg-blue-100 text-blue-800',
+      'Stage': 'bg-purple-100 text-purple-800',
+      'Freelance': 'bg-orange-100 text-orange-800',
+      'Alternance': 'bg-pink-100 text-pink-800',
+      'Temps partiel': 'bg-cyan-100 text-cyan-800'
     };
-    return colors[contractType] || 'bg-gray-100 text-gray-700';
-  };
-
-  // Couleur du badge selon la source
-  const getSourceBadgeColor = (source: JobOffer['source']) => {
-    const colors = {
-      'indeed': 'bg-blue-100 text-blue-700',
-      'linkedin': 'bg-blue-100 text-blue-700',
-      'welcometothejungle': 'bg-green-100 text-green-700',
-      'apec': 'bg-red-100 text-red-700',
-      'pole-emploi': 'bg-yellow-100 text-yellow-700',
-      'github': 'bg-gray-900 text-white',
-      'careerjet': 'bg-indigo-100 text-indigo-700',
-      'themuse': 'bg-purple-100 text-purple-700',
-      'adzuna': 'bg-pink-100 text-pink-700',
-      'jsearch': 'bg-cyan-100 text-cyan-700',
-      'activejobsdb': 'bg-emerald-100 text-emerald-700',
-      'other': 'bg-gray-100 text-gray-700'
-    };
-    return colors[source] || 'bg-gray-100 text-gray-700';
-  };
-
-  // Nom complet de la source
-  const getSourceName = (source: JobOffer['source']) => {
-    const names = {
-      'indeed': 'Indeed',
-      'linkedin': 'LinkedIn',
-      'welcometothejungle': 'Welcome to the Jungle',
-      'apec': 'APEC',
-      'pole-emploi': 'Pôle Emploi',
-      'github': 'GitHub Jobs',
-      'careerjet': 'CareerJet',
-      'activejobsdb': 'Active Jobs DB',
-      'themuse': 'The Muse',
-      'adzuna': 'Adzuna',
-      'jsearch': 'JSearch',
-      'other': 'Autre'
-    };
-    return names[source] || 'Autre';
+    return colors[contractType] || 'bg-gray-100 text-gray-800';
   };
 
   // Gestion de la sauvegarde
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsSaved(!isSaved);
-    // TODO: Implémenter la sauvegarde dans le localStorage ou une base de données
   };
 
   // Gestion du partage
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -132,7 +95,6 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
           url: job.url
         });
       } catch  {
-        // Fallback si le partage échoue
         copyToClipboard();
       }
     } else {
@@ -142,41 +104,42 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(job.url);
-    // TODO: Afficher une notification de succès
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/30 hover:shadow-lg transition-all duration-300 overflow-hidden">
-      {/* Header de la carte */}
+    <div className="bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden">
+      {/* Header */}
       <div className="p-6">
+        {/* Logo et actions */}
         <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              {job.companyLogo && (
-                <img 
-                  src={job.companyLogo} 
+          <div className="flex items-start gap-4">
+            {job.companyLogo && (
+              <div className="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden">
+                <img
+                  src={job.companyLogo}
                   alt={`Logo ${job.company}`}
-                  className="w-12 h-12 rounded-lg object-cover"
+                  className="w-full h-full object-cover"
                 />
-              )}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 hover:text-violet-600 transition-colors">
-                  {job.title}
-                </h3>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Building className="w-4 h-4" />
-                  <span>{job.company}</span>
-                </div>
+              </div>
+            )}
+
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                {job.title}
+              </h3>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Building className="w-4 h-4" />
+                <span>{job.company}</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex items-center gap-2">
             <button
               onClick={handleSave}
               className={`p-2 rounded-lg transition-colors ${
                 isSaved
-                  ? 'bg-violet-100 text-violet-600'
+                  ? 'bg-blue-100 text-blue-600'
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }`}
               title={isSaved ? 'Retirer des favoris' : 'Ajouter aux favoris'}
@@ -186,7 +149,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
 
             <button
               onClick={() => onAnalyze?.(`${job.source}-${job.id}`)}
-              className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-200"
+              className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200"
               title="Analyser cette offre"
             >
               <Brain className="w-4 h-4" />
@@ -203,69 +166,52 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
         </div>
 
         {/* Informations principales */}
-        <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600">
-          <div className="flex items-center gap-1">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="flex items-center gap-2 text-gray-600">
             <MapPin className="w-4 h-4" />
-            <span>{job.location}</span>
+            <span className="text-sm">{job.location}</span>
           </div>
-          
-          <div className="flex items-center gap-1">
-            <Calendar className="w-4 h-4" />
-            <span>{formatDate(job.publishedAt)}</span>
+
+          <div className="flex items-center gap-2 text-gray-600">
+            <Clock className="w-4 h-4" />
+            <span className="text-sm">{formatDate(job.publishedAt)}</span>
           </div>
-          
+
           {job.salary && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2 text-gray-600">
               <Euro className="w-4 h-4" />
-              <span>{formatSalary(job.salary)}</span>
+              <span className="text-sm">{formatSalary(job.salary)}</span>
             </div>
-          )}
-          
-          {job.remote && (
-            <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-              Télétravail
-            </span>
           )}
         </div>
 
         {/* Badges */}
         <div className="flex flex-wrap gap-2 mb-4">
-          <span className={`px-2 py-1 rounded-full text-xs ${getContractBadgeColor(job.contractType)}`}>
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getContractBadgeColor(job.contractType)}`}>
             {job.contractType}
           </span>
-          
-          <span className={`px-2 py-1 rounded-full text-xs ${getSourceBadgeColor(job.source)}`}>
-            {getSourceName(job.source)}
-          </span>
-          
-          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
+
+          {job.remote && (
+            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+              Télétravail
+            </span>
+          )}
+
+          <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
             {job.experience}
           </span>
+
+          {job.applicationCount && (
+            <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              {job.applicationCount} candidats
+            </span>
+          )}
         </div>
 
-        {/* Tags */}
-        {job.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
-            {job.tags.slice(0, 3).map((tag, index) => (
-              <span 
-                key={index}
-                className="px-2 py-1 bg-violet-50 text-violet-600 rounded text-xs flex items-center gap-1"
-              >
-                <Tag className="w-3 h-3" />
-                {tag}
-              </span>
-            ))}
-            {job.tags.length > 3 && (
-              <span className="px-2 py-1 bg-gray-50 text-gray-500 rounded text-xs">
-                +{job.tags.length - 3}
-              </span>
-            )}
-          </div>
-        )}
-
         {/* Description courte */}
-        <p className="text-gray-700 text-sm line-clamp-2 mb-4">
-          {job.description.length > 150 
+        <p className="text-gray-700 text-sm mb-4 line-clamp-2">
+          {job.description.length > 150
             ? `${job.description.substring(0, 150)}...`
             : job.description
           }
@@ -275,7 +221,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
         <div className="flex items-center justify-between">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1 text-violet-600 hover:text-violet-700 transition-colors text-sm"
+            className="flex items-center gap-1 text-gray-600 hover:text-gray-800 transition-colors text-sm"
           >
             {isExpanded ? (
               <>
@@ -292,21 +238,26 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
 
           <a
             href={job.url}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-lg hover:from-violet-600 hover:to-pink-600 transition-all duration-200 text-sm"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 text-sm font-medium"
           >
             <ExternalLink className="w-4 h-4" />
-            Voir l'offre
+            Postuler
           </a>
         </div>
       </div>
 
       {/* Contenu étendu */}
       {isExpanded && (
-        <div className="px-6 pb-6 border-t border-gray-100">
+        <div className="px-6 pb-6 border-t border-gray-100 bg-gray-50">
           <div className="pt-4 space-y-4">
             {/* Description complète */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">Description du poste</h4>
+              <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                <Briefcase className="w-4 h-4" />
+                Description du poste
+              </h4>
               <div className="text-gray-700 text-sm whitespace-pre-wrap">
                 {job.description}
               </div>
@@ -315,11 +266,14 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
             {/* Exigences */}
             {job.requirements.length > 0 && (
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Exigences</h4>
+                <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Exigences
+                </h4>
                 <ul className="text-gray-700 text-sm space-y-1">
                   {job.requirements.map((req, index) => (
                     <li key={index} className="flex items-start gap-2">
-                      <span className="text-violet-500 mt-1">•</span>
+                      <span className="text-blue-500 mt-1">•</span>
                       <span>{req}</span>
                     </li>
                   ))}
@@ -327,16 +281,42 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onAnalyze }) => {
               </div>
             )}
 
-            {/* Informations supplémentaires */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+            {/* Tags */}
+            {job.tags.length > 0 && (
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wide">Publié le</span>
+                <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Compétences clés
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {job.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Informations supplémentaires */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+              <div>
+                <span className="text-xs text-gray-500 uppercase tracking-wide flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  Date de publication
+                </span>
                 <p className="text-sm text-gray-900">{formatDate(job.publishedAt)}</p>
               </div>
-              
+
               {job.applicationCount && (
                 <div>
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">Candidatures</span>
+                  <span className="text-xs text-gray-500 uppercase tracking-wide flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    Nombre de candidats
+                  </span>
                   <p className="text-sm text-gray-900">{job.applicationCount} candidats</p>
                 </div>
               )}

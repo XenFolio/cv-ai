@@ -76,10 +76,12 @@ export default defineConfig({
   optimizeDeps: {
     // Pré-bundler les dépendances critiques
     include: [
-      'react', 
-      'react-dom', 
+      'react',
+      'react-dom',
       'zustand',
-      '@supabase/supabase-js'
+      '@supabase/supabase-js',
+      'docx',
+      'file-saver'
     ],
     // Exclure les dépendances qui doivent être traitées dynamiquement
     exclude: ['lucide-react'],

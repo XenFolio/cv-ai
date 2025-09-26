@@ -9,6 +9,8 @@ import { useCVLibrary, DocumentType } from '../../hooks/useCVLibrary';
 import { useAppStore } from '../../store/useAppStore';
 import {  ArrowLeft } from 'lucide-react';
 import GradientSpinLoader from '../loader/GradientSpinLoader';
+import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
+import { NavigationIcons } from '../UI/iconsData';
 // Type local pour le composant CVAnalysis
 export type CVAnalysisDocumentType = 'cv' | 'lettre';
 
@@ -36,6 +38,7 @@ export const CVAnalysis: React.FC<CVAnalysisProps> = ({
   const { analyzeFile, error } = useOpenAI();
   const { addActivity, addDocument, updateDocument } = useSupabase();
   const { addAnalyzedCV } = useCVLibrary();
+  const setActiveTab = useAppStore(s => s.setActiveTab);
   const previewFile = useAppStore(s => s.previewFile);
   const setPreviewFile = useAppStore(s => s.setPreviewFile);
 
@@ -376,11 +379,24 @@ export const CVAnalysis: React.FC<CVAnalysisProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* En-tête avec titre et description */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 via-pink-600 to-blue-600 bg-clip-text text-transparent mb-2">
-          {config.title}
-        </h2>
+      {/* En-tête avec breadcrumb et description */}
+      <div className="text-left space-y-8">
+        <BreadcrumbNavigation
+          items={[
+            {
+              label: 'Accueil',
+              icon: NavigationIcons.Home,
+              onClick: () => setActiveTab('dashboard')
+            },
+            {
+              label: 'CV',
+              onClick: () => setActiveTab('cv')
+            },
+            { label: config.title, current: true }
+          ]}
+          showHome={false}
+          className="justify-start mb-4"
+        />
         <p className="text-gray-600 max-w-2xl mx-auto">
           {config.description}
         </p>

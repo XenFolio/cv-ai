@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Brain, Target, TrendingUp, Award, User, Star, ArrowRight, CheckCircle, Clock, Lightbulb, MessageSquare, Calendar, Download, X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
+import { NavigationIcons } from '../UI/iconsData';
+import { useAppStore } from '../../store/useAppStore';
 
 interface CoachingProps {
   onNavigate?: (tab: string) => void;
@@ -28,6 +31,7 @@ interface UserProfile {
 
 export const Coaching: React.FC<CoachingProps> = ({ onNavigate }) => {
   const { user, profile } = useAuth();
+  const setActiveTab = useAppStore(s => s.setActiveTab);
   const [activeCategory, setActiveCategory] = useState('all');
   const [showPlanningGuide, setShowPlanningGuide] = useState(false);
 
@@ -138,11 +142,29 @@ export const Coaching: React.FC<CoachingProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="heading-gradient">
-          Coaching IA Personnalisé
-        </h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+          <BreadcrumbNavigation
+            items={[
+              {
+                label: 'Accueil',
+                icon: NavigationIcons.Home,
+                onClick: () => setActiveTab('dashboard')
+              },
+              {
+                label: 'Coach IA',
+                onClick: () => setActiveTab('coach')
+              },
+              { label: 'Coaching IA Personnalisé', current: true }
+            ]}
+            showHome={false}
+            className="justify-start"
+          />
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-violet-500 to-pink-500 rounded-2xl animate-scaleIn flex-shrink-0">
+            <Brain className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+          </div>
+        </div>
+        <p className="text-gray-600 max-w-2xl">
           Programme de coaching adapté à votre profil et vos objectifs professionnels
         </p>
       </div>

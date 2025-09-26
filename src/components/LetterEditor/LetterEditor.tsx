@@ -1,12 +1,15 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import html2pdf from 'html2pdf.js';
-import { 
-  Bold, 
-  Italic, 
-  Underline, 
-  AlignLeft, 
-  AlignCenter, 
-  AlignRight, 
+import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
+import { NavigationIcons } from '../UI/iconsData';
+import { useAppStore } from '../../store/useAppStore';
+import {
+  Bold,
+  Italic,
+  Underline,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
   AlignJustify,
   List,
   ListOrdered,
@@ -20,7 +23,12 @@ import {
   Type,
   Palette,
   FileText,
-  Printer
+  Printer,
+  Menu,
+  X,
+  
+  
+  
 } from 'lucide-react';
 
 interface LetterEditorProps {
@@ -35,15 +43,19 @@ interface LetterEditorProps {
     motivation: string;
     competences: string;
   };
+  onBack?: () => void;
 }
 
-export const LetterEditor: React.FC<LetterEditorProps> = ({ 
-  onSave, 
-  onExport, 
+export const LetterEditor: React.FC<LetterEditorProps> = ({
+  onSave,
+  onExport,
   initialContent = '',
-  formData 
+  formData,
+  
 }) => {
+  const setActiveTab = useAppStore(s => s.setActiveTab);
   const [content, setContent] = useState(initialContent);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   // Charger le contenu sauvegardé au démarrage avec préservation des styles
   useEffect(() => {
@@ -233,7 +245,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
   }, [onExport]);
 
   // Templates de lettres
-  const templates = {
+  const templates = useMemo(() => ({
     moderne: {
       name: "Moderne",
       preview: "Design épuré et contemporain",
@@ -653,7 +665,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
         </div>
       `
     }
-  };
+  }), [formData]);
 
   // Couleurs prédéfinies
   const colors = [
@@ -688,7 +700,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
       editorRef.current.innerHTML = templates[templateKey].template;
       setContent(templates[templateKey].template);
     }
-  }, []);
+  }, [templates]);
 
 
   // Sauvegarder
@@ -867,19 +879,49 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
           </div>
         </div>
       )}
-      
-      <div className="max-w-full mx-auto">
-        <div className="flex gap-4 h-screen">
-          {/* Colonne de gauche - Éditeur */}
-          <div className="flex-1 flex flex-col">
+
+      {/* Breadcrumb Navigation */}
+      <div className="max-w-full mx-auto px-4 py-2">
+        <BreadcrumbNavigation
+          items={[
+            {
+              label: 'Accueil',
+              icon: NavigationIcons.Home,
+              onClick: () => setActiveTab('dashboard')
+            },
+            {
+              label: 'Lettre',
+              onClick: () => setActiveTab('letter-editor')
+            },
+            { label: 'Éditeur de Lettre', current: true }
+          ]}
+          showHome={false}
+          animated={true}
+          className="mb-4"
+        />
+      </div>
+
+      <div className="max-w-full mx-auto h-screen flex flex-col lg:flex-row gap-4">
+          {/* Éditeur */}
+          <div className="flex-1 flex flex-col min-w-0">
             {/* Barre d'outils */}
-            <div className="bg-white rounded-t-lg shadow-sm border border-gray-200 p-3">
-              <div className="flex flex-wrap items-center gap-2">
+            <div className="bg-white rounded-t-lg shadow-sm border border-gray-200 p-2 lg:p-3">
+              <div className="flex flex-wrap items-center gap-1 lg:gap-2">
+                {/* Bouton sidebar mobile */}
+                <div className="lg:hidden">
+                  <button
+                    onClick={() => setShowSidebar(!showSidebar)}
+                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                    title="Afficher les templates"
+                  >
+                    {showSidebar ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                  </button>
+                </div>
                 {/* Section Fichier */}
-                <div className="flex items-center gap-1 pr-3 border-r border-gray-200">
+                <div className="flex items-center gap-1 pr-2 lg:pr-3 border-r border-gray-200">
               <button
                 onClick={handleSave}
-                className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
+                className="p-1.5 lg:p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
                 title="Sauvegarder"
               >
                 <Save className="w-4 h-4" />
@@ -887,7 +929,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
               <div className="relative">
                 <button
                   onClick={exportToPDF}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                  className="p-1.5 lg:p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
                   title="Exporter PDF"
                 >
                   <Download className="w-4 h-4" />
@@ -896,17 +938,17 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
             </div>
 
             {/* Section Édition */}
-            <div className="flex items-center gap-1 pr-3 border-r border-gray-200">
+            <div className="flex items-center gap-1 pr-2 lg:pr-3 border-r border-gray-200">
               <button
                 onClick={() => document.execCommand('undo')}
-                className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                className="p-1.5 lg:p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                 title="Annuler"
               >
                 <Undo2 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => document.execCommand('redo')}
-                className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                className="p-1.5 lg:p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                 title="Rétablir"
               >
                 <Redo2 className="w-4 h-4" />
@@ -914,24 +956,24 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
             </div>
 
             {/* Section Formatage */}
-            <div className="flex items-center gap-1 pr-3 border-r border-gray-200">
+            <div className="flex items-center gap-1 pr-2 lg:pr-3 border-r border-gray-200">
               <button
                 onClick={() => execCommand('bold')}
-                className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors font-bold"
+                className="p-1.5 lg:p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors font-bold"
                 title="Gras"
               >
                 <Bold className="w-4 h-4" />
               </button>
               <button
                 onClick={() => execCommand('italic')}
-                className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors italic"
+                className="p-1.5 lg:p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors italic"
                 title="Italique"
               >
                 <Italic className="w-4 h-4" />
               </button>
               <button
                 onClick={() => execCommand('underline')}
-                className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors underline"
+                className="p-1.5 lg:p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors underline"
                 title="Souligné"
               >
                 <Underline className="w-4 h-4" />
@@ -939,16 +981,16 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
             </div>
 
             {/* Section Police et taille */}
-            <div className="flex items-center gap-1 pr-3 border-r border-gray-200">
+            <div className="flex items-center gap-1 pr-2 lg:pr-3 border-r border-gray-200">
               {/* Menu famille de police */}
               <div className="relative" ref={fontFamilyRef}>
                 <button
                   onClick={() => setShowFontFamily(!showFontFamily)}
-                  className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center gap-1 min-w-[100px]"
+                  className="p-1.5 lg:p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center gap-1 min-w-[80px] lg:min-w-[100px]"
                   title="Police"
                 >
                   <Type className="w-4 h-4" />
-                  <span className="text-xs truncate">{currentFontFamily}</span>
+                  <span className="text-xs truncate hidden sm:inline">{currentFontFamily}</span>
                   <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -1140,71 +1182,70 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
             </div>
           </div>
 
-          {/* Link Dialog */}
-          {showLinkDialog && (
-            <div className="mt-3 p-4 bg-blue-50 rounded border border-blue-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Link className="w-4 h-4 text-blue-600" />
-                <span className="font-medium text-blue-700">Insérer un lien</span>
+            {/* Link Dialog */}
+            {showLinkDialog && (
+              <div className="mt-3 p-4 bg-blue-50 rounded border border-blue-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Link className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium text-blue-700">Insérer un lien</span>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      URL du lien
+                    </label>
+                    <input
+                      type="url"
+                      value={linkUrl}
+                      onChange={(e) => setLinkUrl(e.target.value)}
+                      placeholder="https://exemple.com"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Texte du lien
+                    </label>
+                    <input
+                      type="text"
+                      value={linkText}
+                      onChange={(e) => setLinkText(e.target.value)}
+                      placeholder="Texte à afficher"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={confirmLink}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      Insérer
+                    </button>
+                    <button
+                      onClick={() => setShowLinkDialog(false)}
+                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    URL du lien
-                  </label>
-                  <input
-                    type="url"
-                    value={linkUrl}
-                    onChange={(e) => setLinkUrl(e.target.value)}
-                    placeholder="https://exemple.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Texte du lien
-                  </label>
-                  <input
-                    type="text"
-                    value={linkText}
-                    onChange={(e) => setLinkText(e.target.value)}
-                    placeholder="Texte à afficher"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={confirmLink}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Insérer
-                  </button>
-                  <button
-                    onClick={() => setShowLinkDialog(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
-                  >
-                    Annuler
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
 
             {/* Éditeur */}
-            <div className="bg-white border-l border-r border-gray-200 relative flex-1 overflow-auto" style={{ 
-              width: '210mm', 
-              minHeight: '297mm',
+            <div className="bg-white border-l border-r border-gray-200 relative flex-1 overflow-auto" style={{
+              width: '100%',
+              minHeight: '400px',
               maxWidth: '210mm',
               margin: '0 auto'
             }}>
               {isPreview ? (
-                <div 
+                <div
                   className="outline-none"
-                  style={{ 
-                    width: '210mm',
-                    minHeight: '297mm',
-                    padding: '20mm',
+                  style={{
+                    width: '100%',
+                    minHeight: '400px',
+                    padding: '10mm',
                     fontFamily: templates[currentTemplate as keyof typeof templates].style.fontFamily,
                     fontSize: templates[currentTemplate as keyof typeof templates].style.fontSize,
                     lineHeight: templates[currentTemplate as keyof typeof templates].style.lineHeight,
@@ -1218,10 +1259,10 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
                   contentEditable
                   suppressContentEditableWarning
                   className="outline-none"
-                  style={{ 
-                    width: '210mm',
-                    minHeight: '297mm',
-                    padding: '20mm',
+                  style={{
+                    width: '100%',
+                    minHeight: '400px',
+                    padding: '10mm',
                     fontFamily: templates[currentTemplate as keyof typeof templates].style.fontFamily,
                     fontSize: templates[currentTemplate as keyof typeof templates].style.fontSize,
                     lineHeight: templates[currentTemplate as keyof typeof templates].style.lineHeight,
@@ -1248,18 +1289,18 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
             </div>
           </div>
 
-          {/* Colonne de droite - Templates */}
-          <div className="w-80 bg-white rounded-lg shadow-sm border border-gray-200 h-screen overflow-hidden">
+          {/* Sidebar - Templates */}
+          <div className={`w-full lg:w-80 bg-white rounded-lg shadow-sm border border-gray-200 lg:h-screen overflow-hidden order-first lg:order-last transition-all duration-300 ${showSidebar ? 'block' : 'hidden lg:block'}`}>
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-gray-600" />
                 <span className="font-medium text-gray-700">Templates de lettres</span>
               </div>
             </div>
-            
+
             {/* Container des templates avec scroll vertical */}
             <div className="overflow-y-auto h-full pb-4">
-              <div className="p-4 space-y-4">
+              <div className="p-2 lg:p-4 space-y-3 lg:space-y-4">
                 {templateKeys.map((key) => (
                   <div
                     key={key}
@@ -1272,7 +1313,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
                       e.preventDefault();
                       e.stopPropagation();
                     }}
-                    className={`w-full p-4 bg-white rounded-lg border-2 cursor-pointer transition-all duration-200 select-none ${
+                    className={`w-full p-3 lg:p-4 bg-white rounded-lg border-2 cursor-pointer transition-all duration-200 select-none ${
                       currentTemplate === key
                         ? 'border-purple-500 bg-purple-50 shadow-lg transform scale-105'
                         : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50/30 hover:shadow-md'
@@ -1303,10 +1344,10 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
 
                     {/* Aperçu miniature */}
                     <div className="bg-gray-50 rounded p-2 text-xs text-gray-400 overflow-hidden" style={{ height: '60px' }}>
-                      <div 
+                      <div
                         dangerouslySetInnerHTML={{ __html: templates[key].template.substring(0, 100) + '...' }}
-                        style={{ 
-                          fontSize: '8px', 
+                        style={{
+                          fontSize: '8px',
                           lineHeight: '1.2',
                           fontFamily: templates[key].style.fontFamily.split(',')[0]
                         }}

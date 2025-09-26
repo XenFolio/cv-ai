@@ -4,6 +4,29 @@ import { Search, MapPin, Filter, Briefcase, RefreshCw, TrendingUp } from 'lucide
 import { useJobSearch } from '../../hooks/useJobSearch';
 import { JobSearchFilters } from '../../types/jobs';
 import { JobCard, JobFilters, JobStats, RecentSearches } from './';
+import { Pagination } from '../UI/Pagination';
+import { LoadingState, ProgressIndicator, InteractiveButton, useToast, ToastNotification } from '../UI/AdvancedLoadingStates';
+import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
+import { useAppStore } from '../../store/useAppStore';
+import { NavigationIcons } from '../UI/iconsData';
+
+// Wrapper component for toast notifications
+const JobSearchToastContainer: React.FC = () => {
+  const { toasts, removeToast } = useToast();
+
+  return (
+    <>
+      {toasts.map((toast) => (
+        <ToastNotification
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => removeToast(toast.id)}
+        />
+      ))}
+    </>
+  );
+};
 
 interface JobSearchProps {
   initialKeywords?: string[];
@@ -16,18 +39,21 @@ export const JobSearch: React.FC<JobSearchProps> = ({
   initialLocation = '',
   onAnalyzeJob
 }) => {
+  const setActiveTab = useAppStore(s => s.setActiveTab);
   const {
     jobs,
     loading,
     error,
     totalCount,
-    hasMore,
+    currentPage: hookCurrentPage,
+    totalPages,
     stats,
     searchJobs,
-    loadMore,
     refreshResults,
     findSimilarJobs
   } = useJobSearch();
+
+  const { addToast } = useToast();
 
   const [filters, setFilters] = useState<JobSearchFilters>({
     query: initialKeywords.join(' '),
@@ -37,6 +63,8 @@ export const JobSearch: React.FC<JobSearchProps> = ({
 
   const [showFilters, setShowFilters] = useState(false);
   const [searchMode, setSearchMode] = useState<'manual' | 'cv-based'>('manual');
+  const [itemsPerPage] = useState(20);
+  const [searchProgress, setSearchProgress] = useState(0);
 
   // Recherche initiale si des mots-clés sont fournis
   useEffect(() => {
@@ -49,17 +77,54 @@ export const JobSearch: React.FC<JobSearchProps> = ({
   // Gestion de la recherche
   const handleSearch = async () => {
     if (!filters.query?.trim()) return;
-    
+
     setSearchMode('manual');
-    await searchJobs(filters);
+    setSearchProgress(0);
+
+    // Simulate progress for better UX
+    const progressInterval = setInterval(() => {
+      setSearchProgress(prev => Math.min(prev + 10, 90));
+    }, 200);
+
+    try {
+      await searchJobs(filters, 1);
+      setSearchProgress(100);
+      addToast('Recherche terminée avec succès', 'success');
+    } catch  {
+      addToast('Erreur lors de la recherche', 'error');
+    } finally {
+      clearInterval(progressInterval);
+      setTimeout(() => setSearchProgress(0), 1000);
+    }
+  };
+
+  // Gestion du changement de page
+  const handlePageChange = async (page: number) => {
+    await searchJobs(filters, page);
   };
 
   // Gestion de la recherche basée sur le CV
   const handleCVBasedSearch = async () => {
     if (initialKeywords.length === 0) return;
-    
+
     setSearchMode('cv-based');
-    await findSimilarJobs(initialKeywords, filters.location);
+    setSearchProgress(0);
+
+    // Simulate progress for better UX
+    const progressInterval = setInterval(() => {
+      setSearchProgress(prev => Math.min(prev + 15, 90));
+    }, 200);
+
+    try {
+      await findSimilarJobs(initialKeywords, filters.location);
+      setSearchProgress(100);
+      addToast('Analyse CV terminée', 'success');
+    } catch  {
+      addToast('Erreur lors de l\'analyse CV', 'error');
+    } finally {
+      clearInterval(progressInterval);
+      setTimeout(() => setSearchProgress(0), 1000);
+    }
   };
 
   // Gestion des filtres
@@ -73,19 +138,30 @@ export const JobSearch: React.FC<JobSearchProps> = ({
     if (searchMode === 'cv-based' && initialKeywords.length > 0) {
       await findSimilarJobs(initialKeywords, filters.location);
     } else {
-      await searchJobs(filters);
+      await searchJobs(filters, 1);
     }
   };
 
   // Gestion de la sélection d'une recherche récente
   const handleSelectRecentSearch = (selectedFilters: JobSearchFilters) => {
     setFilters(selectedFilters);
-    searchJobs(selectedFilters);
+    searchJobs(selectedFilters, 1);
   };
 
   // Gestion de l'analyse d'offre
   const handleAnalyzeJob = (jobId: string) => {
     onAnalyzeJob?.(jobId);
+    addToast('Analyse de l\'offre démarrée', 'info');
+  };
+
+  // Gestion du rafraîchissement avec réinitialisation de la page
+  const handleRefreshResults = async () => {
+    try {
+      await refreshResults();
+      addToast('Résultats actualisés', 'success');
+    } catch  {
+      addToast('Erreur lors du rafraîchissement', 'error');
+    }
   };
 
   return (
@@ -96,35 +172,61 @@ export const JobSearch: React.FC<JobSearchProps> = ({
         <meta name="keywords" content="recherche emploi, offres d'emploi, CV, candidature, recrutement" />
       </Helmet>
 
+      {/* Toast container pour les notifications */}
+      <JobSearchToastContainer />
+
       <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 pt-0 pb-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-2">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-violet-500 to-pink-500 rounded-2xl mb-4">
-              <Briefcase className="w-4 h-4 text-white" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header responsive */}
+          <div className="mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+              <BreadcrumbNavigation
+                items={[
+                  {
+                    label: 'Accueil',
+                    icon: NavigationIcons.Home,
+                    onClick: () => setActiveTab('dashboard')
+                  },
+                  {
+                    label: 'Jobs',
+                    onClick: () => setActiveTab('job-search')
+                  },
+                  { label: 'Recherche d\'Emploi', current: true }
+                ]}
+                showHome={false}
+                className="justify-start"
+              />
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-violet-500 to-pink-500 rounded-2xl animate-scaleIn flex-shrink-0">
+                <Briefcase className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+              </div>
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-pink-400 bg-clip-text text-transparent mb-2">
-              Recherche d'Emploi
-            </h1>
-            <p className="text-sm text-gray-600 max-w-2xl mx-auto">
-              Découvrez des opportunités professionnelles adaptées à votre profil
-              {initialKeywords.length > 0 && ' basées sur votre CV analysé'}
-            </p>
+            <div className="text-center sm:text-left">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-violet-600 to-pink-400 bg-clip-text text-transparent mb-2">
+                Recherche d'Emploi
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 max-w-2xl sm:max-w-none mx-auto sm:mx-0">
+                Découvrez des opportunités professionnelles adaptées à votre profil
+                {initialKeywords.length > 0 && ' basées sur votre CV analysé'}
+              </p>
+            </div>
           </div>
 
           {/* Barre de recherche */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-gray-200/30 mb-6">
+          <div className="text-white bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border border-gray-200/30 dark:border-gray-700/30 mb-6 shadow-sm">
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Champ de recherche */}
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <label htmlFor="job-search" className="sr-only">Rechercher des offres d'emploi</label>
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" aria-hidden="true" />
                 <input
-                  type="text"
+                  id="job-search"
+                  type="search"
                   placeholder="Poste, compétences, entreprise..."
                   value={filters.query || ''}
                   onChange={(e) => handleFiltersChange({ query: e.target.value })}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-0 focus:ring-violet-500 focus:border-transparent hover:border-violet-500 transition-all duration-200"
+                  className=" text-gray-900 w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white transition-all duration-200"
+                  aria-label="Rechercher des offres d'emploi"
                 />
               </div>
 
@@ -137,34 +239,43 @@ export const JobSearch: React.FC<JobSearchProps> = ({
                   value={filters.location || ''}
                   onChange={(e) => handleFiltersChange({ location: e.target.value })}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-0 focus:ring-violet-500 focus:border-transparent hover:border-violet-500 transition-all duration-200"
+                  className="text-gray-900 w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-0 focus:ring-violet-500 focus:border-transparent hover:border-violet-500 transition-all duration-200"
                 />
               </div>
 
               {/* Boutons d'action */}
               <div className="flex gap-2">
-                <button
+                <InteractiveButton
                   onClick={handleSearch}
-                  disabled={loading || !filters.query?.trim()}
-                  className="px-6 py-3 bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-xl hover:from-violet-600 hover:to-pink-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  loading={loading}
+                  disabled={!filters.query?.trim()}
+                  icon={loading ? undefined : <Search className="w-4 h-4" />}
+                  variant="primary"
+                  className="bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white"
                 >
-                  {loading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Search className="w-4 h-4" />
-                  )}
-                  Rechercher
-                </button>
+                  {loading ? 'Recherche...' : 'Rechercher'}
+                </InteractiveButton>
 
-                <button
+                <InteractiveButton
                   onClick={() => setShowFilters(!showFilters)}
-                  className="px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  variant="outline"
+                  icon={<Filter className="w-4 h-4" />}
+                  size="md"
                 >
-                  <Filter className="w-4 h-4" />
                   Filtres
-                </button>
+                </InteractiveButton>
               </div>
             </div>
+
+            {/* Progress Indicator */}
+            {searchProgress > 0 && (
+              <ProgressIndicator
+                progress={searchProgress}
+                label={searchMode === 'cv-based' ? 'Analyse CV en cours...' : 'Recherche en cours...'}
+                className="mt-4"
+                size="sm"
+              />
+            )}
 
             {/* Recherche basée sur le CV */}
             {initialKeywords.length > 0 && (
@@ -175,13 +286,15 @@ export const JobSearch: React.FC<JobSearchProps> = ({
                     <span>Mots-clés de votre CV : {initialKeywords.slice(0, 3).join(', ')}</span>
                     {initialKeywords.length > 3 && <span>+{initialKeywords.length - 3} autres</span>}
                   </div>
-                  <button
+                  <InteractiveButton
                     onClick={handleCVBasedSearch}
-                    disabled={loading}
-                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 disabled:opacity-50 text-sm"
+                    loading={loading}
+                    variant="primary"
+                    size="sm"
+                    className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
                   >
                     Emplois similaires à mon CV
-                  </button>
+                  </InteractiveButton>
                 </div>
               </div>
             )}
@@ -205,7 +318,7 @@ export const JobSearch: React.FC<JobSearchProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <span className="text-gray-600">
-                      {loading ? 'Recherche en cours...' : `${totalCount} offres trouvées`}
+                      {loading ? 'Recherche en cours...' : `${totalCount} offres disponibles • ${jobs.length} affichées`}
                     </span>
                     {searchMode === 'cv-based' && (
                       <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
@@ -216,14 +329,15 @@ export const JobSearch: React.FC<JobSearchProps> = ({
 
                   {jobs.length > 0 && (
                     <div className="flex gap-2">
-                      <button
-                        onClick={refreshResults}
-                        disabled={loading}
-                        className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                      <InteractiveButton
+                        onClick={handleRefreshResults}
+                        loading={loading}
+                        variant="ghost"
+                        size="sm"
+                        className="p-2"
                         title="Actualiser"
-                      >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                      </button>
+                        icon={<RefreshCw className="w-4 h-4" />}
+                      />
                     </div>
                   )}
                 </div>
@@ -250,37 +364,70 @@ export const JobSearch: React.FC<JobSearchProps> = ({
             <div className="lg:col-span-3">
               {/* Message d'erreur */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-                  <p className="text-red-700">{error}</p>
-                  <button
+                <LoadingState
+                  isLoading={false}
+                  error={error}
+                  className="mb-6"
+                >
+                  <InteractiveButton
                     onClick={() => window.location.reload()}
-                    className="mt-2 text-red-600 hover:text-red-800 underline text-sm"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
                   >
                     Réessayer
-                  </button>
-                </div>
+                  </InteractiveButton>
+                </LoadingState>
               )}
 
               {/* Liste des offres */}
-              <div className="space-y-4">
-                {jobs.map((job) => (
-                  <JobCard
-                    key={`${job.source}-${job.id}`}
-                    job={job}
-                    onAnalyze={handleAnalyzeJob}
-                  />
-                ))}
-              </div>
+              <LoadingState
+                isLoading={loading && jobs.length === 0}
+                error={error}
+                variant="skeleton"
+              >
+                <div className="space-y-4">
+                  {jobs.length === 0 && !loading && !error ? (
+                    <div className="text-center py-12">
+                      <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-600 mb-2">
+                        {initialKeywords.length > 0 ? 'Aucune offre correspondante' : 'Commencez votre recherche'}
+                      </h3>
+                      <p className="text-gray-500 mb-6">
+                        {initialKeywords.length > 0
+                          ? 'Essayez d\'élargir vos critères de recherche'
+                          : 'Entrez des mots-clés pour trouver des offres d\'emploi'
+                        }
+                      </p>
+                      <InteractiveButton
+                        onClick={() => document.getElementById('job-search')?.focus()}
+                        variant="primary"
+                      >
+                        {initialKeywords.length > 0 ? 'Modifier la recherche' : 'Commencer'}
+                      </InteractiveButton>
+                    </div>
+                  ) : (
+                    jobs.map((job) => (
+                      <JobCard
+                        key={`${job.source}-${job.id}`}
+                        job={job}
+                        onAnalyze={handleAnalyzeJob}
+                      />
+                    ))
+                  )}
+                </div>
+              </LoadingState>
 
-              {/* Bouton "Charger plus" */}
-              {hasMore && !loading && (
-                <div className="text-center mt-8">
-                  <button
-                    onClick={loadMore}
-                    className="px-6 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    Charger plus d'offres
-                  </button>
+              {/* Pagination */}
+              {jobs.length > 0 && !loading && totalPages > 1 && (
+                <div className="mt-8">
+                  <Pagination
+                    currentPage={hookCurrentPage}
+                    totalPages={totalPages}
+                    totalItems={totalCount}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                  />
                 </div>
               )}
 
@@ -295,23 +442,18 @@ export const JobSearch: React.FC<JobSearchProps> = ({
                     Essayez d'ajuster vos critères de recherche ou vos filtres
                   </p>
                   {initialKeywords.length > 0 && (
-                    <button
+                    <InteractiveButton
                       onClick={handleCVBasedSearch}
-                      className="px-4 py-2 bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-lg hover:from-violet-600 hover:to-pink-600 transition-all duration-200"
+                      variant="outline"
+                      size="sm"
+                      className="border-blue-300 text-blue-600 hover:bg-blue-50"
                     >
                       Rechercher avec les mots-clés de mon CV
-                    </button>
+                    </InteractiveButton>
                   )}
                 </div>
               )}
 
-              {/* Loader */}
-              {loading && jobs.length === 0 && (
-                <div className="text-center py-12">
-                  <RefreshCw className="w-8 h-8 text-violet-500 mx-auto mb-4 animate-spin" />
-                  <p className="text-gray-600">Recherche d'offres d'emploi en cours...</p>
-                </div>
-              )}
             </div>
           </div>
         </div>

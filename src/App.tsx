@@ -5,7 +5,6 @@ import { useAuth } from './hooks/useAuth';
 import { UniversalLoginPage } from './components/Auth/UniversalLoginPage';
 import { SupabaseConfigModal } from './components/Auth/SupabaseConfigModal';
 import { Header } from './components/Layout/Header';
-import { Navigation } from './components/Layout/Navigation';
 import { Sparkles } from 'lucide-react';
 import { useAppStore } from './store/useAppStore';
 import { AuthBoundary } from './components/Auth/AuthBoundary';
@@ -13,6 +12,7 @@ import { useAuthStore } from './store/useAuthStore';
 import { lazyComponentsMap, intelligentPreload } from './utils/lazyComponents';
 import PageLoader from './components/loader/PageLoader';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AdvancedThemeProvider } from './contexts/AdvancedThemeContext';
 import AIDashboard from './components/AISuggestions/AIDashboard';
 import { JobAnalysis } from './components/JobAnalysis/JobAnalysis';
 import { useJobSearch } from './hooks/useJobSearch';
@@ -198,6 +198,7 @@ const SupabaseAppContent: React.FC = () => {
             <LetterEditor
               onSave={(content) => console.log('Letter saved:', content)}
               onExport={(content, format) => console.log('Letter exported:', format, content)}
+              onBack={handleBackToDashboard}
             />
           );
         case 'jobs':
@@ -293,8 +294,9 @@ const SupabaseAppContent: React.FC = () => {
           onSettingsClick={handleSettingsClick}
           onLogout={handleLogout}
           apiKeyStatus={apiKeyStatus}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
         />
-        {!showSettings && !showChat && <Navigation activeTab={activeTab} onTabChange={handleTabChange} />}
 
         <main className="flex justify-center px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
           <div className="w-full max-w-7xl lg:max-w-8xl">
@@ -321,11 +323,13 @@ const App: React.FC = () => {
     return (
       <HelmetProvider>
         <ThemeProvider>
-          <SupabaseAuthProvider>
-            <AuthBoundary>
-              <SupabaseAppContent />
-            </AuthBoundary>
-          </SupabaseAuthProvider>
+          <AdvancedThemeProvider>
+            <SupabaseAuthProvider>
+              <AuthBoundary>
+                <SupabaseAppContent />
+              </AuthBoundary>
+            </SupabaseAuthProvider>
+          </AdvancedThemeProvider>
         </ThemeProvider>
       </HelmetProvider>
     );
@@ -336,7 +340,8 @@ const App: React.FC = () => {
   return (
     <HelmetProvider>
       <ThemeProvider>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 flex items-center justify-center">
+        <AdvancedThemeProvider>
+          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-8 h-8 text-white" />
@@ -347,6 +352,7 @@ const App: React.FC = () => {
             <p className="text-gray-600">Configuration en cours...</p>
           </div>
         </div>
+        </AdvancedThemeProvider>
 
         <SupabaseConfigModal
           isOpen={showConfigModal}

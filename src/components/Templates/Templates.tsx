@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Eye, Star, Search, Award, Users, TrendingUp, Sparkles, FileText } from 'lucide-react';
 import { useSupabase } from '../../hooks/useSupabase';
+import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
+import { NavigationIcons } from '../UI/iconsData';
+import { useAppStore } from '../../store/useAppStore';
 
 interface Template {
   id: string;
@@ -199,6 +202,7 @@ const pickProfile = (profileKey: ProfileKey, seed: string): Profile | undefined 
 };
 
 export const Templates: React.FC = () => {
+  const setActiveTab = useAppStore(s => s.setActiveTab);
   const [selectedCategory, setSelectedCategory] = useState('Tous');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('popular');
@@ -398,8 +402,20 @@ export const Templates: React.FC = () => {
  if (loading) {
    return (
      <div className="space-y-8">
-       <div className="text-center">
-         <h2 className="heading-gradient">Templates CV Word</h2>
+       <div className="text-left">
+         <BreadcrumbNavigation
+           items={[
+             {
+               label: 'Accueil',
+               icon: NavigationIcons.Home,
+               onClick: () => setActiveTab('dashboard')
+             },
+             
+             { label: 'Modèles', current: true }
+           ]}
+           showHome={false}
+           className="justify-start mb-4"
+         />
          <p className="text-gray-600 max-w-2xl mx-auto">Chargement des templates...</p>
        </div>
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -423,7 +439,18 @@ export const Templates: React.FC = () => {
    return (
      <div className="space-y-8">
        <div className="text-center">
-         <h2 className="heading-gradient">Templates CV Word</h2>
+         <BreadcrumbNavigation
+           items={[
+             {
+               label: 'Accueil',
+               icon: NavigationIcons.Home,
+               onClick: () => setActiveTab('dashboard')
+             },
+             { label: 'Modèles', current: true }
+           ]}
+           showHome={false}
+           className="justify-start mb-4"
+         />
          <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-2xl mx-auto">
            <p className="text-red-600">Erreur lors du chargement des templates: {error}</p>
            <p className="text-sm text-red-500 mt-2">Utilisation des templates par défaut.</p>
@@ -512,9 +539,9 @@ const buildA4Html = (template: Template, seed?: string): string => {
         <div class="section">
           <div class="section-title">EXPÉRIENCE PROFESSIONNELLE</div>
           ${profile.experiences.map((exp: Experience) => `
-            <div style=\"margin-bottom:10px;\">
-              <div class=\"job-title\">${exp.title}</div>
-              <div class=\"company\">${exp.company} • <span class=\"date\">${exp.period}</span></div>
+            <div style="margin-bottom:10px;">
+              <div class="job-title">${exp.title}</div>
+              <div class="company">${exp.company} • <span class="date">${exp.period}</span></div>
               <ul>
                 ${exp.achievements.map((ach: string) => `<li>${ach}</li>`).join('')}
               </ul>
@@ -870,11 +897,21 @@ Français (Natif) • Anglais (Courant) • [Autre langue]
         </div>
       )}
       {/* Header */}
-      <div className="text-center">
-        <h2 className="heading-gradient">
-          Templates CV Word
-        </h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+      <div className="text-left">
+        <BreadcrumbNavigation
+          items={[
+            {
+              label: 'Accueil',
+              icon: NavigationIcons.Home,
+              onClick: () => setActiveTab('dashboard')
+            },
+            
+            { label: 'Modèles', current: true }
+          ]}
+          showHome={false}
+          className="justify-start mb-4"
+        />
+        <p className="text-gray-600 max-w-2xl">
           Collection de templates professionnels au format Word, optimisés ATS et prêts à télécharger
         </p>
       </div>
@@ -1043,7 +1080,7 @@ Français (Natif) • Anglais (Courant) • [Autre langue]
                       <div className="mb-2">
                         <div className="font-semibold text-xs mb-1" style={{ color }}>EXPÉRIENCE PROFESSIONNELLE</div>
                         <div className="space-y-1">
-                          {profile.experiences.slice(0, 2).map((exp: any, idx: number) => (
+                          {profile.experiences.slice(0, 2).map((exp: Experience, idx: number) => (
                             <div key={idx}>
                               <div className="font-medium text-xs">{exp.title}</div>
                               <div className="text-xs text-gray-600">{exp.company} • {exp.period}</div>

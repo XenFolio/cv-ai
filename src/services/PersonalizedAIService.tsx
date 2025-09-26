@@ -788,4 +788,3 @@ class PersonalizedAIService {
 }
 
 export const personalizedAIService = PersonalizedAIService.getInstance();
-export default PersonalizedAIService;

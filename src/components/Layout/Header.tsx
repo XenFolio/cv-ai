@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, LogOut, Settings, AlertTriangle, ChevronDown, Sparkles } from 'lucide-react';
+import { User, LogOut, Settings, AlertTriangle, ChevronDown, Sparkles, BarChart3, FileText, FolderOpen, Brain, MessageSquare, ChevronDown as MenuDown, Plus, Search, Briefcase, LayoutTemplate, Star } from 'lucide-react';
 import ThemeToggle from '../UI/ThemeToggle';
 
 interface HeaderProps {
@@ -12,10 +12,76 @@ interface HeaderProps {
   onSettingsClick: () => void;
   onLogout: () => void;
   apiKeyStatus?: 'valid' | 'invalid' | 'missing';
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout, apiKeyStatus = 'valid' }) => {
+export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout, apiKeyStatus = 'valid', activeTab = '', onTabChange = () => {} }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
+  const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
+
+  // Navigation items
+  const navItems = [
+    { id: 'dashboard', label: 'Accueil', icon: BarChart3 },
+    {
+      id: 'cv',
+      label: 'CV',
+      icon: FileText,
+      dropdown: [
+        { id: 'creator', label: 'Créer', icon: Plus },
+        { id: 'analyze', label: 'Analyser', icon: Search },
+      ]
+    },
+    {
+      id: 'lettre',
+      label: 'Lettre',
+      icon: MessageSquare,
+      dropdown: [
+        { id: 'chat', label: 'Assistant IA', icon: Brain },
+        { id: 'letter-editor', label: 'Créer', icon: Plus },
+        { id: 'lettre-analyze', label: 'Analyser', icon: Search },
+      ]
+    },
+    { id: 'templates', label: 'Modèles', icon: LayoutTemplate },
+    {
+      id: 'coach',
+      label: 'Coach IA',
+      icon: Brain,
+      dropdown: [
+        { id: 'coaching', label: 'Coaching', icon: Brain },
+        { id: 'chat-cv', label: 'Conseils CV', icon: FileText },
+        { id: 'chat-general', label: 'Carrière', icon: MessageSquare },
+      ]
+    },
+    { id: 'library', label: 'Documents', icon: FolderOpen },
+    { id: 'jobs', label: 'Offres', icon: Briefcase },
+    { id: 'tarifs', label: 'Premium', icon: Star },
+  ];
+
+  const isItemActive = (itemId: string) => {
+    return activeTab === itemId;
+  };
+
+  const handleItemClick = (itemId: string) => {
+    onTabChange(itemId);
+    setOpenDropdown(null);
+  };
+
+  const handleDropdownToggle = (itemId: string) => {
+    setOpenDropdown(openDropdown === itemId ? null : itemId);
+  };
+
+  // Close dropdowns when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = () => {
+      if (openDropdown) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openDropdown]);
 
   const getApiKeyIndicator = () => {
     if (apiKeyStatus === 'missing') {
@@ -41,11 +107,11 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
   const indicator = getApiKeyIndicator();
 
   return (
-    <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 shadow-sm sticky top-0 z-50">
+    <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 shadow-sm sticky top-0 z-[60]">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-3">
             <div className="relative">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300">
                 <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -60,18 +126,80 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
             </div>
           </div>
 
-          {/* Center Action Items */}
-          <div className="hidden md:flex items-center space-x-4">
-            {indicator && (
-              <button
-                onClick={onSettingsClick}
-                className={`flex items-center space-x-2 px-4 py-2.5 ${indicator.bgColor} border ${indicator.borderColor} rounded-xl hover:shadow-md transition-all duration-200 hover:scale-[1.02] group`}
-                title="Configurez votre clé API pour débloquer toutes les fonctionnalités"
-              >
-                <AlertTriangle className={`w-4 h-4 ${indicator.iconColor} group-hover:scale-110 transition-transform`} />
-                <span className={`text-sm ${indicator.textColor} font-medium`}>{indicator.text}</span>
-              </button>
-            )}
+          {/* Navigation Menu */}
+          <div className="hidden lg:flex items-center space-x-1 flex-1 justify-center max-w-4xl mx-4">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = isItemActive(item.id);
+              const hasDropdown = item.dropdown && item.dropdown.length > 0;
+
+              return (
+                <div key={item.id} className="relative group">
+                  <button
+                    onClick={(e) => {
+                      if (hasDropdown) {
+                        e.stopPropagation();
+                        handleDropdownToggle(item.id);
+                      } else {
+                        handleItemClick(item.id);
+                      }
+                    }}
+                    onMouseEnter={() => {
+                      if (hasDropdown) {
+                        setOpenDropdown(item.id);
+                      }
+                    }}
+                    className={`relative flex items-center space-x-1 px-2 py-1.5 text-xs font-medium transition-all duration-200 rounded-md ${isActive
+                      ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/60 shadow-sm'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/40'
+                      }`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <Icon className={`w-3 h-3 transition-all duration-200 group-hover:scale-110 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'
+                      }`} />
+                    <span className="font-medium hidden sm:block">{item.label}</span>
+
+                    {hasDropdown && (
+                      <MenuDown className={`w-2 h-2 transition-transform duration-300 ${openDropdown === item.id ? 'rotate-180 text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'
+                        }`} />
+                    )}
+
+                    {/* Active indicator */}
+                    {isActive && (
+                      <div className="absolute bottom-0 left-1 right-1 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse" />
+                    )}
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {hasDropdown && openDropdown === item.id && (
+                    <div
+                      className="absolute top-full left-0 mt-1 w-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1.5 z-[99999] animate-fadeIn"
+                      onMouseLeave={() => setOpenDropdown(null)}
+                    >
+                      {item.dropdown.map((subItem) => {
+                        const SubIcon = subItem.icon;
+                        const isSubActive = activeTab === subItem.id;
+
+                        return (
+                          <button
+                            key={subItem.id}
+                            onClick={() => handleItemClick(subItem.id)}
+                            className={`w-full flex items-center space-x-2 px-3 py-2 text-xs font-medium transition-all duration-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 ${isSubActive
+                              ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/60'
+                              : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
+                              }`}
+                          >
+                            <SubIcon className={`w-3 h-3 transition-all duration-200 ${isSubActive ? 'text-indigo-600 dark:text-indigo-400 scale-110' : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                              }`} />
+                            <span className="text-left font-medium">{subItem.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* User Actions */}
@@ -117,7 +245,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
 
               {/* Dropdown Menu */}
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-2 z-10">
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-2 z-[99999]">
                   <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
@@ -152,7 +280,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
       {/* Click outside to close menu */}
       {isUserMenuOpen && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-[99998]"
           onClick={() => setIsUserMenuOpen(false)}
         />
       )}

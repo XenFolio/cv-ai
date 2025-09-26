@@ -228,7 +228,7 @@ export function SubscriptionManagement() {
       )}
 
       {/* Current Subscription */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-10">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-lg font-medium text-gray-900">Abonnement actuel</h3>
@@ -263,7 +263,7 @@ export function SubscriptionManagement() {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-10 flex flex-wrap gap-3">
           <button
             onClick={handleManageBilling}
             disabled={isLoading}
@@ -297,11 +297,11 @@ export function SubscriptionManagement() {
       </div>
 
       {/* Payment History */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-6">Historique des paiements</h3>
+      <div className="bg-white rounded-lg border border-gray-200 p-10">
+        <h3 className="text-lg font-medium text-gray-900 mb-8">Historique des paiements</h3>
 
         {payments && payments.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {payments.map((payment) => (
               <div key={payment.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                 <div>
