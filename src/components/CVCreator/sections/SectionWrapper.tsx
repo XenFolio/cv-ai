@@ -85,7 +85,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
 
   const adjustedBackgroundColor = getAdjustedBackgroundColor(
   currentColors.background === 'transparent' ? 'transparent' :
-  currentColors.background.includes('gradient') ? currentColors.background :
+  (currentColors.background && typeof currentColors.background === 'string' && currentColors.background.includes('gradient')) ? currentColors.background :
   `#${currentColors.background}`,
   position
 );

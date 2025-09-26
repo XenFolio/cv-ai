@@ -41,6 +41,7 @@ const {
 // Import direct pour SubscriptionPlans (pas de lazy loading pour les tarifs)
 import { SubscriptionPlans } from './components/Subscription/SubscriptionPlans';
 import { Coaching } from './components/Coaching/Coaching';
+import { CVScanIntegration } from './components/CVCreator/CVScanIntegration';
 
 // Composant pour l'authentification Supabase
 const SupabaseAppContent: React.FC = () => {
@@ -53,7 +54,6 @@ const SupabaseAppContent: React.FC = () => {
   const setActiveTab = useAppStore(s => s.setActiveTab);
   const showSettings = useAppStore(s => s.showSettings);
   const setShowSettings = useAppStore(s => s.setShowSettings);
-  const showChat = useAppStore(s => s.showChat);
   const setShowChat = useAppStore(s => s.setShowChat);
   const voiceEnabled = useAppStore(s => s.voiceEnabled);
   const showCVCreatorDemo = useAppStore(s => s.showCVCreatorDemo);
@@ -61,6 +61,19 @@ const SupabaseAppContent: React.FC = () => {
   const apiKeyStatus = useAppStore(s => s.apiKeyStatus);
   const setApiKeyStatus = useAppStore(s => s.setApiKeyStatus);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [showCVScanDemo, setShowCVScanDemo] = useState(false);
+
+  // Vérifier les paramètres URL pour les démos
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const demo = params.get('demo');
+
+    if (demo === 'cvscan') {
+      setShowCVScanDemo(true);
+    } else if (demo === 'cvcreator') {
+      setShowCVCreatorDemo(true);
+    }
+  }, [setShowCVCreatorDemo]);
 
   // Fonction pour vérifier le statut de la clé API
   const checkApiKeyStatus = useCallback(() => {
@@ -126,6 +139,11 @@ const SupabaseAppContent: React.FC = () => {
   // Si on est en mode démo CVCreator, afficher seulement le CVCreator
   if (showCVCreatorDemo) {
     return <CVCreatorDemo onBack={() => setShowCVCreatorDemo(false)} />;
+  }
+
+  // Si on est en mode démo CV Scan, afficher seulement le CV Scan
+  if (showCVScanDemo) {
+    return <CVScanIntegration onBack={() => setShowCVScanDemo(false)} />;
   }
 
   if (!isAuthenticated) {

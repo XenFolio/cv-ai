@@ -1038,10 +1038,10 @@ export const CVCreator: React.FC = () => {
     <CVCreatorProvider value={contextValue}>
       <main className="w-full min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header responsive */}
-        <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              
+        <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 px-3 py-1 sm:py-1">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
+            {/* Breadcrumb et sauvegarde sur la même ligne pour desktop */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
               <BreadcrumbNavigation
                 items={[
                   {
@@ -1058,53 +1058,59 @@ export const CVCreator: React.FC = () => {
                 className="text-sm"
                 showHome={false}
               />
+
+              {/* Indicateur de sauvegarde automatique - sur la même ligne que breadcrumb */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 ml-0 sm:ml-4">
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoSaveEnabled}
+                      onChange={(e) => setAutoSaveEnabled(e.target.checked)}
+                      className="rounded border-gray-300 text-violet-600 focus:ring-violet-500 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-600 dark:hover:border-gray-500 dark:focus:ring-gray-500"
+                    />
+                    Sauvegarde auto
+                  </label>
+                </div>
+
+                {lastSaved && (
+                  <time className="text-xs text-gray-500 dark:text-gray-400">
+                    Dernière sauvegarde : {lastSaved.toLocaleTimeString()}
+                  </time>
+                )}
+
+                {hasLocalData() && (
+                  <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" aria-hidden="true"></span>
+                    Données sauvegardées
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Actions rapides mobile */}
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => {
-                  const template = templates.find(t => t.id === selectedTemplate);
-                  if (template) generateDocx(template);
-                }}
-                className="p-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                aria-label="Télécharger le CV"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </button>
-            </div>
+            {/* Actions rapides */}
+            <button
+              onClick={() => {
+                const template = templates.find(t => t.id === selectedTemplate);
+                if (template) generateDocx(template);
+              }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              className="bg-transparent text-violet-600 border border-violet-600 hover:bg-violet-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              aria-label="Télécharger le CV"
+            >
+              <svg className="w-5 h-5 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2  0 01-2 2z" />
+              </svg>
+            </button>
           </div>
         </header>
-
-        {/* Indicateur de sauvegarde automatique */}
-        <section className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 mb-2 p-3 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg mx-2 sm:mx-4">
-          <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoSaveEnabled}
-                onChange={(e) => setAutoSaveEnabled(e.target.checked)}
-                className="rounded border-gray-300 text-violet-600 focus:ring-violet-500 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-600 dark:hover:border-gray-500 dark:focus:ring-gray-500"
-              />
-              Sauvegarde auto
-            </label>
-          </div>
-
-          {lastSaved && (
-            <time className="text-xs text-gray-500 dark:text-gray-400">
-              Dernière sauvegarde : {lastSaved.toLocaleTimeString()}
-            </time>
-          )}
-
-          {hasLocalData() && (
-            <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" aria-hidden="true"></span>
-              Données sauvegardées
-            </div>
-          )}
-        </section>
 
       <div className="p-2 grid grid-cols-1 lg:grid-cols-12 gap-1">
 
