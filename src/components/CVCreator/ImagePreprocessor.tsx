@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { RotateCcw, RotateCw, Crop, Sun, Moon, Download, Upload } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { RotateCcw, RotateCw, Upload } from 'lucide-react';
 import Button from '../UI/Button';
 
 interface ImagePreprocessorProps {
@@ -16,12 +16,24 @@ export const ImagePreprocessor: React.FC<ImagePreprocessorProps> = ({
   const [rotation, setRotation] = useState(0);
   const [brightness, setBrightness] = useState(100);
   const [contrast, setContrast] = useState(100);
-  const [isCropping, setIsCropping] = useState(false);
-  const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 100, height: 100 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [imageUrl, setImageUrl] = useState<string>('');
 
-  const applyFilters = () => {
+/*************  ✨ Windsurf Command ⭐  *************/
+  /**
+   * Applies filters to the image and updates the preview.
+   *
+   * The following filters are applied:
+   * - Rotation
+   * - Brightness
+   * - Contrast
+   *
+   * @returns {HTMLCanvasElement | null} the canvas element with the applied filters
+   */
+/*******  f1bf4b63-eb20-4a9c-b4d9-a50d51e72a0c  *******/
+  const applyFilters = useCallback(() => {
     if (!canvasRef.current || !imageRef.current) return;
 
     const canvas = canvasRef.current;
@@ -44,35 +56,54 @@ export const ImagePreprocessor: React.FC<ImagePreprocessorProps> = ({
 
     ctx?.restore();
 
+    // Update preview
+    const newPreviewUrl = canvas.toDataURL('image/jpeg', 0.9);
+    setPreviewUrl(newPreviewUrl);
+
     return canvas;
-  };
+  }, [rotation, brightness, contrast]);
 
-  const handleProcess = () => {
-    const canvas = applyFilters();
-    if (canvas) {
-      canvas.toBlob((blob) => {
-        if (blob) onProcess(blob);
-      }, 'image/jpeg', 0.9);
-    }
-  };
+const handleProcess = () => {
+  const canvas = applyFilters();
+  if (canvas) {
+    canvas.toBlob((blob) => {
+      if (blob) onProcess(blob);
+    }, 'image/jpeg', 0.9);
+  }
+};
 
-  const handleReset = () => {
-    setRotation(0);
-    setBrightness(100);
-    setContrast(100);
-    setIsCropping(false);
-  };
+const handleReset = () => {
+  setRotation(0);
+  setBrightness(100);
+  setContrast(100);
+};
 
-  const imageUrl = URL.createObjectURL(imageBlob);
+// Create image URL from blob
+useEffect(() => {
+  if (imageBlob) {
+    const url = URL.createObjectURL(imageBlob);
+    setImageUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }
+}, [imageBlob]);
 
-  return (
-    <div className="bg-white rounded-2xl p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800">Prétraitement de l'image</h3>
-        <Button variant="outline" onClick={onCancel}>
-          Annuler
-        </Button>
-      </div>
+// Apply filters when image loads or controls change
+useEffect(() => {
+  if (imageRef.current?.complete) {
+    applyFilters();
+  }
+}, [imageUrl, rotation, brightness, contrast, applyFilters]);
+
+return (
+  <div className="bg-white rounded-2xl p-6 space-y-6">
+    <div className="flex items-center justify-between">
+      <h3 className="text-lg font-semibold text-gray-800">Prétraitement de l'image</h3>
+      <Button variant="outline" onClick={onCancel}>
+        Annuler
+      </Button>
+    </div>
 
       {/* Image Preview */}
       <div className="relative">
@@ -81,79 +112,86 @@ export const ImagePreprocessor: React.FC<ImagePreprocessorProps> = ({
           src={imageUrl}
           alt="CV preview"
           className="w-full max-h-96 object-contain"
-          onLoad={() => applyFilters()}
+          onLoad={applyFilters}
         />
+        {previewUrl && (
+          <img
+            src={previewUrl}
+            alt="Processed CV preview"
+            className="w-full max-h-96 object-contain absolute inset-0"
+          />
+        )}
         <canvas ref={canvasRef} className="hidden" />
       </div>
 
-      {/* Controls */}
-      <div className="space-y-4">
-        {/* Rotation */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Rotation</label>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setRotation(r => r - 90)}
-            >
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-            <span className="text-sm text-gray-600 min-w-[3rem] text-center">
-              {rotation}°
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setRotation(r => r + 90)}
-            >
-              <RotateCw className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Brightness */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
-            Luminosité: {brightness}%
-          </label>
-          <input
-            type="range"
-            min="50"
-            max="150"
-            value={brightness}
-            onChange={(e) => setBrightness(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
-
-        {/* Contrast */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
-            Contraste: {contrast}%
-          </label>
-          <input
-            type="range"
-            min="50"
-            max="150"
-            value={contrast}
-            onChange={(e) => setContrast(Number(e.target.value))}
-            className="w-full"
-          />
+    {/* Controls */}
+    <div className="space-y-4">
+      {/* Rotation */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700">Rotation</label>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setRotation(r => r - 90)}
+          >
+            <RotateCcw className="w-4 h-4" />
+          </Button>
+          <span className="text-sm text-gray-600 min-w-[3rem] text-center">
+            {rotation}°
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setRotation(r => r + 90)}
+          >
+            <RotateCw className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2">
-        <Button variant="outline" onClick={handleReset}>
-          Réinitialiser
-        </Button>
-        <div className="flex-1" />
-        <Button onClick={handleProcess}>
-          <Upload className="w-4 h-4 mr-2" />
-          Traiter l'image
-        </Button>
+      {/* Brightness */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700">
+          Luminosité: {brightness}%
+        </label>
+        <input
+          type="range"
+          min="50"
+          max="150"
+          value={brightness}
+          onChange={(e) => setBrightness(Number(e.target.value))}
+          className="w-full"
+        />
+      </div>
+
+      {/* Contrast */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700">
+          Contraste: {contrast}%
+        </label>
+        <input
+          type="range"
+          min="50"
+          max="150"
+          value={contrast}
+          onChange={(e) => setContrast(Number(e.target.value))}
+          className="w-full"
+        />
       </div>
     </div>
-  );
+
+    {/* Actions */}
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={handleReset}>
+        Réinitialiser
+      </Button>
+      <div className="flex-1" />
+      <Button onClick={handleProcess}>
+        <Upload className="w-4 h-4 mr-2" />
+        Traiter l'image
+      </Button>
+    </div>
+  </div>
+);
 };

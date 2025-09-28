@@ -2,7 +2,11 @@ import React from 'react';
 import { Clock, FileText, CheckCircle, AlertCircle, TrendingUp, Wand2, Target, Loader2 } from 'lucide-react';
 import { useSupabase } from '../../hooks/useSupabase';
 
-export const RecentActivity: React.FC = () => {
+interface RecentActivityProps {
+  onShowAllActivities: () => void;
+}
+
+export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivities }) => {
   const { activities, activitiesLoading, error } = useSupabase();
 
   const getActivityIcon = (type: string) => {
@@ -41,9 +45,9 @@ export const RecentActivity: React.FC = () => {
   };
 
   return (
-    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/30 mx-auto w-full shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">Activité Récente</h3>
+    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-gray-200/30 mx-auto w-full shadow-sm">
+      <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-violet-600 to-pink-500 p-2 px-4  rounded-xl">
+        <h3 className="w-full text-white text-lg font-semibold text-gray-900  ">Activité Récente</h3>
         <div className="flex items-center space-x-2">
           <Clock className="w-5 h-5 text-gray-400" />
           {activitiesLoading && <Loader2 className="w-4 h-4 text-violet-500 animate-spin" />}
@@ -51,9 +55,9 @@ export const RecentActivity: React.FC = () => {
       </div>
       
       {activitiesLoading ? (
-        <div className="space-y-4">
+        <div className="space-y-3 max-h-64 overflow-y-auto">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-start space-x-3 p-3 rounded-xl animate-pulse">
+            <div key={i} className="flex items-start space-x-3 p-2 rounded-xl animate-pulse">
               <div className="w-8 h-8 bg-gray-200 rounded-lg" />
               <div className="flex-1">
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
@@ -74,14 +78,14 @@ export const RecentActivity: React.FC = () => {
           <p className="text-sm text-gray-600 mb-4">
             Commencez par analyser un CV ou créer un nouveau document pour voir vos activités ici
           </p>
-          
+
         </div>
       ) : (
-        <div className="space-y-4">
-          {activities.slice(0, 6).map((activity) => {
+        <div className="max-h-64 overflow-y-auto space-y-3">
+          {activities.slice(0, 5).map((activity) => {
             const Icon = getActivityIcon(activity.type);
             return (
-              <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50/50 transition-colors group">
+              <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-100 cursor-pointer duration-200 transition-colors group">
                 <div className={`p-2 rounded-lg ${getStatusColor(activity.status)} group-hover:scale-110 transition-transform duration-200`}>
                   <Icon className="w-4 h-4" />
                 </div>
@@ -115,10 +119,13 @@ export const RecentActivity: React.FC = () => {
           })}
         </div>
       )}
-      
+
       {/* Footer */}
-      <div className="mt-6 pt-4 border-t border-gray-200/30 flex justify-center">
-        <button className="bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-violet-700 hover:to-pink-700 transition-all duration-200 hover:scale-105 shadow-sm">
+      <div className="mt-4 pt-4 border-t border-gray-200/30 flex justify-center">
+        <button
+          onClick={onShowAllActivities}
+          className="bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-violet-700 hover:to-pink-700 transition-all duration-200 hover:scale-105 shadow-sm"
+        >
           Voir toute l'activité
         </button>
       </div>

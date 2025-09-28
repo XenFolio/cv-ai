@@ -12,7 +12,8 @@
     "supabase:push": "npx supabase db push",
     "supabase:reset": "npx supabase db reset",
     "supabase:status": "npx supabase status",
-    "supabase:types": "npx supabase gen types typescript --local > src/types/supabase.ts"
+    "supabase:types": "npx supabase gen types typescript --local > src/types/supabase.ts",
+    "analyze-bundle": "node src/utils/bundleAnalyzer.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -1,0 +1,5 @@
+CVScanIntegration : Interface principale qui redirige vers CVScanDemo pour le scanner
+CVScanDemo : Composant qui gère le scanner de CV avec caméra/ upload
+Logique actuelle :
+- Utilise getUserMedia pour la caméra
+- Traite l'image prise/chargée avec OCR + extraction

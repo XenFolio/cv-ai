@@ -1,50 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Document, Packer, Paragraph, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
 import { useOpenAI } from '../../hooks/useOpenAI';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useLocalStorageCV } from '../../hooks/useLocalStorageCV';
-import { useCVLibrary, CVData } from '../../hooks/useCVLibrary';
+import { useCVLibrary } from '../../hooks/useCVLibrary';
 import { useCVSections } from '../../hooks/useCVSections';
-import { CVPreviewDragDrop } from './CVPreviewDragDrop';
-import { StyleControls } from './StyleControls';
 import { CVTemplateCarousel } from './CVTemplateCarousel';
 import { CVCreatorProvider } from './CVCreatorContext.provider';
 import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
 import { useAppStore } from '../../store/useAppStore';
 import { NavigationIcons } from '../UI/iconsData';
+import { PreviewModule } from './modules/PreviewModule';
+import { StyleControlsModule } from './modules/StyleControlsModule';
 
-import type { CVExperience, CVSkill, CVLanguage, CVContent, CVEducation } from './types';
+import type { CVExperience, CVSkill, CVLanguage, CVContent, CVEducation, SectionConfig } from './types';
+import { templates, type Template } from './templates';
 
-interface SectionConfig {
-  id: string;
-  name: string;
-  component: string;
-  visible: boolean;
-  layer?: number;
-  width?: 'full' | 'half';
-}
+// SectionConfig interface removed - imported from types now
 
-interface Template {
-  id: string;
-  name: string;
-  description: string;
-  preview: string;
-  image: string;
-  category: string;
-  atsScore: number;
-  theme: { primaryColor: string; font: string };
-  layoutColumns: number;
-  sectionTitles: {
-    profileTitle: string;
-    experienceTitle: string;
-    educationTitle: string;
-    skillsTitle: string;
-    languagesTitle: string;
-    contactTitle: string;
-  };
-  sectionsOrder: SectionConfig[];
-}
 
 const availableFonts = ['Calibri', 'Georgia', 'Helvetica', 'Consolas', 'Times New Roman', 'Arial'];
 const availableColors = [
@@ -194,9 +166,10 @@ export const CVCreator: React.FC = () => {
     autoSaveEnabled,
     setAutoSaveEnabled
   } = useLocalStorageCV();
-  
+
   // Hook pour la bibliothèque CV
   const { addCreatedCV } = useCVLibrary();
+
 
   const [experiences, setExperiences] = useState<CVExperience[]>([
     { id: 1, content: '[Poste] - [Entreprise] (Dates)', details: '• Réalisation clé ou projet important.' }
@@ -617,296 +590,9 @@ export const CVCreator: React.FC = () => {
   };
 
 
-  const templates = [
-    {
-      id: "1",
-      name: "Minimaliste",
-      description: "CV clair et sobre, idéal pour les profils tech.",
-      category: "Moderne",
-      atsScore: 90,
-      preview: "bg-gradient-to-br from-violet-100 to-indigo-100",
-      image: "/images/minimalist.png",
-      theme: { primaryColor: "2E3A59", font: "Calibri" },
-      layoutColumns: 2,
-      sectionTitles: {
-        profileTitle: "PROFIL",
-        experienceTitle: "EXPÉRIENCE",
-        educationTitle: "FORMATION",
-        skillsTitle: "COMPÉTENCES",
-        languagesTitle: "LANGUES",
-        contactTitle: "CONTACT"
-      },
-      sectionsOrder: [
-        { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-        { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: false, layer: 2, order: 0, width: 'half' as const },
-        { id: 'profile', name: 'Profil', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
-        { id: 'experience', name: 'Expérience', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'half' as const },
-        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 4, order: 1, width: 'half' as const },
-        { id: 'education', name: 'Formation', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'half' as const },
-        { id: 'skills', name: 'Compétences', component: 'SkillsSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-        { id: 'languages', name: 'Langues', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'full' as const }
-      ]
-    },
-    {
-      id: "2",
-      name: "Créatif",
-      description: "Un modèle visuel et audacieux pour les métiers artistiques.",
-      category: "Créatif",
-      atsScore: 70,
-      preview: "bg-gradient-to-br from-yellow-100 to-amber-100",
-      image: "/images/creatif.png",
-      theme: { primaryColor: "49332c", font: "Helvetica" },
-      layoutColumns: 1,
-      sectionTitles: {
-        profileTitle: "À PROPOS DE MOI",
-        experienceTitle: "PARCOURS CRÉATIF",
-        educationTitle: "FORMATION ARTISTIQUE",
-        skillsTitle: "TALENTS & OUTILS",
-        languagesTitle: "LANGUES PARLÉES",
-        contactTitle: "CONTACT"
-      },
-      sectionsOrder: [
-        { id: 'profile', name: 'À propos de moi', component: 'ProfileSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 2, order: 0, width: 'full' as const },
-        { id: 'skills', name: 'Talents & Outils', component: 'SkillsSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-        { id: 'experience', name: 'Parcours Créatif', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-        { id: 'education', name: 'Formation Artistique', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'half' as const },
-        { id: 'languages', name: 'Langues Parlées', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'half' as const }
-      ]
-    },
-    {
-      id: "3",
-      name: "Corporate",
-      description: "Pour les candidatures sérieuses et formelles.",
-      category: "Classique",
-      atsScore: 85,
-      preview: "bg-gradient-to-br from-gray-100 to-slate-100",
-      image: "/images/corporate.png",
-      theme: { primaryColor: "111827", font: "Times New Roman" },
-      layoutColumns: 1,
-      sectionTitles: {
-        profileTitle: "PROFIL PROFESSIONNEL",
-        experienceTitle: "EXPÉRIENCE PROFESSIONNELLE",
-        educationTitle: "FORMATION ACADÉMIQUE",
-        skillsTitle: "COMPÉTENCES TECHNIQUES",
-        languagesTitle: "LANGUES ÉTRANGÈRES",
-        contactTitle: "CONTACT"
-      },
-      sectionsOrder: [
-        { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-        { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
-        { id: 'profile', name: 'Profil Professionnel', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
-        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-        { id: 'experience', name: 'Expérience Professionnelle', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-        { id: 'education', name: 'Formation Académique', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'full' as const },
-        { id: 'skills', name: 'Compétences Techniques', component: 'SkillsSection', visible: true, layer: 6, order: 0, width: 'half' as const },
-        { id: 'languages', name: 'Langues Étrangères', component: 'LanguagesSection', visible: true, layer: 6, order: 1, width: 'half' as const }
-      ]
-    },
-    {
-      id: "4",
-      name: "Moderne Coloré",
-      description: "Design contemporain avec des touches de couleur vive.",
-      category: "Moderne",
-      atsScore: 88,
-      preview: "bg-gradient-to-br from-violet-100 to-purple-100",
-      image: "/images/modern.png",
-      theme: { primaryColor: "7C3AED", font: "Calibri" },
-      layoutColumns: 1,
-      sectionTitles: {
-        profileTitle: "QUI SUIS-JE ?",
-        experienceTitle: "MON PARCOURS",
-        educationTitle: "MES ÉTUDES",
-        skillsTitle: "MES COMPÉTENCES",
-        languagesTitle: "MES LANGUES",
-        contactTitle: "CONTACT"
-      },
-      sectionsOrder: [
-        { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-        { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
-        { id: 'profile', name: 'Qui suis-je ?', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
-        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-        { id: 'skills', name: 'Mes Compétences', component: 'SkillsSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-        { id: 'experience', name: 'Mon Parcours', component: 'ExperienceSection', visible: true, layer: 5, order: 0, width: 'full' as const },
-        { id: 'languages', name: 'Mes Langues', component: 'LanguagesSection', visible: true, layer: 6, order: 0, width: 'half' as const },
-        { id: 'education', name: 'Mes Études', component: 'EducationSection', visible: true, layer: 6, order: 1, width: 'half' as const }
-      ]
-    },
-    {
-      id: "5",
-      name: "Élégant B&W",
-      description: "Style sobre en noir et blanc pour un look professionnel raffiné.",
-      category: "Classique",
-      atsScore: 92,
-      preview: "bg-gradient-to-br from-gray-100 to-gray-200",
-      image: "/images/elegant-bw.png",
-      theme: { primaryColor: "0F172A", font: "Georgia" },
-      layoutColumns: 1,
-      sectionTitles: {
-        profileTitle: "PRÉSENTATION",
-        experienceTitle: "CARRIÈRE PROFESSIONNELLE",
-        educationTitle: "CURSUS ACADÉMIQUE",
-        skillsTitle: "EXPERTISE TECHNIQUE",
-        languagesTitle: "MAÎTRISE LINGUISTIQUE",
-        contactTitle: "CONTACT"
-      },
-      sectionsOrder: [
-        { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-        { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
-        { id: 'profile', name: 'Présentation', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
-        { id: 'experience', name: 'Carrière Professionnelle', component: 'ExperienceSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-        { id: 'education', name: 'Cursus Académique', component: 'EducationSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-        { id: 'skills', name: 'Expertise Technique', component: 'SkillsSection', visible: true, layer: 5, order: 0, width: 'half' as const },
-        { id: 'languages', name: 'Maîtrise Linguistique', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'half' as const }
-      ]
-    },
-    {
-      id: "6",
-      name: "Émeraude",
-      description: "Style élégant avec des accents émeraude pour un look professionnel moderne.",
-      category: "Moderne",
-      atsScore: 94,
-      preview: "bg-[#fbf9f4]",
-      image: "/images/emeraude.png",
-      theme: { primaryColor: "10B981", font: "Georgia" },
-      layoutColumns: 1,
-      sectionTitles: {
-        profileTitle: "PROFIL PERSONNEL",
-        experienceTitle: "EXPÉRIENCES CLÉS",
-        educationTitle: "PARCOURS ÉDUCATIF",
-        skillsTitle: "SAVOIR-FAIRE",
-        languagesTitle: "COMPÉTENCES LINGUISTIQUES",
-        contactTitle: "CONTACT"
-      },
-      sectionsOrder: [
-        { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-        { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
-        { id: 'profile', name: 'Profil Personnel', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
-        { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-        { id: 'experience', name: 'Expériences Clés', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-        { id: 'skills', name: 'Savoir-faire', component: 'SkillsSection', visible: true, layer: 5, order: 0, width: 'full' as const },
-        { id: 'education', name: 'Parcours Éducatif', component: 'EducationSection', visible: true, layer: 6, order: 0, width: 'full' as const },
-        { id: 'languages', name: 'Compétences Linguistiques', component: 'LanguagesSection', visible: true, layer: 7, order: 0, width: 'full' as const }
-      ]
-    },
-  ];
+  
 
-
-  const getSkillsByCategory = (category: string) => {
-    switch (category) {
-      case 'Développement': return ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Python', 'SQL', 'Git', 'Docker'];
-      case 'Marketing': return ['Google Analytics', 'SEO/SEM', 'Social Media', 'Content Marketing', 'Email Marketing', 'CRM'];
-      case 'Finance': return ['Excel', 'Modélisation financière', 'Analyse de risque', 'Bloomberg', 'SAP'];
-      default: return ['Communication', 'Travail d\'équipe', 'Résolution de problèmes', 'Adaptabilité'];
-    }
-  };
-
-  const generateDocx = async (template: Template) => {
-    const skills = getSkillsByCategory(template.category);
-
-    // Générer la chaîne de caractères pour les langues
-    const languagesString = languages.map(lang => `${lang.name} (${lang.level})`).join(' • ');
-
-    // Générer la chaîne de caractères pour les formations
-    const educationsString = educations.map(edu => `${edu.degree} - ${edu.school} - ${edu.year}`).join('\n');
-
-    const doc = new Document({
-      styles: {
-        default: {
-          document: { run: { font: customFont } }
-        },
-        paragraphStyles: [
-          {
-            id: 'Title',
-            name: 'Title',
-            basedOn: 'Normal',
-            run: { size: 48, bold: true, color: titleColor },
-            paragraph: { alignment: AlignmentType.CENTER, spacing: { after: 300 } }
-          },
-          {
-            id: 'Heading2',
-            name: 'Heading 2',
-            basedOn: 'Normal',
-            run: { size: 28, bold: true, color: titleColor },
-            paragraph: { spacing: { before: 200, after: 100 } }
-          }
-        ]
-      },
-      sections: [{
-        children: [
-          new Paragraph({ text: editableContent.name, style: 'Title' }),
-          new Paragraph({ text: editableContent.contact, alignment: AlignmentType.CENTER }),
-          new Paragraph({ text: editableContent.profileTitle, style: 'Heading2' }),
-          new Paragraph({ text: editableContent.profileContent }),
-          new Paragraph({ text: editableContent.experienceTitle, style: 'Heading2' }),
-          ...experiences.map(exp => [
-            new Paragraph({ text: exp.content, run: { bold: true } }),
-            new Paragraph({ text: exp.details })
-          ]).flat(),
-          new Paragraph({ text: editableContent.educationTitle, style: 'Heading2' }),
-          new Paragraph({ text: educationsString }),
-          new Paragraph({ text: editableContent.skillsTitle, style: 'Heading2' }),
-          ...skills.map(skill => new Paragraph({ text: `• ${skill}` })),
-          new Paragraph({ text: editableContent.languagesTitle, style: 'Heading2' }),
-          new Paragraph({ text: languagesString })
-        ]
-      }]
-    });
-
-    const blob = await Packer.toBlob(doc);
-    const fileName = `${template.name.replace(/\s+/g, '_').toLowerCase()}.docx`;
-    saveAs(blob, fileName);
-
-    // Ajouter le CV créé à la bibliothèque
-    try {
-      const cvData: CVData = {
-        name: editableContent.name,
-        contact: editableContent.contact,
-        profileContent: editableContent.profileContent,
-        experiences: experiences,
-        skills: skills.map((skill, index) => ({ id: index + 1, content: skill })), // Convertir en format CVData
-        languages: languages,
-        educations: educations,
-        industry: template.category,
-        customFont: customFont,
-        customColor: customColor,
-        templateName: template.name
-      };
-
-      // Calculer un score ATS basé sur le template et le contenu
-      const atsScore = calculateATSScore(template, cvData);
-      
-      const docId = await addCreatedCV(
-        `${editableContent.name || 'CV'} - ${template.name}`,
-        cvData,
-        template.name,
-        atsScore
-      );
-      
-      console.log(`✅ CV créé ajouté et sauvegardé avec l'ID: ${docId}`);
-    } catch (error) {
-      console.warn('Erreur lors de l\'ajout du CV créé à la bibliothèque:', error);
-      // Ne pas bloquer la génération du CV
-    }
-  };
-
-  // Fonction pour calculer un score ATS approximatif
-  const calculateATSScore = (template: Template, cvData: CVData): number => {
-    let score = template.atsScore; // Score de base du template
-
-    // Bonifications basées sur le contenu
-    if (cvData.name && cvData.name !== '[VOTRE NOM]') score += 2;
-    if (cvData.contact && !cvData.contact.includes('[')) score += 3;
-    if (cvData.profileContent && !cvData.profileContent.includes('Résumé de votre profil')) score += 3;
-    if (cvData.experiences.length > 0 && !cvData.experiences[0].content.includes('[Poste]')) score += 5;
-    if (cvData.skills.length >= 3) score += 3;
-    if (cvData.languages.length >= 1) score += 2;
-    if (cvData.educations.length > 0 && !cvData.educations[0].degree.includes('[Diplôme]')) score += 2;
-
-    // Plafonner le score à 98
-    return Math.min(score, 98);
-  };
-
+  
 
   const addExperience = useCallback(() => {
     const newId = experiences.length > 0 ? Math.max(...experiences.map(exp => exp.id)) + 1 : 1;
@@ -943,6 +629,44 @@ export const CVCreator: React.FC = () => {
   const removeEducation = useCallback((id: number) => {
     setEducations(prev => prev.filter(edu => edu.id !== id));
   }, []);
+
+  // Fonction d'export
+  const handleDownload = useCallback(async () => {
+    const template = templates.find(t => t.id === selectedTemplate);
+    if (!template) return;
+
+    try {
+      const { generateCVDocument } = await import('./ExportModule');
+
+      await generateCVDocument(
+        template,
+        editableContent,
+        experiences,
+        languages,
+        educations,
+        addCreatedCV
+      );
+    } catch (error) {
+      console.error('Erreur lors du téléchargement du CV:', error);
+    }
+  }, [templates, selectedTemplate, editableContent, experiences, languages, educations, addCreatedCV]);
+
+  const handleDownloadTemplate = useCallback(async (template: Template) => {
+    try {
+      const { generateCVDocument } = await import('./ExportModule');
+
+      await generateCVDocument(
+        template,
+        editableContent,
+        experiences,
+        languages,
+        educations,
+        addCreatedCV
+      );
+    } catch (error) {
+      console.error('Erreur lors du téléchargement du template:', error);
+    }
+  }, [editableContent, experiences, languages, educations, addCreatedCV]);
 
   // Context value for provider
   const contextValue = {
@@ -1090,22 +814,11 @@ export const CVCreator: React.FC = () => {
 
             {/* Actions rapides */}
             <button
-              onClick={() => {
-                const template = templates.find(t => t.id === selectedTemplate);
-                if (template) generateDocx(template);
-              }}
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              className="bg-transparent text-violet-600 border border-violet-600 hover:bg-violet-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              onClick={handleDownload}
+              className="w-9 h-9 bg-transparent text-violet-600 border rounded border-violet-600 hover:bg-violet-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center self-start"
               aria-label="Télécharger le CV"
             >
-              <svg className="w-5 h-5 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2  0 01-2 2z" />
               </svg>
             </button>
@@ -1117,50 +830,14 @@ export const CVCreator: React.FC = () => {
         <div className="lg:col-span-9 flex gap-2">
           {/* Contrôles de style à gauche */}
           <aside className="w-80 flex-shrink-0">
-            <StyleControls
-              customFont={customFont}
-              setCustomFont={setCustomFont}
-              customColor={customColor}
-              setCustomColor={setCustomColor}
-              titleColor={titleColor}
-              setTitleColor={setTitleColor}
-              layoutColumns={layoutColumns}
-              setLayoutColumns={setLayoutColumns}
-              sectionSpacing={sectionSpacing}
-              setSectionSpacing={setSectionSpacing}
-              nameAlignment={nameAlignment}
-              setNameAlignment={setNameAlignment}
-              photoAlignment={photoAlignment}
-              setPhotoAlignment={setPhotoAlignment}
-              photoSize={photoSize}
-              setPhotoSize={setPhotoSize}
-              photoShape={photoShape}
-              setPhotoShape={setPhotoShape}
-              nameFontSize={nameFontSize}
-              setNameFontSize={setNameFontSize}
-              photoZoom={photoZoom}
-              setPhotoZoom={setPhotoZoom}
-              photoPositionX={photoPositionX}
-              setPhotoPositionX={setPhotoPositionX}
-              photoPositionY={photoPositionY}
-              setPhotoPositionY={setPhotoPositionY}
-              photoRotation={photoRotation}
-              setPhotoRotation={setPhotoRotation}
-              photoObjectFit={photoObjectFit}
-              setPhotoObjectFit={setPhotoObjectFit}
-              selectedSection={selectedSection}
-              availableFonts={availableFonts}
-              availableColors={availableColors}
-              hasPhoto={!!editableContent.photo}
-              sections={sections.map(s => ({ id: s.id, name: s.name, visible: s.visible }))}
-              toggleSectionVisibility={toggleSectionVisibility}
-            />
+            <StyleControlsModule />
           </aside>
 
           {/* Aperçu dynamique en temps réel */}
           <section className="flex-1">
-            <CVPreviewDragDrop
+            <PreviewModule
               setSectionsOrder={setSectionsOrderFunc}
+              templates={templates.map(t => ({ id: t.id, name: t.name, preview: t.preview }))}
             />
           </section>
 
@@ -1200,15 +877,24 @@ export const CVCreator: React.FC = () => {
               // Appliquer l'ordre des sections du template
               if (setSectionsOrderFunc && Array.isArray(template.sectionsOrder)) {
                 try {
-                  // Pour tous les templates, utiliser les sections du template directement
-                  setSectionsOrderFunc(template.sectionsOrder);
+                  // Ajouter les propriétés manquantes (layer et order) à chaque section
+                  const sectionsWithOrder = template.sectionsOrder.map((section, index) => {
+                    // Type assertion to access properties that may exist on template sections
+                    const templateSection = section as unknown as Record<string, unknown>;
+                    return {
+                      ...section,
+                      layer: (templateSection.layer as number) ?? 1,
+                      order: index + 1
+                    } as SectionConfig;
+                  });
+                  setSectionsOrderFunc(sectionsWithOrder);
                 } catch (error) {
                   console.warn('Erreur lors de l\'application de l\'ordre des sections:', error);
                 }
               }
             }
           }}
-          onDownloadTemplate={generateDocx}
+          onDownloadTemplate={handleDownloadTemplate}
         />
 
         </aside>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>OCR CV avec Mistral</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; }
+    h1 { color: #333; text-align: center; }
+    .file-input-container { margin: 20px 0; text-align: center; }
+    input[type="file"] { padding: 10px; border: 2px dashed #ccc; border-radius: 5px; background: white; cursor: pointer; }
+    #output { background: #fff; padding: 20px; border-radius: 5px; border: 1px solid #ddd; white-space: pre-wrap; min-height: 200px; font-family: monospace; font-size: 14px; margin-top: 20px; }
+    .loading { text-align: center; color: #666; font-style: italic; }
+    #downloadBtn { display: none; margin: 20px auto; padding: 10px 20px; background: #333; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+    #downloadBtn:hover { background: #555; }
+  </style>
+</head>
+<body>
+  <h1>OCR CV avec Mistral (Pixtral)</h1>
+
+  <div class="file-input-container">
+    <input type="file" id="fileInput" accept="image/*">
+  </div>
+
+  <button id="downloadBtn">📥 Télécharger le JSON</button>
+
+  <div id="output">Choisissez un CV (image) pour commencer l'analyse...</div>
+
+  <script>
+    const API_KEY = "zCjSe1304HvI2EhHvN8Cb6GKpBBs9t2a"; // ⚠️ mets ta clé ici
+    const API_URL = "https://api.mistral.ai/v1/chat/completions";
+
+    // ✅ Schéma élargi CV
+    const schema = `
+    {
+      "identite": { "nom": "string", "titre": "string", "photo": "string", "adresse": "string", "telephone": "string", "email": "string", "site_web": "string", "linkedin": "string" },
+      "profil": "string",
+      "competences": ["string"],
+      "experiences": [{ "intitule_poste": "string", "societe": "string", "lieu": "string", "periode": "string", "description": "string", "missions": ["string"] }],
+      "formations": [{ "etablissement": "string", "lieu": "string", "periode": "string", "diplome": "string" }],
+      "formations_complementaires": [{ "intitule": "string", "organisme": "string", "annee": "string" }],
+      "distinctions": ["string"],
+      "interets": ["string"]
+    }`;
+
+    let lastJsonResult = null;
+
+    function tryParseJson(raw) {
+      try {
+        // Nettoyer le texte (enlever markdown ```json ... ```)
+        raw = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+        return JSON.parse(raw);
+      } catch (err) {
+        console.warn("Échec JSON.parse, contenu brut:", raw);
+        return null;
+      }
+    }
+
+    document.getElementById("fileInput").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const output = document.getElementById("output");
+      const downloadBtn = document.getElementById("downloadBtn");
+      output.innerHTML = '<div class="loading">📄 OCR en cours, patientez...</div>';
+      downloadBtn.style.display = "none";
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result.split(",")[1];
+          const mimeType = file.type || 'image/png';
+
+          const body = {
+            model: "pixtral-12b-2409",
+            messages: [
+              {
+                role: "system",
+                content: `Tu es un assistant OCR. Extrait les données du CV fourni et renvoie UNIQUEMENT un JSON strict et valide conforme à ce schéma : ${schema}`
+              },
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: "Voici un CV à analyser, renvoie les données en JSON valide." },
+                  { type: "image_url", image_url: `data:${mimeType};base64,${base64Data}` }
+                ]
+              }
+            ],
+            max_tokens: 2048,
+            temperature: 0
+          };
+
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify(body)
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Erreur API: ${response.status} - ${errorData.error?.message || 'Erreur inconnue'}`);
+          }
+
+          const data = await response.json();
+          let raw = data.choices?.[0]?.message?.content?.trim() || "";
+
+          const parsed = tryParseJson(raw);
+
+          if (parsed) {
+            lastJsonResult = parsed;
+            output.textContent = JSON.stringify(parsed, null, 2);
+            downloadBtn.style.display = "block";
+          } else {
+            lastJsonResult = null;
+            output.textContent = "⚠️ Impossible de parser le JSON. Réponse brute :\n\n" + raw;
+          }
+
+        } catch (error) {
+          lastJsonResult = null;
+          output.textContent = `❌ Erreur: ${error.message}`;
+          console.error("Erreur OCR:", error);
+        }
+      };
+
+      reader.onerror = () => {
+        output.textContent = "❌ Erreur lors de la lecture du fichier.";
+      };
+
+      reader.readAsDataURL(file);
+    });
+
+    // 📥 Télécharger le JSON
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      if (!lastJsonResult) return alert("Aucun JSON valide à télécharger.");
+      const blob = new Blob([JSON.stringify(lastJsonResult, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "cv-ocr.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>

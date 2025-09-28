@@ -112,18 +112,24 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-3">
-            <div className="relative">
+            <button
+              onClick={() => onTabChange('dashboard')}
+              className="relative hover:scale-105 transition-all duration-300"
+            >
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300">
                 <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
-            </div>
-            <div className="hidden sm:block">
+            </button>
+            <button
+              onClick={() => onTabChange('dashboard')}
+              className="hidden sm:block text-left hover:opacity-80 transition-opacity"
+            >
               <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
                 CV ATS <span className="text-indigo-600 dark:text-indigo-400">Pro</span>
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400 -mt-0.5">Assistant Carrière IA</p>
-            </div>
+            </button>
           </div>
 
           {/* Navigation Menu */}

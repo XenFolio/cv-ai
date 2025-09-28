@@ -42,6 +42,9 @@ const {
 import { SubscriptionPlans } from './components/Subscription/SubscriptionPlans';
 import { Coaching } from './components/Coaching/Coaching';
 import { CVScanIntegration } from './components/CVCreator/CVScanIntegration';
+import { OCRTest } from './components/OCR/OCRTest';
+import { WebcamOCR } from './components/Webcam/WebcamOCR';
+import { UnifiedCVScan } from './components/CVScan/UnifiedCVScan';
 
 // Composant pour l'authentification Supabase
 const SupabaseAppContent: React.FC = () => {
@@ -147,7 +150,7 @@ const SupabaseAppContent: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <UniversalLoginPage onCVCreatorDemo={() => setShowCVCreatorDemo(true)} />;
+    return <UniversalLoginPage onCVScanDemo={() => setShowCVScanDemo(true)} />;
   }
 
   const renderActiveTab = () => {
@@ -227,6 +230,12 @@ const SupabaseAppContent: React.FC = () => {
           return <SubscriptionPlans />;
         case 'coaching':
           return <Coaching onNavigate={handleTabChange} />;
+        case 'ocr':
+          return <OCRTest />;
+        case 'webcam':
+          return <WebcamOCR />;
+        case 'cv-scan':
+          return <UnifiedCVScan />;
         default:
           return <Dashboard onNavigate={handleTabChange} />;
       }
@@ -257,6 +266,9 @@ const SupabaseAppContent: React.FC = () => {
       'ai-dashboard': 'du coach IA',
       tarifs: 'des tarifs',
       coaching: 'du coaching IA',
+      ocr: 'de l\'OCR CV',
+      webcam: 'de la webcam CV',
+      'cv-scan': 'du scan CV',
       'cv-designer-test': 'du CV Designer test'
     };
     return displayNames[tab] || 'du contenu';
@@ -316,7 +328,7 @@ const SupabaseAppContent: React.FC = () => {
           onTabChange={handleTabChange}
         />
 
-        <main className="flex justify-center px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <main className="flex justify-center px-3 sm:px-4 md:px-6 lg:px-6 py-4 sm:py-4 lg:py-4">
           <div className="w-full max-w-7xl lg:max-w-8xl">
             {renderActiveTab()}
           </div>

@@ -6,21 +6,20 @@ import { Camera, FileText, ArrowLeft } from 'lucide-react';
 
 interface CVScanIntegrationProps {
   onBack: () => void;
+  onImportCV?: () => void;
 }
 
-export const CVScanIntegration: React.FC<CVScanIntegrationProps> = ({ onBack }) => {
+export const CVScanIntegration: React.FC<CVScanIntegrationProps> = ({ onBack, onImportCV }) => {
   const [currentView, setCurrentView] = React.useState<'menu' | 'scanner' | 'creator'>('menu');
-
-  const handleScanComplete = (cvData: any) => {
-    // This would integrate with your CVCreator context
-    console.log('CV Scan completed:', cvData);
-    setCurrentView('creator');
-  };
 
   if (currentView === 'scanner') {
     return (
       <CVScanDemo
         onBack={() => setCurrentView('menu')}
+        onImportCV={() => {
+          if (onImportCV) onImportCV();
+          setCurrentView('creator');
+        }}
       />
     );
   }

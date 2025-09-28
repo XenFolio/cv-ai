@@ -32,13 +32,16 @@ export default defineConfig({
           if (id.includes('node_modules/@supabase')) {
             return 'auth-vendor';
           }
-          // Librairies PDF et documents
+          // Librairies PDF
           if (id.includes('node_modules/jspdf') || id.includes('node_modules/html2pdf')) {
             return 'pdf-vendor';
           }
-          // Librairies de traitement de documents
-          if (id.includes('node_modules/html2canvas') || id.includes('node_modules/docx') || id.includes('node_modules/mammoth')) {
-            return 'document-vendor';
+          // Librairies de traitement de documents (séparé en deux pour réduire la taille)
+          if (id.includes('node_modules/docx') || id.includes('node_modules/mammoth')) {
+            return 'word-vendor';
+          }
+          if (id.includes('node_modules/html2canvas') || id.includes('node_modules/fabric') || id.includes('node_modules/tesseract.js')) {
+            return 'ocr-vendor';
           }
           // Librairies markdown
           if (id.includes('node_modules/react-markdown') || id.includes('node_modules/remark')) {
@@ -48,9 +51,36 @@ export default defineConfig({
           if (id.includes('node_modules/@stripe')) {
             return 'stripe-vendor';
           }
-          // D'autres vendors importants
+          // Librairies de syntax highlighting (grosse) - séparées en chunks plus petits
+          if (id.includes('node_modules/highlight.js')) {
+            return 'syntax-highlight-vendor';
+          }
+          if (id.includes('node_modules/react-syntax-highlighter') ||
+              id.includes('node_modules/refractor')) {
+            return 'syntax-render-vendor';
+          }
+          // Librairies de gestion des dates/calendrier
+          if (id.includes('node_modules/date-fns') || id.includes('node_modules/dayjs')) {
+            return 'date-vendor';
+          }
+          // Librairies de validation/formulaires
+          if (id.includes('node_modules/yup') || id.includes('node_modules/zod')) {
+            return 'validation-vendor';
+          }
+          // D'autres vendors moins critiques (séparés en chunks plus petits)
           if (id.includes('node_modules/') && !id.includes('node_modules/@types')) {
-            return 'vendor';
+            // Séparer par domaine fonctionnel plutôt que tout dans 'vendor'
+            if (id.includes('core-js') || id.includes('babel-runtime') || id.includes('regenerator-runtime')) {
+              return 'polyfills-vendor';
+            }
+            if (id.includes('underscore') || id.includes('lodash') || id.includes('ramda')) {
+              return 'utils-vendor';
+            }
+            if (id.includes('axios') || id.includes('fetch') || id.includes('http')) {
+              return 'http-vendor';
+            }
+            // Le reste va dans vendor-core (devrait être plus petit maintenant)
+            return 'vendor-core';
           }
         },
       },

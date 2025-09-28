@@ -8,11 +8,11 @@ import { AuthProvider } from './AuthProvider';
 
 interface UniversalLoginPageProps {
   onDemoMode?: () => void;
-  onCVCreatorDemo?: () => void;
+  onCVScanDemo?: () => void;
 }
 
 // Composant pour Supabase
-const SupabaseLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCVCreatorDemo }) => {
+const SupabaseLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCVScanDemo }) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { signIn, signUp } = useSupabaseAuth();
 
@@ -51,7 +51,7 @@ const SupabaseLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCV
 
   return <LoginPageContent
     onDemoMode={onDemoMode}
-    onCVCreatorDemo={onCVCreatorDemo}
+    onCVScanDemo={onCVScanDemo}
     showAuthModal={showAuthModal}
     setShowAuthModal={setShowAuthModal}
     handleLogin={handleLogin}
@@ -61,7 +61,7 @@ const SupabaseLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCV
 };
 
 // Composant pour Mock
-const MockLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCVCreatorDemo }) => {
+const MockLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCVScanDemo }) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { login, register } = useMockAuth();
 
@@ -87,7 +87,7 @@ const MockLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCVCrea
 
   return <LoginPageContent
     onDemoMode={onDemoMode}
-    onCVCreatorDemo={onCVCreatorDemo}
+    onCVScanDemo={onCVScanDemo}
     showAuthModal={showAuthModal}
     setShowAuthModal={setShowAuthModal}
     handleLogin={handleLogin}
@@ -99,7 +99,7 @@ const MockLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCVCrea
 // Composant de contenu partagé
 interface LoginPageContentProps {
   onDemoMode?: () => void;
-  onCVCreatorDemo?: () => void;
+  onCVScanDemo?: () => void;
   showAuthModal: boolean;
   setShowAuthModal: (show: boolean) => void;
   handleLogin: (email: string, password: string) => Promise<void>;
@@ -109,7 +109,7 @@ interface LoginPageContentProps {
 
 const LoginPageContent: React.FC<LoginPageContentProps> = ({
   onDemoMode,
-  onCVCreatorDemo,
+  onCVScanDemo,
   showAuthModal,
   setShowAuthModal,
   handleLogin,
@@ -220,12 +220,12 @@ const LoginPageContent: React.FC<LoginPageContentProps> = ({
                 >
                   {isSupabaseMode ? 'Créer un compte' : 'Commencer gratuitement'}
                 </button>
-                {onCVCreatorDemo && (
+                {onCVScanDemo && (
                   <button
-                    onClick={onCVCreatorDemo}
+                    onClick={onCVScanDemo}
                     className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 hover:scale-105 shadow-lg"
                   >
-                    Essayer le Créateur CV
+                    Scanner CV
                   </button>
                 )}
                 {onDemoMode && (

@@ -50,7 +50,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     <div className={`relative ${className}`} ref={selectRef}>
       {/* Select trigger */}
       <div
-        className="border border-gray-300 rounded-md px-3 py-1 bg-white text-gray-900 cursor-pointer flex items-center justify-between min-w-[120px] hover:border-violet-500  focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all duration-200"
+        className="leading-none border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 cursor-pointer flex items-center justify-between min-w-[120px] hover:border-violet-500  focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all duration-200"
         onClick={() => setIsOpen(!isOpen)}
         tabIndex={0}
         onKeyDown={(e) => {

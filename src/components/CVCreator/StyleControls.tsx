@@ -87,9 +87,8 @@ const ColorToneSelector: React.FC<{
     <div className="relative">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${
-          currentValue === baseColor.replace('#', '') ? 'border-violet-500 shadow-md' : 'border-gray-300'
-        }`}
+        className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${currentValue === baseColor.replace('#', '') ? 'border-violet-500 shadow-md' : 'border-gray-300'
+          }`}
         style={{ backgroundColor: baseColor }}
         title={`Tons de ${baseColor}`}
       >
@@ -113,9 +112,8 @@ const ColorToneSelector: React.FC<{
                   onColorSelect(variation.value);
                   setIsExpanded(false);
                 }}
-                className={`w-6 h-6 rounded border transition-all duration-200 hover:scale-110 ${
-                  currentValue === variation.value ? 'border-violet-500 shadow-md' : 'border-gray-300'
-                }`}
+                className={`w-6 h-6 rounded border transition-all duration-200 hover:scale-110 ${currentValue === variation.value ? 'border-violet-500 shadow-md' : 'border-gray-300'
+                  }`}
                 style={{ backgroundColor: `#${variation.value}` }}
                 title={variation.name}
               />
@@ -359,8 +357,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                   ? 'bg-violet-500 text-white shadow-md'
                   : 'bg-white text-gray-600 hover:bg-violet-100'
                   }`}
-                title={photoObjectFit === 'contain' 
-                  ? "Basculer vers mode couvrir (remplir l'espace)" 
+                title={photoObjectFit === 'contain'
+                  ? "Basculer vers mode couvrir (remplir l'espace)"
                   : "Basculer vers mode contenir (image complète visible)"
                 }
               >
@@ -373,7 +371,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
             </div>
           </div>
         </div>
-        
+
 
         {/* Deuxième ligne - Ajustements d'image */}
         <div className="flex items-start gap-4 pt-4 border-t border-violet-200">
@@ -518,15 +516,14 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
 
   // Afficher les contrôles généraux quand aucune section n'est sélectionnée
   if (selectedSection === null && sections && toggleSectionVisibility) {
-    console.log('Sections in StyleControls:', sections);
     return (
-      <div className="bg-violet-50 rounded-lg shadow-sm p-3 mb-4 -mt-2 -ml-1 -mr-1">
+      <div className="bg-violet-50 rounded-lg shadow-sm p-2">
         <div className="space-y-4">
           {/* Contrôles principaux */}
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
               <label className="block text-sm font-medium mb-2">Police</label>
-              <div className="w-[120px]">
+              <div className="w-full">
                 <CustomSelect
                   value={customFont}
                   onChange={setCustomFont}
@@ -536,62 +533,66 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
             </div>
 
             <div className="flex-shrink-0">
-              <label className="block text-sm font-medium mb-2">Mise en page</label>
-              <div className="flex items-center gap-2 h-[32px]">
-                <button
-                  onClick={() => {
-                    const newColumns = layoutColumns === 1 ? 2 : 1;
-                    setLayoutColumns?.(newColumns);
-                    
-                    // Ajuster automatiquement la disposition des sections selon le ratio de colonnes
-                    if (contextSections && setSectionsOrder) {
-                      if (newColumns === 2) {
-                        // Passer en mode 2 colonnes selon le ratio sélectionné
-                        const updatedSections = contextSections.map(section => {
-                          if (section.id === 'name' || section.id === 'profile') {
-                            return { ...section, width: 'full' as const };
-                          } else {
-                            // Appliquer le ratio de colonnes
-                            if (columnRatio === '1/3-2/3') {
-                              // Alternance 1/3 et 2/3
-                              return { ...section, width: section.order === 0 ? '1/3' as const : '2/3' as const };
-                            } else {
-                              // Par défaut 1/2-1/2
-                              return { ...section, width: 'half' as const };
-                            }
-                          }
-                        });
-                        setSectionsOrder(cleanupLayers(updatedSections));
-                      } else {
-                        // Passer en mode 1 colonne : toutes les sections en full
-                        const updatedSections = contextSections.map(section => ({
-                          ...section,
-                          width: 'full' as const
-                        }));
-                        setSectionsOrder(cleanupLayers(updatedSections));
-                      }
-                    }
-                  }}
-                  className="flex items-center justify-center w-10 h-[30px] rounded-md text-sm font-medium transition-all bg-violet-500 text-white shadow-md hover:bg-violet-600 hover:shadow-lg"
-                  title={layoutColumns === 1 ? "Passer à deux colonnes" : "Passer à une colonne"}
-                >
-                  {layoutColumns === 1 ? (
-                    <Columns className="w-4 h-4" />
-                  ) : (
-                    <RectangleVertical className="w-4 h-4" />
-                  )}
-                </button>
+              <div>
+                <label className="block text-sm font-medium mb-2">Mise en page</label>
+              </div>
+              <div className="flex  gap-2  top-2 ">
+                <div className=''>
+                  <button
+                    onClick={() => {
+                      const newColumns = layoutColumns === 1 ? 2 : 1;
+                      setLayoutColumns?.(newColumns);
 
+                      // Ajuster automatiquement la disposition des sections selon le ratio de colonnes
+                      if (contextSections && setSectionsOrder) {
+                        if (newColumns === 2) {
+                          // Passer en mode 2 colonnes selon le ratio sélectionné
+                          const updatedSections = contextSections.map(section => {
+                            if (section.id === 'name' || section.id === 'profile') {
+                              return { ...section, width: 'full' as const };
+                            } else {
+                              // Appliquer le ratio de colonnes
+                              if (columnRatio === '1/3-2/3') {
+                                return { ...section, width: section.order === 0 ? '1/3' as const : '2/3' as const };
+                              } else if (columnRatio === '2/3-1/3') {
+                                return { ...section, width: section.order === 0 ? '2/3' as const : '1/3' as const };
+                              } else {
+                                // Par défaut 1/2-1/2
+                                return { ...section, width: 'half' as const };
+                              }
+                            }
+                          });
+                          setSectionsOrder(cleanupLayers(updatedSections));
+                        } else {
+                          // Passer en mode 1 colonne : toutes les sections en full
+                          const updatedSections = contextSections.map(section => ({
+                            ...section,
+                            width: 'full' as const
+                          }));
+                          setSectionsOrder(cleanupLayers(updatedSections));
+                        }
+                      }
+                    }}
+                    className="leading-none p-0 flex items-center justify-center w-7  h-7 rounded-md text-sm font-medium transition-all bg-violet-500 text-white shadow-md hover:bg-violet-600 hover:shadow-lg"
+                    title={layoutColumns === 1 ? "Passer à deux colonnes" : "Passer à une colonne"}
+                  >
+                    {layoutColumns === 1 ? (
+                      <Columns className="w-4 h-4" />
+                    ) : (
+                      <RectangleVertical className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
                 {/* Combo ratio colonnes - visible seulement en mode 2 colonnes */}
                 {layoutColumns === 2 && (
-                  <div className="w-[100px]">
+                  <div className="w-full">
                     <CustomSelect
                       value={columnRatio}
                       onChange={(value) => {
                         console.log('Changing column ratio from', columnRatio, 'to', value);
                         const newRatio = value as '1/2-1/2' | '1/3-2/3' | '2/3-1/3';
                         setColumnRatio(newRatio);
-                        
+
                         // Appliquer immédiatement le nouveau ratio aux sections existantes
                         if (contextSections && setSectionsOrder) {
                           const updatedSections = contextSections.map(section => {
@@ -608,7 +609,6 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                               }
                             }
                           });
-                          console.log('Updated sections with new ratio:', updatedSections);
                           setSectionsOrder(cleanupLayers(updatedSections));
                         }
                       }}
@@ -634,11 +634,10 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                     <button
                       key={spacing}
                       onClick={() => setSectionSpacing(spacing as 0 | 1 | 2 | 3 | 4)}
-                      className={`px-2 py-1 rounded text-xs transition-all duration-200 ${
-                        sectionSpacing === spacing
-                          ? 'bg-violet-500 text-white shadow-md'
-                          : 'bg-white text-gray-600 hover:bg-violet-100'
-                      }`}
+                      className={`px-2 py-1 rounded text-xs transition-all duration-200 ${sectionSpacing === spacing
+                        ? 'bg-violet-500 text-white shadow-md'
+                        : 'bg-white text-gray-600 hover:bg-violet-100'
+                        }`}
                       title={`Espacement ${spacing === 0 ? 'nul' : spacing === 1 ? 'minimal' : spacing === 2 ? 'petit' : spacing === 3 ? 'moyen' : 'grand'}`}
                     >
                       {spacing}
@@ -763,14 +762,13 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 <button
                   key={section.id}
                   onClick={() => {
-    console.log('Toggle section:', section.id, 'current visibility:', section.visible);
-    toggleSectionVisibility(section.id);
-  }}
-                  className={`flex items-center gap-2 p-2 rounded-md transition-all duration-200 text-left ${
-                    section.visible
-                      ? 'bg-white text-gray-700 hover:bg-gray-50'
-                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                  }`}
+                    console.log('Toggle section:', section.id, 'current visibility:', section.visible);
+                    toggleSectionVisibility(section.id);
+                  }}
+                  className={`flex items-center gap-2 p-2 rounded-md transition-all duration-200 text-left ${section.visible
+                    ? 'bg-white text-gray-700 hover:bg-gray-50'
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
                   title={section.visible ? 'Masquer la section' : 'Afficher la section'}
                 >
                   {section.visible ? (
@@ -793,6 +791,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
     <div className="bg-violet-50 rounded-lg shadow-sm p-3 mb-4 -mt-2 -ml-1 -mr-1">
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-4">
+          {/* Police */}
           <div className="flex-shrink-0">
             <label className="block text-sm font-medium mb-2">Police</label>
             <div className="w-[120px]">
@@ -800,76 +799,102 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 value={customFont}
                 onChange={setCustomFont}
                 options={fontOptions}
+                className="
+          h-7 w-full
+          p-0 leading-none
+          text-[11px] text-gray-700
+          border border-gray-300 hover:border-gray-400
+          focus:border-violet-500 focus:ring-violet-500
+          rounded-md
+        "
               />
             </div>
           </div>
 
-          {selectedSection === null && (
-            <div className="flex-shrink-0">
-              <label className="block text-sm font-medium mb-2">Mise en page</label>
-            <div className="flex items-center justify-start h-[32px]">
+          {/* Mise en page */}
+          <div className="flex-shrink-0">
+            <label className="block text-sm font-medium mb-2">Mise en page</label>
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => {
                   const newColumns = layoutColumns === 1 ? 2 : 1;
                   setLayoutColumns?.(newColumns);
-                  
-                  // Ajuster automatiquement la disposition des sections
+
                   if (contextSections && setSectionsOrder) {
                     if (newColumns === 2) {
-                      // Passer en mode 2 colonnes : garder nom et profile en full, reste en half
-                      const updatedSections = contextSections.map(section => {
-                        if (section.id === 'name' || section.id === 'profile') {
-                          return { ...section, width: 'full' as const };
-                        } else {
-                          return { ...section, width: 'half' as const };
-                        }
-                      });
+                      const updatedSections = contextSections.map((section) =>
+                        section.id === "name" || section.id === "profile"
+                          ? { ...section, width: "full" as const }
+                          : { ...section, width: "half" as const }
+                      );
                       setSectionsOrder(cleanupLayers(updatedSections));
                     } else {
-                      // Passer en mode 1 colonne : toutes les sections en full
-                      const updatedSections = contextSections.map(section => ({
+                      const updatedSections = contextSections.map((section) => ({
                         ...section,
-                        width: 'full' as const
+                        width: "full" as const,
                       }));
                       setSectionsOrder(cleanupLayers(updatedSections));
                     }
                   }
                 }}
-                className="top-0 flex items-center justify-center w-10 h-[30px] rounded-md text-sm font-medium transition-all bg-violet-500 text-white shadow-md hover:bg-violet-600 hover:shadow-lg"
+                className=" h-[28px] w-[28px]        /* hauteur + largeur forcées */
+                            flex items-center justify-center
+                            p-0 leading-none         /* supprime tout padding et line-height */
+                            rounded-md
+                            text-[11px] font-medium  /* taille texte réduite */
+                            bg-violet-400 text-white
+                            shadow-md hover:bg-violet-600 hover:shadow-lg
+                            transition-all"
                 title={layoutColumns === 1 ? "Passer à deux colonnes" : "Passer à une colonne"}
               >
                 {layoutColumns === 1 ? (
-                  <Columns className="w-4 h-4" />
+                  <Columns />
                 ) : (
-                  <RectangleVertical className="w-4 h-4" />
+                  <RectangleVertical />
                 )}
               </button>
-            </div>
-            </div>
-          )}
 
-          {selectedSection === null && setSectionSpacing && (
-            <div className="flex-shrink-0">
-              <label className="block text-sm font-medium mb-2">Espacement sections</label>
-              <div className="flex gap-1">
-                {[0, 1, 2, 3, 4].map((spacing) => (
-                  <button
-                    key={spacing}
-                    onClick={() => setSectionSpacing(spacing as 0 | 1 | 2 | 3 | 4)}
-                    className={`px-2 py-1 rounded text-xs transition-all duration-200 ${
-                      sectionSpacing === spacing
-                        ? 'bg-violet-500 text-white shadow-md'
-                        : 'bg-white text-gray-600 hover:bg-violet-100'
-                    }`}
-                    title={`Espacement ${spacing === 0 ? 'nul' : spacing === 1 ? 'minimal' : spacing === 2 ? 'petit' : spacing === 3 ? 'moyen' : 'grand'}`}
-                  >
-                    {spacing}
-                  </button>
-                ))}
-              </div>
+              {layoutColumns === 2 && (
+                <div className="w-[100px]">
+                  <CustomSelect
+                    value={columnRatio}
+                    onChange={(value) => {
+                      const newRatio = value as "1/2-1/2" | "1/3-2/3" | "2/3-1/3";
+                      setColumnRatio(newRatio);
+
+                      if (contextSections && setSectionsOrder) {
+                        const updatedSections = contextSections.map((section) =>
+                          section.id === "name" || section.id === "profile"
+                            ? { ...section, width: "full" as const }
+                            : newRatio === "1/3-2/3"
+                              ? { ...section, width: section.order === 0 ? "1/3" as const : "2/3" as const }
+                              : newRatio === "2/3-1/3"
+                                ? { ...section, width: section.order === 0 ? "2/3" as const : "1/3" as const }
+                                : { ...section, width: "half" as const }
+                        );
+                        setSectionsOrder(cleanupLayers(updatedSections));
+                      }
+                    }}
+                    options={[
+                      { value: "1/2-1/2", label: "1/2-1/2" },
+                      { value: "1/3-2/3", label: "1/3-2/3" },
+                      { value: "2/3-1/3", label: "2/3-1/3" },
+                    ]}
+                    className="
+              h-7 w-full
+              p-0 leading-none
+              text-[11px] text-gray-700
+              border border-gray-300 hover:border-gray-400
+              focus:border-violet-500 focus:ring-violet-500
+              rounded-md
+            "
+                  />
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
+
 
         {showNameAlignment && (
           <div className="flex items-start gap-4">
@@ -954,11 +979,10 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                       setSectionsOrder(updatedSections);
                     }
                   }}
-                  className={`p-1 rounded transition-all duration-200 ${
-                    contextSections?.find(s => s.id === selectedSection)?.alignment === 'left'
-                      ? 'bg-violet-500 text-white shadow-md'
-                      : 'bg-white text-gray-600 hover:bg-violet-100'
-                  }`}
+                  className={`p-1 rounded transition-all duration-200 ${contextSections?.find(s => s.id === selectedSection)?.alignment === 'left'
+                    ? 'bg-violet-500 text-white shadow-md'
+                    : 'bg-white text-gray-600 hover:bg-violet-100'
+                    }`}
                   title="Aligner à gauche"
                 >
                   <AlignLeft className="w-4 h-4" />
@@ -974,11 +998,10 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                       setSectionsOrder(updatedSections);
                     }
                   }}
-                  className={`p-1 rounded transition-all duration-200 ${
-                    contextSections?.find(s => s.id === selectedSection)?.alignment === 'center' || !contextSections?.find(s => s.id === selectedSection)?.alignment
-                      ? 'bg-violet-500 text-white shadow-md'
-                      : 'bg-white text-gray-600 hover:bg-violet-100'
-                  }`}
+                  className={`p-1 rounded transition-all duration-200 ${contextSections?.find(s => s.id === selectedSection)?.alignment === 'center' || !contextSections?.find(s => s.id === selectedSection)?.alignment
+                    ? 'bg-violet-500 text-white shadow-md'
+                    : 'bg-white text-gray-600 hover:bg-violet-100'
+                    }`}
                   title="Centrer"
                 >
                   <AlignCenter className="w-4 h-4" />
@@ -994,11 +1017,10 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                       setSectionsOrder(updatedSections);
                     }
                   }}
-                  className={`p-1 rounded transition-all duration-200 ${
-                    contextSections?.find(s => s.id === selectedSection)?.alignment === 'right'
-                      ? 'bg-violet-500 text-white shadow-md'
-                      : 'bg-white text-gray-600 hover:bg-violet-100'
-                  }`}
+                  className={`p-1 rounded transition-all duration-200 ${contextSections?.find(s => s.id === selectedSection)?.alignment === 'right'
+                    ? 'bg-violet-500 text-white shadow-md'
+                    : 'bg-white text-gray-600 hover:bg-violet-100'
+                    }`}
                   title="Aligner à droite"
                 >
                   <AlignRight className="w-4 h-4" />
@@ -1093,9 +1115,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                         <button
                           key={`bg-${color.value}`}
                           onClick={() => updateSectionElementColor(selectedSection, 'background', color.value)}
-                          className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 relative ${
-                            currentColors.background === color.value ? 'border-violet-500 shadow-md ring-2 ring-violet-200' : 'border-gray-300'
-                          } ${color.value === 'transparent' ? '!bg-transparent' : color.value.includes('gradient') ? '' : ''}`}
+                          className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 relative ${currentColors.background === color.value ? 'border-violet-500 shadow-md ring-2 ring-violet-200' : 'border-gray-300'
+                            } ${color.value === 'transparent' ? '!bg-transparent' : color.value.includes('gradient') ? '' : ''}`}
                           style={{ backgroundColor: color.value === 'transparent' ? 'transparent' : color.value.includes('gradient') ? 'transparent' : `#${color.value}`, backgroundImage: color.value.includes('gradient') ? color.value : 'none' }}
                           title={color.name}>
                           {color.value === 'transparent' && (
@@ -1168,9 +1189,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                     <button
                       key="title-white"
                       onClick={() => updateSectionElementColor(selectedSection, 'title', 'ffffff')}
-                      className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${
-                        (sectionColors[selectedSection]?.title || '000000') === 'ffffff' ? 'border-violet-500 shadow-md' : 'border-gray-300'
-                      }`}
+                      className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${(sectionColors[selectedSection]?.title || '000000') === 'ffffff' ? 'border-violet-500 shadow-md' : 'border-gray-300'
+                        }`}
                       style={{ backgroundColor: '#ffffff' }}
                       title="Blanc"
                     />
@@ -1182,9 +1202,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                         <button
                           key={`title-${color.value}`}
                           onClick={() => updateSectionElementColor(selectedSection, 'title', color.value)}
-                          className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${
-                            currentColors.title === color.value ? 'border-violet-500 shadow-md' : 'border-gray-300'
-                          }`}
+                          className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${currentColors.title === color.value ? 'border-violet-500 shadow-md' : 'border-gray-300'
+                            }`}
                           style={{ backgroundColor: `#${color.value}` }}
                           title={color.name}
                         />
@@ -1239,9 +1258,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                     <button
                       key="content-white"
                       onClick={() => updateSectionElementColor(selectedSection, 'content', 'ffffff')}
-                      className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${
-                        (sectionColors[selectedSection]?.content || '000000') === 'ffffff' ? 'border-violet-500 shadow-md' : 'border-gray-300'
-                      }`}
+                      className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${(sectionColors[selectedSection]?.content || '000000') === 'ffffff' ? 'border-violet-500 shadow-md' : 'border-gray-300'
+                        }`}
                       style={{ backgroundColor: '#ffffff' }}
                       title="Blanc"
                     />
@@ -1253,9 +1271,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                         <button
                           key={`content-${color.value}`}
                           onClick={() => updateSectionElementColor(selectedSection, 'content', color.value)}
-                          className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${
-                            currentColors.content === color.value ? 'border-violet-500 shadow-md' : 'border-gray-300'
-                          }`}
+                          className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${currentColors.content === color.value ? 'border-violet-500 shadow-md' : 'border-gray-300'
+                            }`}
                           style={{ backgroundColor: `#${color.value}` }}
                           title={color.name}
                         />

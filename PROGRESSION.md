@@ -2,7 +2,7 @@
 
 ## 📊 État Actuel Global
 
-**Version**: 3.5 | **Dernière mise à jour**: 2025-09-26 | **Progression totale**: 55%
+**Version**: 3.6 | **Dernière mise à jour**: 2025-09-28 | **Progression totale**: 58%
 
 ---
 
@@ -151,7 +151,7 @@
 
 - [ ] Prévisualisation temps réel avancée (animations, transitions)
 - [ ] Integration LinkedIn API complète
-- [x] CV scan via caméra (OCR)
+- [x] **CV Scan Unified** - Interface complète combinant webcam et upload avec Mistral OCR
 - [ ] Analyse concurrentielle (salaire, compétences demandées)
 - [ ] Portfolio personnel intégrée
 - [ ] Video CV support
@@ -362,24 +362,23 @@
 
 ---
 
-*Dernière mise à jour: 2025-09-26 (v3.5)*
-*Prochaine révision: 2025-10-03*
+*Dernière mise à jour: 2025-09-28 (v3.6)*
+*Prochaine révision: 2025-10-05*
 
-### ✅ Dernière réalisation (Version 3.5)
+### ✅ Dernière réalisation (Version 3.6)
 
-- [x] **Breadcrumb navigation complète** - Implémentation dans tous les composants principaux avec gradient styling
-- [x] **Cartes abonnement améliorées** - Hauteur augmentée (p-10), meilleur espacement et design responsive
-- [x] **Popups intelligents** - Messages erreur/succès avec auto-hide après 3 secondes
-- [x] **Header optimisé** - Z-index augmenté (z-[60]) pour être au-dessus du dashboard
-- [x] **Vite fix** - Correction dependency optimization pour docx et file-saver (504 errors)
-- [x] **UI cleanup** - Suppression "Support prioritaire", navigation dupliquée, layout left-aligned
-- [x] **Architecture améliorée** - Integration AdvancedThemeProvider, structure app optimisée
-- [x] **CV Scan OCR** - Implémentation complète du scan par caméra avec Tesseract.js
-- [x] **Prétraitement d'image** - Outils d'amélioration d'image (rotation, luminosité, contraste)
-- [x] **Interface upload** - Support fallback pour mobile/desktop
-- [x] **Parsing CV intelligent** - Extraction automatique des sections CV
-- [x] **Integration CV Creator** - Intégration prête avec le système existant
-- [x] **Commit 60797ca** - 31 fichiers modifiés, 3737 insertions, 865 suppressions
+- [x] **Unified CV Scan** - Composant unifié combinant webcam et upload avec interface compacte
+- [x] **Integration Mistral Pixtral** - Service OCR avancé utilisant l'API Mistral pour extraction CV
+- [x] **Breadcrumb navigation optimisée** - Icône home vers dashboard, chemins dynamiques par mode
+- [x] **Layout full-height** - Page utilisant toute la hauteur disponible sans défilement inutile
+- [x] **Navigation interne** - Utilisation de setActiveTab pour navigation React fluide
+- [x] **Mode choice compact** - Interface centrée verticalement avec design épuré
+- [x] **Validation données OCR** - Système strict empêchant l'invention de données
+- [x] **States management** - Gestion états (choice, webcam, upload, results) avec navigation fluide
+- [x] **Design responsive** - Adaptation mobile/desktop avec contraintes de hauteur
+- [x] **Error handling amélioré** - Gestion erreurs caméra et API avec messages appropriés
+- [x] **Header optimisé** - Hauteur réduite (h-12) pour maximiser l'espace contenu
+- [x] **Breadcrumb styling** - Dernier élément en dégradé rose/violet comme autres pages
 
 ### 🎯 Phase 2: Focus Actuel
 

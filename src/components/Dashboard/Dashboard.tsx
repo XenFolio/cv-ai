@@ -1,9 +1,10 @@
-import React from 'react';
-import { FileText, TrendingUp, Users, CheckCircle, PlusCircle, MessageSquare, FileEdit, Search, Edit3 } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, TrendingUp, Users, CheckCircle, PlusCircle, MessageSquare, FileEdit, Search, Edit3, Scan } from 'lucide-react';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useProfile } from '../../hooks/useProfile';
 import { MetricCard } from './MetricCard';
 import { RecentActivity } from './RecentActivity';
+import { ActivityModal } from './ActivityModal';
 
 interface DashboardProps {
   onNavigate?: (tab: string) => void;
@@ -12,6 +13,7 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { activities, loading } = useSupabase();
   const { profile, getFullName } = useProfile();
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   
   // Obtenir le nom d'utilisateur depuis le profil ou fallback
   const getUserName = () => {
@@ -158,7 +160,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Welcome Section with Quick Actions */}
       <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-violet-900 rounded-3xl p-8 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10 rounded-3xl" />
@@ -167,12 +169,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         
         <div className="relative z-2">
           <h1 className="text-3xl font-bold mb-2">Bienvenue {userName} ! 👋</h1>
-          <p className="text-white/90 text-lg mb-8">
+          <p className="text-white/90 text-md mb-8">
             Optimisez vos CV avec notre IA avancée et maximisez vos chances de succès.
           </p>
           
           {/* Actions Rapides intégrées */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
             {/* Bouton Créer un CV */}
             <button
               onClick={() => onNavigate?.('creator')}
@@ -200,7 +202,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             >
               <Edit3 className="h-7 w-7 mb-3 text-white/90 group-hover:text-white group-hover:scale-110 transition-all duration-300" />
               <span className="font-semibold text-sm">Éditeur de Lettres</span>
-              <span className="text-xs text-white/70 mt-1">Demo Editor</span>
+              <span className="text-xs text-white/70 mt-1">Créez votre lettre</span>
             </button>
 
             {/* Bouton Chat IA */}
@@ -221,6 +223,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <Search className="h-7 w-7 mb-3 text-white/90 group-hover:text-white group-hover:scale-110 transition-all duration-300" />
               <span className="font-semibold text-sm">Analyser CV</span>
               <span className="text-xs text-white/70 mt-1">Score ATS</span>
+            </button>
+
+            {/* Bouton Unifié CV Scan */}
+            <button
+              onClick={() => onNavigate?.('cv-scan')}
+              className="group flex flex-col items-center p-5 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-2xl border border-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl"
+            >
+              <Scan className="h-7 w-7 mb-3 text-white/90 group-hover:text-white group-hover:scale-110 transition-all duration-300" />
+              <span className="font-semibold text-sm">Scan CV</span>
+              <span className="text-xs text-white/70 mt-1">Webcam + Upload</span>
             </button>
           </div>
           
@@ -243,9 +255,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       {/* Charts and Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
         <div className="flex justify-center">
-          <RecentActivity />
+          <RecentActivity onShowAllActivities={() => setIsActivityModalOpen(true)} />
         </div>
       </div>
+
+      {/* Backdrop du modal - positionné au niveau Dashboard pour couvrir tout l'écran */}
+      {isActivityModalOpen && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur z-[99998]" style={{ marginTop: '0' }} />
+      )}
+
+      {/* Modal d'activité globalu niveau du Dashboard */}
+      <ActivityModal
+        isOpen={isActivityModalOpen}
+        onClose={() => setIsActivityModalOpen(false)}
+      />
     </div>
   );
 };

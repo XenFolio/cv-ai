@@ -4,18 +4,24 @@ import { createWorker } from 'tesseract.js';
 import { BackButton } from '../UI/BackButton';
 import Button from '../UI/Button';
 import { ImagePreprocessor } from './ImagePreprocessor';
+import { OCRClassificationService, OCRClassificationResult } from '../../services/OCRClassificationService';
+import { OCRDataExtractor } from '../../services/OCRDataExtractor';
+import { OCRValidationModal, OCRValidationResult } from './OCRValidationModal';
 
 interface CVScanDemoProps {
   onBack: () => void;
+  onImportCV?: (data: import('../../services/OCRClassificationService').StructuredCVData) => void;
 }
 
 interface ScanResult {
   text: string;
   confidence: number;
   processedAt: Date;
+  classification?: OCRClassificationResult;
+  structuredData?: import('../../services/OCRClassificationService').StructuredCVData;
 }
 
-export const CVScanDemo: React.FC<CVScanDemoProps> = ({ onBack }) => {
+export const CVScanDemo: React.FC<CVScanDemoProps> = ({ onBack, onImportCV }) => {
   const [cameraActive, setCameraActive] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
@@ -23,6 +29,7 @@ export const CVScanDemo: React.FC<CVScanDemoProps> = ({ onBack }) => {
   const [uploadMode, setUploadMode] = useState(false);
   const [ocrProgress, setOcrProgress] = useState(0);
   const [preprocessingImage, setPreprocessingImage] = useState<Blob | null>(null);
+  const [showValidationModal, setShowValidationModal] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,13 +108,12 @@ export const CVScanDemo: React.FC<CVScanDemoProps> = ({ onBack }) => {
   const processImage = async (imageBlob: Blob) => {
     setIsScanning(true);
     setError(null);
-    setOcrProgress(0);
+    setOcrProgress(10);
 
     try {
       const worker = await createWorker();
-
-      // Load French language for better CV recognition
       await worker.load();
+      setOcrProgress(30);
 
       // Set parameters for better text recognition
       await worker.setParameters({
@@ -120,16 +126,32 @@ export const CVScanDemo: React.FC<CVScanDemoProps> = ({ onBack }) => {
       await worker.terminate();
       URL.revokeObjectURL(imageUrl);
 
+      setOcrProgress(60);
+
+      // Classification intelligente du texte OCR
+      const classification = await OCRClassificationService.classifyOCRText(text.trim());
+      setOcrProgress(80);
+
+      // Extraction des données structurées
+      const extractionResult = await OCRDataExtractor.extractStructuredData(classification.sections);
+      setOcrProgress(100);
+
       const result: ScanResult = {
         text: text.trim(),
         confidence: confidence / 100,
-        processedAt: new Date()
+        processedAt: new Date(),
+        classification,
+        structuredData: extractionResult.data
       };
 
       setScanResult(result);
+
+      // Ouvrir automatiquement la modal de validation
+      setShowValidationModal(true);
+
     } catch (err) {
-      console.error('OCR Error:', err);
-      setError('Le traitement OCR a échoué. Veuillez réessayer avec une image plus claire.');
+      console.error('Processing Error:', err);
+      setError('Le traitement du CV a échoué. Veuillez réessayer avec une image plus claire.');
     } finally {
       setIsScanning(false);
       setOcrProgress(0);
@@ -137,81 +159,26 @@ export const CVScanDemo: React.FC<CVScanDemoProps> = ({ onBack }) => {
   };
 
   const handleImportCV = () => {
-    if (scanResult) {
-      // Parse OCR text to extract CV sections
-      const parsedCV = parseCVText(scanResult.text);
-      console.log('Parsed CV data:', parsedCV);
-
-      // This would integrate with your existing CV system
-      alert('CV importé avec succès! Données extraites prêtes pour le créateur de CV.');
+    if (scanResult?.structuredData && onImportCV) {
+      onImportCV(scanResult.structuredData);
+    } else {
+      alert('Aucune donnée à importer. Veuillez d\'abord scanner un CV.');
     }
   };
 
-  const parseCVText = (text: string) => {
-    const lines = text.split('\n').filter(line => line.trim());
-    const result: {
-      personal: Record<string, string>;
-      experience: Array<{ company: string; description: string }>;
-      education: Array<{ school: string; description: string }>;
-      skills: string[];
-    } = {
-      personal: {},
-      experience: [],
-      education: [],
-      skills: []
-    };
+  const handleValidationComplete = (validationResult: OCRValidationResult) => {
+    setShowValidationModal(false);
 
-    let currentSection: string | null = null;
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-
-      // Detect sections
-      if (line.toUpperCase().includes('EXPÉRIENCE') || line.toUpperCase().includes('EXPERIENCE')) {
-        currentSection = 'experience';
-        continue;
-      } else if (line.toUpperCase().includes('FORMATION') || line.toUpperCase().includes('ÉDUCATION')) {
-        currentSection = 'education';
-        continue;
-      } else if (line.toUpperCase().includes('COMPÉTENCES') || line.toUpperCase().includes('SKILLS')) {
-        currentSection = 'skills';
-        continue;
-      }
-
-      // Parse personal info (usually first few lines)
-      if (!currentSection && i < 5) {
-        if (line.includes('@') || line.includes('email')) {
-          result.personal.email = line;
-        } else if (line.includes('+33') || line.includes('06') || line.includes('07')) {
-          result.personal.phone = line;
-        } else if (line.toLowerCase().includes('linkedin')) {
-          result.personal.linkedin = line;
-        } else if (!result.personal.name && line.length > 2 && !line.includes('@')) {
-          result.personal.name = line;
-        }
-      }
-
-      // Parse sections
-      if (currentSection === 'experience' && line.length > 0) {
-        if (line.includes('•') || line.includes('-')) {
-          result.experience.push({
-            company: lines[i-1] || '',
-            description: line.replace(/^[•-]\s*/, '')
-          });
-        }
-      } else if (currentSection === 'education' && line.length > 0) {
-        if (line.includes('•') || line.includes('-')) {
-          result.education.push({
-            school: lines[i-1] || '',
-            description: line.replace(/^[•-]\s*/, '')
-          });
-        }
-      } else if (currentSection === 'skills' && line.length > 0) {
-        result.skills.push(line.replace(/^[•-]\s*/, ''));
-      }
+    if (onImportCV) {
+      onImportCV(validationResult.data);
+    } else {
+      alert('CV importé avec succès! Données validées prêtes pour le créateur de CV.');
     }
+  };
 
-    return result;
+  const handleRetryScan = () => {
+    setShowValidationModal(false);
+    setScanResult(null);
   };
 
   const resetScan = () => {
@@ -351,12 +318,12 @@ export const CVScanDemo: React.FC<CVScanDemoProps> = ({ onBack }) => {
                       Téléchargez votre CV
                     </p>
                     <p className="text-sm text-gray-500 mb-4">
-                      Formats supportés: JPG, PNG, PDF
+                      Formats supportés: JPG, PNG
                     </p>
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*,.pdf"
+                      accept="image/*"
                       onChange={handleFileUpload}
                       className="hidden"
                     />
@@ -427,7 +394,7 @@ export const CVScanDemo: React.FC<CVScanDemoProps> = ({ onBack }) => {
                   <li>• Évitez les ombres et reflets</li>
                   <li>• Placez le CV à plat</li>
                   <li>• Utilisez une résolution minimale de 720p</li>
-                  <li>• Formats supportés: JPG, PNG, PDF</li>
+                  <li>• Formats supportés: JPG, PNG</li>
                 </ul>
               </div>
             </div>
@@ -476,6 +443,26 @@ export const CVScanDemo: React.FC<CVScanDemoProps> = ({ onBack }) => {
           )}
         </main>
       </div>
+
+      {/* OCR Validation Modal */}
+      <OCRValidationModal
+        isOpen={showValidationModal}
+        onClose={() => setShowValidationModal(false)}
+        extractedData={scanResult?.structuredData || {
+          personal: {},
+          experience: [],
+          education: [],
+          skills: { technical: [], soft: [], languages: [] }
+        }}
+        confidence={scanResult?.classification?.confidence || 0}
+        issues={scanResult?.classification?.warnings.map(w => ({
+          field: 'general',
+          issue: w,
+          severity: 'medium' as const
+        })) || []}
+        onValidate={handleValidationComplete}
+        onRetry={handleRetryScan}
+      />
     </div>
   );
 };
