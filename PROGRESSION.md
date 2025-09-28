@@ -380,17 +380,140 @@
 - [x] **Header optimisé** - Hauteur réduite (h-12) pour maximiser l'espace contenu
 - [x] **Breadcrumb styling** - Dernier élément en dégradé rose/violet comme autres pages
 
-### 🎯 Phase 2: Focus Actuel
+## 🎯 Phase 2: Plan Détaillé (4 semaines)
 
-**Priorité**: Analyse ATS Pro ✨
+**Priorité**: Analyse ATS Pro & Features Premium ✨
 
-**Scoring de base implémenté**  
-  
-- [ ] (0-100 avec analyse détaillée)  
-- [x] **Analyse par section** (expérience, compétences, formation)
-- [ ] **Suggestions ciblées par mots-clés** - En développement
-- [ ] **Benchmark vs marché** - Données à intégrer
-- [ ] **Export rapport PDF** - Template à créer
+### 📋 Semaine 1: ATS Pro Foundation
+**Objectif**: Système d'analyse ATS complet avec scoring intelligent
 
-**Progression cible**: 50% d'ici la fin de la semaine
-**Prochains livrables**: ATS Pro suggestions et benchmarking
+#### ✅ Terminé
+- [x] **Service OCR avancé** - Integration Mistral Pixtral pour extraction CV
+- [x] **Unified CV Scan** - Interface webcam/upload compacte
+- [x] **Parsing CV intelligent** - Extraction automatique sections CV
+
+#### 🔄 En cours (Week 1-2)
+- [ ] **ATS Scoring Engine**
+  - [x] Base scoring (0-100)
+  - [x] Analyse par section (expérience, compétences, formation)
+  - [ ] **Weighted scoring** - Pondération par section et pertinence
+  - [ ] **Keyword analysis** - Matching avec offres d'emploi
+  - [ ] **Format optimization** - Suggestions structure/format
+  - [ ] **Length optimization** - Recommandations longueur sections
+
+- [ ] **Market Benchmarking**
+  - [ ] **Industry standards** - Base de données standards par industrie
+  - [ ] **Role benchmarks** - Comparaison vs postes similaires
+  - [ ] **Salary insights** - Estimations salariales basées sur CV
+  - [ ] **Skill trends** - Analyse compétences en demande
+  - [ ] **Location optimization** - Facteurs géographiques
+
+#### 📅 Livrables Semaine 1
+- [ ] ATS scoring engine v1.0
+- [ ] Market benchmarking base
+- [ ] Integration avec CV existant
+
+### 📋 Semaine 2: ATS Pro Advanced
+**Objectif**: Features avancées et export professionnel
+
+#### 🔄 En cours (Week 2-3)
+- [ ] **PDF Report Generation**
+  - [ ] **Professional template** - Design rapport entreprise
+  - [ ] **Executive summary** - Synthèse performante
+  - [ ] **Detailed breakdown** - Analyse section par section
+  - [ ] **Visual charts** - Graphiques performance
+  - [ ] **Actionable recommendations** - Suggestions concrètes
+  - [ ] **Comparison charts** - Benchmark vs marché
+
+- [ ] **AI Enhancement Engine**
+  - [ ] **Content optimization** - Suggestions texte descriptif
+  - [ ] **Skill gap analysis** - Identification compétences manquantes
+  - [ ] **Experience enhancement** - Recommandations descriptions
+  - [ ] **Education alignment** - Suggestions formations pertinentes
+  - [ ] **Keyword optimization** - SEO pour ATS
+
+#### 📅 Livrables Semaine 2
+- [ ] PDF export professionnel
+- [ ] AI enhancement suggestions
+- [ ] UI/UX pour résultats détaillés
+
+### 📋 Semaine 3: Job Search Intelligence
+**Objectif**: Intégration recherche d'emploi et matching intelligent
+
+#### ⏳ À démarrer (Week 3)
+- [ ] **Job Search Pro**
+  - [ ] **Multi-platform aggregation** - LinkedIn, Indeed, etc.
+  - [ ] **Smart matching** - CV vs offres automatique
+  - [ ] **Compatibility scoring** - Score match 0-100
+  - [ ] **Application tracking** - Suivi candidatures
+  - [ ] **Interview preparation** - Questions prédictives
+  - [ ] **Network insights** - Contacts LinkedIn utiles
+
+- [ ] **Advanced Filters**
+  - [ ] **Experience level** - Junior, Senior, etc.
+  - [ ] **Industry focus** - Filtrage par secteur
+  - [ ] **Location preferences** - Remote/hybrid/onsite
+  - [ ] **Salary range** - Fourchette salariale
+  - [ ] **Company size** - Taille entreprise
+  - [ ] **Benefits** - Avantages spécifiques
+
+#### 📅 Livrables Semaine 3
+- [ ] Job search intelligence v1.0
+- [ ] CV-job matching algorithm
+- [ ] Application tracking system
+
+### 📋 Semaine 4: Premium Features Polish
+**Objectif**: Finalisation features premium et intégration
+
+#### ⏳ Finalisation (Week 4)
+- [ ] **Premium Templates**
+  - [ ] **Industry-specific** - Templates par secteur
+  - [ ] **Design variations** - Multiple styles premium
+  - [ ] **Advanced customization** - Couleurs, fonts, layout
+  - [ ] **Import/export** - Templates personnalisables
+  - [ ] **Preview system** - Prévisualisation temps réel
+
+- [ ] **Analytics Dashboard**
+  - [ ] **Application metrics** - Taux de réponse, entretiens
+  - [ ] **CV performance** - Scores ATS dans le temps
+  - [ ] **Market insights** - Tendances marché emploi
+  - [ ] **Skill progression** - Évolution compétences
+  - [ ] **ROI tracking** - Retour sur investissement
+
+#### 📅 Livrables Semaine 4
+- [ ] Premium templates library
+- [ ] Analytics dashboard v1.0
+- [ ] Integration complete écosystème
+
+### 🎯 Success Metrics Phase 2
+
+#### Techniques
+- [ ] ATS scoring accuracy >90%
+- [ ] PDF generation time <5s
+- [ ] Job matching accuracy >85%
+- [ ] Mobile responsiveness 100%
+
+#### Business
+- [ ] User engagement +30%
+- [ ] Premium conversion +15%
+- [ ] Analysis completion rate +40%
+- [ ] Customer satisfaction >4.5/5
+
+#### UX
+- [ ] Time to analysis <2min
+- [ ] Report comprehension rate >95%
+- [ ] Mobile optimization 100%
+- [ ] Accessibility compliance WCAG 2.1
+
+### 📊 Timeline Phase 2
+
+| Semaine | Focus Area | Progression | Livrables clés |
+|---------|------------|-------------|-----------------|
+| Semaine 1 | ATS Foundation | 0% → 30% | Scoring engine, Benchmarking |
+| Semaine 2 | ATS Advanced | 30% → 60% | PDF export, AI enhancements |
+| Semaine 3 | Job Intelligence | 60% → 85% | Job matching, Application tracking |
+| Semaine 4 | Polish & Integration | 85% → 100% | Templates, Analytics, Final integration |
+
+**Progression cible**: 100% d'ici 4 semaines
+**Estimation effort**: 2-3 développeurs full-time
+**Risks**: Complexité algorithmes matching, intégration APIs externes

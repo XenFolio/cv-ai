@@ -138,7 +138,7 @@ class JobStorageService {
         recent: validSearches.length,
         expired: allSearches.length - validSearches.length
       };
-    } catch (error) {
+    } catch  {
       return { total: 0, recent: 0, expired: 0 };
     }
   }
