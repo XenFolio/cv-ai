@@ -8,6 +8,7 @@ import { EditorToolbar } from './EditorToolbar';
 import { LinkDialog } from './LinkDialog';
 import { EditorFooter } from './EditorFooter';
 import { createTemplates } from '../../data/letterTemplates';
+import { MarginModal } from './MarginModal';
 import { FileText } from 'lucide-react';
 
 interface LetterEditorProps {
@@ -34,6 +35,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
   const setActiveTab = useAppStore(s => s.setActiveTab);
   const [content, setContent] = useState(initialContent);
   const editorRef = useRef<HTMLDivElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showFontSize, setShowFontSize] = useState(false);
@@ -45,6 +47,16 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkText, setLinkText] = useState('');
+  const [showMarginGuides, setShowMarginGuides] = useState(false);
+  const [showMarginModal, setShowMarginModal] = useState(false);
+  const [allowMultiplePages, setAllowMultiplePages] = useState(false);
+  const [showBorders, setShowBorders] = useState(true);
+  const [customMargins, setCustomMargins] = useState({
+    top: 20,
+    right: 20,
+    bottom: 20,
+    left: 20,
+  });
   const [notification, setNotification] = useState<{
     message: string;
     type: 'success' | 'error' | 'info';
@@ -71,7 +83,40 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
     }
   }, [initialContent]);
 
-  
+  // Appliquer les marges personnalisées sur l'éditeur et le preview (conversion mm -> px)
+  useEffect(() => {
+    // Appliquer les marges sur letter-container (pas letter-root)
+    const applyMarginsToLetterContainer = () => {
+      const letterContainers = document.querySelectorAll('.letter-container');
+      letterContainers.forEach((container) => {
+        // Appliquer les marges personnalisées (conversion mm -> px)
+        (container as HTMLElement).style.paddingTop = `${customMargins.top * 3.78}px`;
+        (container as HTMLElement).style.paddingRight = `${customMargins.right * 3.78}px`;
+        (container as HTMLElement).style.paddingBottom = `${customMargins.bottom * 3.78}px`;
+        (container as HTMLElement).style.paddingLeft = `${customMargins.left * 3.78}px`;
+      });
+    };
+
+    // Appliquer les marges sur tous les letter-container
+    applyMarginsToLetterContainer();
+  }, [customMargins, editorRef, editorContainerRef]);
+
+  // Gérer l'affichage/masquage des bordures sur letter-content
+  useEffect(() => {
+    const toggleBorder = () => {
+      const letterContents = document.querySelectorAll('.letter-content');
+      letterContents.forEach((element) => {
+        if (showBorders) {
+          (element as HTMLElement).style.border = '1px solid red';
+        } else {
+          (element as HTMLElement).style.border = '1px solid transparent';
+        }
+      });
+    };
+
+    toggleBorder();
+  }, [showBorders]);
+
   // Fermer les menus quand on clique ailleurs
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -257,57 +302,168 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
     if (!editorRef.current) return;
 
     try {
+      console.log('Export PDF - allowMultiplePages:', allowMultiplePages);
+
+      const currentTemplateData = templates[currentTemplate as keyof typeof templates];
+      const currentTemplateStyle = currentTemplateData.style;
+
       const container = document.createElement('div');
-      container.style.cssText = `
-        width: 210mm;
-        height: 297mm;
-        margin: 0;
-        padding: 0;
-        background: white;
-        position: relative;
-        overflow: hidden;
+      container.style.width = '210mm';
+      container.style.margin = '0';
+      container.style.padding = '0';
+      container.style.background = 'white';
+      container.style.position = 'relative';
+      container.style.boxSizing = 'border-box';
+
+      if (allowMultiplePages) {
+        container.style.minHeight = '297mm';
+      } else {
+        container.style.height = '297mm';
+        container.style.overflow = 'hidden';
+      }
+
+      if (showBorders) {
+        container.style.border = '1px solid #ccc';
+      }
+
+      console.log('Container style:', container.style.cssText);
+
+      // Définir la classe de base pour le container
+      container.className = 'letter-container';
+
+      // Appliquer les marges personnalisées directement sur le container (conversion mm -> px)
+      const marginPx = {
+        top: customMargins.top ,
+        right: customMargins.right ,
+        bottom: customMargins.bottom ,
+        left: customMargins.left 
+      };
+      console.log('Marges en px:', marginPx);
+
+      container.style.paddingTop = `${marginPx.top}px`;
+      container.style.paddingRight = `${marginPx.right}px`;
+      container.style.paddingBottom = `${marginPx.bottom}px`;
+      container.style.paddingLeft = `${marginPx.left}px`;
+
+      // Créer un wrapper pour le contenu (letter-content avec margin/padding 0)
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'letter-content' + (!showBorders ? ' letter-no-borders' : '');
+      contentWrapper.style.width = '100%';
+      contentWrapper.style.height = '100%';
+      contentWrapper.style.boxSizing = 'border-box';
+      contentWrapper.style.fontFamily = currentTemplateStyle.fontFamily;
+      contentWrapper.style.fontSize = currentTemplateStyle.fontSize;
+      contentWrapper.style.lineHeight = currentTemplateStyle.lineHeight;
+      contentWrapper.style.color = currentTemplateStyle.color;
+      contentWrapper.style.position = 'relative';
+
+      if (allowMultiplePages) {
+        contentWrapper.style.minHeight = '100%';
+      } else {
+        contentWrapper.style.height = '100%';
+        contentWrapper.style.overflow = 'hidden';
+      }
+
+      // Prendre directement le contenu de letter-container
+      const containerContent = editorRef.current.innerHTML;
+      contentWrapper.innerHTML = containerContent;
+      console.log('Container content for PDF:', containerContent);
+      console.log('customMargins:', customMargins);
+      container.appendChild(contentWrapper);
+
+      // Injecter les styles CSS pour gérer les bordures et sauts de page dans le PDF
+      const styleSheet = document.createElement('style');
+      styleSheet.textContent = `
+        /* Supprimer les marges CSS par défaut mais garder celles appliquées par JavaScript */
+        .letter-content {
+          padding: 0 !important;
+          border: none !important;
+        }
+
+        /* Supprimer toutes les bordures de templates dans le PDF */
+        .letter-moderne,
+        .letter-classique,
+        .letter-creatif,
+        .letter-minimaliste,
+        .letter-executive {
+          border: none !important;
+        }
+
+        .letter-startup-card {
+          background: none !important;
+          padding: 0 !important;
+        }
+
+        .letter-startup-content {
+          border-radius: 0 !important;
+          background: transparent !important;
+        }
+
+        /* Styles pour les sauts de page (toujours disponibles) */
+        .force-new-page {
+          page-break-before: always;
+          break-before: page;
+        }
+
+        .no-break {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+
+        .avoid-after {
+          page-break-after: avoid;
+          break-after: avoid;
+        }
+
+        /* Éviter les coupures sur les éléments importants */
+        h1, h2, h3, h4, h5, h6, img, table, blockquote, .letter-container {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+
+        /* Pas de saut de page après ces éléments */
+        .letter-container > div:last-child,
+        .letter-moderne > div:last-child,
+        .letter-classique > div:last-child,
+        .letter-creatif > div:last-child,
+        .letter-minimaliste > div:last-child,
+        .letter-executive > div:last-child {
+          page-break-after: avoid;
+          break-after: avoid;
+        }
       `;
 
-      const contentDiv = document.createElement('div');
-      contentDiv.style.cssText = `
-        width: 170mm;
-        margin: 20mm auto;
-        padding: 0;
-        font-family: Arial, sans-serif;
-        font-size: 12pt;
-        line-height: 1.6;
-        color: #333;
-        background: white;
-      `;
-      contentDiv.innerHTML = editorRef.current.innerHTML;
-      container.appendChild(contentDiv);
+      container.appendChild(styleSheet);
 
       const options = {
         margin: [0, 0, 0, 0],
         filename: 'lettre-motivation.pdf',
         image: {
           type: 'jpeg',
-          quality: 0.95
+          quality: 0.98
         },
         html2canvas: {
           scale: 2,
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#ffffff',
-          width: 794,
-          height: 1123,
-          x: 0,
-          y: 0
+          logging: false
         },
         jsPDF: {
           unit: 'mm',
           format: 'a4',
-          orientation: 'portrait',
-          putOnlyUsedFonts: true,
-          compress: false
+          orientation: 'portrait'
+        },
+        pagebreak: {
+          mode: allowMultiplePages ? ['css', 'legacy'] : ['avoid-all', 'css', 'legacy'],
+          before: '.force-new-page',
+          avoid: '.no-break'
         }
       };
 
+      console.log('PDF options:', options);
+
+      // Utiliser la même configuration, seule la gestion des pages diffère
       await html2pdf().set(options).from(container).save();
 
       if (onExport) {
@@ -317,7 +473,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
       console.error('Erreur lors de l\'export PDF:', error);
       alert('Erreur lors de l\'export PDF. Veuillez réessayer.');
     }
-  }, [onExport]);
+  }, [onExport, currentTemplate, showBorders, templates, customMargins, allowMultiplePages]);
 
   // Charger un template
   const loadTemplate = useCallback((templateKey: string) => {
@@ -359,6 +515,8 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
             margin: 0 auto;
             padding: 20mm;
             background: white;
+            border: 2px solid #e5e7eb;
+
         }
         b, strong { font-weight: bold; }
         i, em { font-style: italic; }
@@ -386,7 +544,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
     ${content}
 </body>
 </html>`;
-
+      
       const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -447,6 +605,62 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
   const toggleFontFamily = useCallback(() => setShowFontFamily(!showFontFamily), [showFontFamily]);
   const toggleFontSize = useCallback(() => setShowFontSize(!showFontSize), [showFontSize]);
   const toggleColorPicker = useCallback(() => setShowColorPicker(!showColorPicker), [showColorPicker]);
+  const toggleMarginGuides = useCallback(() => setShowMarginGuides(!showMarginGuides), [showMarginGuides]);
+  const toggleBorders = useCallback(() => setShowBorders(!showBorders), [showBorders]);
+
+  // Margin modal handlers
+  const closeMarginModal = useCallback(() => setShowMarginModal(false), []);
+  const saveMargins = useCallback((newMargins: typeof customMargins) => {
+    setCustomMargins(newMargins);
+    setShowMarginModal(false);
+    showNotification('Marges mises à jour', 'success');
+  }, [showNotification]);
+
+  // Toggle handlers
+  const toggleMultiplePages = useCallback(() => {
+    const newValue = !allowMultiplePages;
+    console.log('Toggle multiple pages:', allowMultiplePages, '->', newValue);
+    setAllowMultiplePages(newValue);
+  }, [allowMultiplePages]);
+
+  
+  // Settings modal handlers (pour les marges)
+  const openRulesModal = useCallback(() => {
+    // Récupérer les marges du template actuel
+    const currentTemplateData = templates[currentTemplate as keyof typeof templates];
+    const templatePadding = currentTemplateData.style.padding;
+
+    // Parser le padding et convertir en pixels
+    let newMargins = { top: 20, right: 20, bottom: 20, left: 20 };
+
+    if (templatePadding) {
+      const values = templatePadding.split(/\s+/).map(v => {
+        const match = v.match(/(\d+)/);
+        const value = match ? parseInt(match[1]) : 0;
+
+        // Convertir en pixels si nécessaire
+        if (v.includes('mm')) {
+          // 1mm ≈ 3.78px (96 DPI)
+          return Math.round(value * 3.78);
+        }
+        return value; // déjà en pixels
+      });
+
+      if (values.length === 1) {
+        // Format: "20mm" -> toutes les marges
+        newMargins = { top: values[0], right: values[0], bottom: values[0], left: values[0] };
+      } else if (values.length === 2) {
+        // Format: "20px 30px" -> vertical horizontal
+        newMargins = { top: values[0], right: values[1], bottom: values[0], left: values[1] };
+      } else if (values.length === 4) {
+        // Format: "20px 30px 40px 30px" -> top right bottom left
+        newMargins = { top: values[0], right: values[1], bottom: values[2], left: values[3] };
+      }
+    }
+
+    setCustomMargins(newMargins);
+    setShowMarginModal(true);
+  }, [currentTemplate, templates]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -528,6 +742,13 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
             onToggleFontFamily={toggleFontFamily}
             onToggleFontSize={toggleFontSize}
             onToggleColorPicker={toggleColorPicker}
+            showMarginGuides={showMarginGuides}
+            onToggleMarginGuides={toggleMarginGuides}
+            showBorders={showBorders}
+            onToggleBorders={toggleBorders}
+            onOpenRulesModal={openRulesModal}
+            allowMultiplePages={allowMultiplePages}
+            onToggleMultiplePages={toggleMultiplePages}
           />
 
           {/* Link Dialog */}
@@ -541,15 +762,22 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
             onCancel={() => setShowLinkDialog(false)}
           />
 
+          {/* Margin Modal */}
+          <MarginModal
+            isVisible={showMarginModal}
+            margins={customMargins}
+            onSave={saveMargins}
+            onCancel={closeMarginModal}
+          />
+
           {/* Editor Content */}
-          <div className="bg-gray-100 relative flex-1 overflow-auto" style={{ width: '100%', minHeight: '400px' }}>
+          <div className={`bg-gray-50 relative flex-1 overflow-auto ${!showBorders ? 'letter-no-borders' : ''}`} style={{ width: '100%', minHeight: '400px' }} ref={editorContainerRef}>
             {isPreview ? (
               <div
-                className="outline-none bg-white shadow-lg mx-auto"
+                className={`outline-none bg-white shadow-lg mx-auto letter-container ${!showBorders ? 'letter-no-borders' : ''}`}
                 style={{
                   width: '210mm',
                   minHeight: '297mm',
-                  padding: '20mm',
                   fontFamily: templates[currentTemplate as keyof typeof templates].style.fontFamily,
                   fontSize: templates[currentTemplate as keyof typeof templates].style.fontSize,
                   lineHeight: templates[currentTemplate as keyof typeof templates].style.lineHeight,
@@ -560,32 +788,37 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
                 dangerouslySetInnerHTML={{ __html: content }}
               />
             ) : (
-              <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                className="outline-none bg-white shadow-lg mx-auto"
-                style={{
-                  width: '210mm',
-                  minHeight: '297mm',
-                  padding: '20mm',
-                  fontFamily: templates[currentTemplate as keyof typeof templates].style.fontFamily,
-                  fontSize: templates[currentTemplate as keyof typeof templates].style.fontSize,
-                  lineHeight: templates[currentTemplate as keyof typeof templates].style.lineHeight,
-                  color: templates[currentTemplate as keyof typeof templates].style.color,
-                  boxSizing: 'border-box',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                }}
-                onInput={() => {
-                  // Laisser le DOM gérer le contenu naturellement
-                }}
-                onPaste={(e) => {
-                  e.preventDefault();
-                  const text = e.clipboardData.getData('text/plain');
-                  document.execCommand('insertText', false, text);
-                }}
-                dangerouslySetInnerHTML={{ __html: initialContent || templates[currentTemplate as keyof typeof templates].template }}
-              />
+              <>
+
+                <div
+                  ref={editorRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  className={`letter-root outline-none bg-white shadow-lg mx-auto p-0`}
+                  style={{
+                    width: '210mm',
+                    minHeight: '297mm',
+                    fontFamily: templates[currentTemplate as keyof typeof templates].style.fontFamily,
+                    fontSize: templates[currentTemplate as keyof typeof templates].style.fontSize,
+                    lineHeight: templates[currentTemplate as keyof typeof templates].style.lineHeight,
+                    color: templates[currentTemplate as keyof typeof templates].style.color,
+                    boxSizing: 'border-box',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    position: 'relative',
+                    zIndex: 5,
+                    marginBottom: '20px'
+                  }}
+                  onInput={() => {
+                    // Laisser le DOM gérer le contenu naturellement
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const text = e.clipboardData.getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                  }}
+                  dangerouslySetInnerHTML={{ __html: initialContent || templates[currentTemplate as keyof typeof templates].template }}
+                />
+              </>
             )}
           </div>
 

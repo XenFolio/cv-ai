@@ -16,10 +16,14 @@ import {
   Redo2,
   Type,
   Palette,
-  Eye,
+  
   Printer,
   Menu,
-  X
+  X,
+  Ruler,
+  Square,
+  FileText,
+
 } from 'lucide-react';
 
 interface EditorToolbarProps {
@@ -45,6 +49,13 @@ interface EditorToolbarProps {
   onToggleFontFamily: () => void;
   onToggleFontSize: () => void;
   onToggleColorPicker: () => void;
+  showMarginGuides: boolean;
+  onToggleMarginGuides: () => void;
+  showBorders: boolean;
+  onToggleBorders: () => void;
+  onOpenRulesModal?: () => void;
+  allowMultiplePages: boolean;
+  onToggleMultiplePages: () => void;
 }
 
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -52,8 +63,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onExportPDF,
   onUndo,
   onRedo,
-  onTogglePreview,
-  isPreview,
   showSidebar,
   onToggleSidebar,
   onFormatCommand,
@@ -69,7 +78,14 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
   showColorPicker,
   onToggleFontFamily,
   onToggleFontSize,
-  onToggleColorPicker
+  onToggleColorPicker,
+  
+  
+  showBorders,
+  onToggleBorders,
+  onOpenRulesModal,
+  allowMultiplePages,
+  onToggleMultiplePages
 }) => {
   const fontFamilyRef = useRef<HTMLDivElement>(null);
   const fontSizeRef = useRef<HTMLDivElement>(null);
@@ -351,19 +367,39 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           </button>
         </div>
 
-        {/* Section Aperçu */}
+        {/* Section Aperçu et Guides */}
         <div className="flex items-center gap-1">
           <button
-            onClick={onTogglePreview}
+            onClick={onOpenRulesModal}
+            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            title="Règles de l'éditeur"
+          >
+            <Ruler className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onToggleMultiplePages}
             className={`p-2 rounded transition-colors ${
-              isPreview
-                ? 'text-blue-600 bg-blue-50'
+              allowMultiplePages
+                ? 'text-green-600 bg-green-50'
                 : 'text-gray-700 hover:bg-gray-50'
             }`}
-            title="Aperçu"
+            title={allowMultiplePages ? "Pages multiples activées" : "Activer les pages multiples"}
           >
-            <Eye className="w-4 h-4" />
+            <FileText className="w-4 h-4" />
           </button>
+         
+          <button
+            onClick={onToggleBorders}
+            className={`p-2 rounded transition-colors ${
+              showBorders
+                ? 'text-indigo-600 bg-indigo-50'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+            title="Afficher/masquer les bordures"
+          >
+            <Square className="w-4 h-4" />
+          </button>
+         
           <button
             onClick={onExportPDF}
             className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"

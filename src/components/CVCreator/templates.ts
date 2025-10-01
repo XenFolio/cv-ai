@@ -22,6 +22,7 @@ export interface Template {
     component: string;
     visible: boolean;
     layer?: number;
+    order?: number;
     width?: 'full' | 'half';
   }>;
 }

@@ -62,4 +62,115 @@
   aspect-ratio: 1 / 1.414;
 }
 
-/* Classes de largeur pour les sections - Tailwind les fournit déjà */
+/* Classes pour les templates de lettre */
+.letter-container {
+  max-width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.letter-content {
+  margin: 0;
+  padding: 0;
+  border: 1px solid red;
+}
+
+/* Styles dynamiques pour les marges personnalisées - SUR LETTER-CONTAINER */
+/* Note: 1mm ≈ 3.78px à 96 DPI */
+
+/* Les marges sont appliquées par JavaScript uniquement */
+
+/* Pas d'override - letter-container garde le padding des marges */
+
+/* Classes pour les différents styles de lettre */
+.letter-moderne {
+  font-family: Arial, sans-serif;
+  font-size: 12pt;
+  line-height: 1.6;
+}
+
+.letter-classique {
+  font-family: 'Times New Roman', serif;
+  font-size: 12pt;
+  line-height: 1.8;
+}
+
+.letter-creatif {
+  font-family: Helvetica, sans-serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  color: #2c3e50;
+}
+
+.letter-minimaliste {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 11pt;
+  line-height: 1.7;
+  color: #444;
+}
+
+.letter-executive {
+  font-family: 'Georgia', serif;
+  font-size: 12pt;
+  line-height: 1.8;
+  color: #2c3e50;
+}
+
+.letter-startup-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+}
+
+.letter-startup-content {
+  background: white;
+  border-radius: 11px;
+  padding: 30px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11pt;
+  line-height: 1.6;
+  color: #1a202c;
+}
+
+/* Classes pour les modes d'affichage */
+.letter-content.letter-no-borders,
+.letter-container.letter-no-borders .letter-content,
+.letter-root.letter-no-borders .letter-content {
+  border: 1px solid transparent !important;
+}
+
+/* Pour l'export PDF - supprimer les bordures des templates */
+.letter-container .letter-moderne,
+.letter-container .letter-classique,
+.letter-container .letter-creatif,
+.letter-container .letter-minimaliste {
+  border: none !important;
+}
+
+.letter-container .letter-executive {
+  border: none !important;
+}
+
+.letter-container .letter-startup-card {
+  background: none !important;
+  padding: 0 !important;
+}
+
+.letter-container .letter-startup-content {
+  border-radius: 0 !important;
+  background: white !important;
+}
+
+.letter-no-borders .letter-startup-card {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Classes pour les sections communes */
+.signature-section {
+  text-align: right;
+  margin-top: 40px;
+}

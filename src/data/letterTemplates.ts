@@ -8,6 +8,7 @@ export interface TemplateData {
       fontSize: string;
       lineHeight: string;
       color: string;
+      padding: string;
     };
     template: string;
   };
@@ -19,6 +20,7 @@ export interface TemplateData {
       fontSize: string;
       lineHeight: string;
       color: string;
+      padding: string;
     };
     template: string;
   };
@@ -30,6 +32,7 @@ export interface TemplateData {
       fontSize: string;
       lineHeight: string;
       color: string;
+      padding: string;
     };
     template: string;
   };
@@ -41,6 +44,7 @@ export interface TemplateData {
       fontSize: string;
       lineHeight: string;
       color: string;
+      padding: string;
     };
     template: string;
   };
@@ -52,6 +56,7 @@ export interface TemplateData {
       fontSize: string;
       lineHeight: string;
       color: string;
+      padding: string;
     };
     template: string;
   };
@@ -63,6 +68,7 @@ export interface TemplateData {
       fontSize: string;
       lineHeight: string;
       color: string;
+      padding: string;
     };
     template: string;
   };
@@ -84,9 +90,11 @@ export const createTemplates = (formData?: {
       fontSize: '12pt',
       lineHeight: '1.6',
       color: '#333',
+      padding: '20mm',
     },
     template: `
-      <div style="max-width: 210mm; margin: 0 auto; padding: 20mm; font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.6;">
+      <div class="letter-container letter-moderne">
+        <div class="letter-content">
         <div style="text-align: right; margin-bottom: 30px;">
           <strong>[Votre Prénom Nom]</strong><br>
           [Votre adresse]<br>
@@ -96,7 +104,7 @@ export const createTemplates = (formData?: {
         </div>
 
         <div style="margin-bottom: 30px;">
-          <strong>[Nom de l'entreprise]</strong><br>
+          <strong>${formData?.entreprise || '[Nom de l\'entreprise]'}</strong><br>
           [Adresse de l'entreprise]<br>
           [Code postal] [Ville]
         </div>
@@ -141,6 +149,7 @@ export const createTemplates = (formData?: {
           [Votre signature]<br>
           <strong>[Votre Prénom Nom]</strong>
         </div>
+        </div>
       </div>
     `
   },
@@ -152,9 +161,11 @@ export const createTemplates = (formData?: {
       fontSize: '12pt',
       lineHeight: '1.8',
       color: '#000',
+      padding: '25mm',
     },
     template: `
-      <div style="max-width: 210mm; margin: 0 auto; padding: 25mm; font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.8;">
+      <div class="letter-container letter-classique">
+        <div class="letter-content">
         <div style="text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 10px;">
           <h1 style="font-size: 16pt; margin: 0;">LETTRE DE MOTIVATION</h1>
         </div>
@@ -216,6 +227,7 @@ export const createTemplates = (formData?: {
             <strong>[Votre Prénom Nom]</strong>
           </div>
         </div>
+        </div>
       </div>
     `
   },
@@ -227,9 +239,11 @@ export const createTemplates = (formData?: {
       fontSize: '11pt',
       lineHeight: '1.5',
       color: '#2c3e50',
+      padding: '10mm',
     },
     template: `
-      <div style="max-width: 210mm; margin: 0 auto; padding: 15mm; font-family: Helvetica, sans-serif; font-size: 11pt; line-height: 1.5; color: #2c3e50;">
+      <div class="letter-container letter-creatif">
+        <div class="letter-content">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
           <h1 style="margin: 0; font-size: 18pt; font-weight: 300;">Lettre de Motivation</h1>
           <p style="margin: 5px 0 0 0; opacity: 0.9;">Candidature au poste de <strong>${formData?.poste || '[Intitulé du poste]'}</strong></p>
@@ -296,6 +310,7 @@ export const createTemplates = (formData?: {
             <strong>[Votre Prénom Nom]</strong>
           </div>
         </div>
+        </div>
       </div>
     `
   },
@@ -306,10 +321,12 @@ export const createTemplates = (formData?: {
       fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
       fontSize: '11pt',
       lineHeight: '1.7',
-      color: '#444'
+      color: '#444',
+      padding: '40px 0'
     },
     template: `
-      <div style="max-width: 600px; margin: 0 auto; padding: 40px 0;">
+      <div class="letter-container letter-minimaliste">
+        <div class="letter-content">
         <div style="text-align: center; margin-bottom: 50px;">
           <h1 style="font-size: 24pt; font-weight: 300; margin: 0; color: #333; letter-spacing: 2px;">[VOTRE NOM]</h1>
           <div style="width: 60px; height: 2px; background: #333; margin: 15px auto;"></div>
@@ -354,6 +371,7 @@ export const createTemplates = (formData?: {
           <div style="color: #666; font-size: 10pt; margin-bottom: 5px;">Cordialement,</div>
           <div style="font-weight: 500; color: #333;">[Votre Nom]</div>
         </div>
+        </div>
       </div>
     `
   },
@@ -364,11 +382,14 @@ export const createTemplates = (formData?: {
       fontFamily: 'Inter, system-ui, sans-serif',
       fontSize: '11pt',
       lineHeight: '1.6',
-      color: '#1a202c'
+      color: '#1a202c',
+      padding: '30px'
     },
     template: `
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1px; border-radius: 12px; margin-bottom: 30px;">
-        <div style="background: white; border-radius: 11px; padding: 30px;">
+      <div class="letter-container">
+        <div class="letter-startup-card">
+        <div class="letter-startup-content">
+          <div class="letter-content">
           <div style="display: flex; align-items: center; margin-bottom: 25px;">
             <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18pt; margin-right: 15px;">
               [I]
@@ -422,6 +443,8 @@ export const createTemplates = (formData?: {
           <div style="text-align: center; margin-top: 15px; font-size: 9pt; color: #a0aec0;">
             📧 [Email] • 📱 [Téléphone] • 💼 [LinkedIn/Portfolio]
           </div>
+          </div>
+        </div>
         </div>
       </div>
     `
@@ -433,10 +456,12 @@ export const createTemplates = (formData?: {
       fontFamily: 'Georgia, serif',
       fontSize: '12pt',
       lineHeight: '1.8',
-      color: '#2c3e50'
+      color: '#2c3e50',
+      padding: '40px'
     },
     template: `
-      <div style="border: 2px solid #34495e; padding: 40px; margin-bottom: 30px;">
+      <div class="letter-container letter-executive">
+        <div class="letter-content">
         <div style="text-align: center; border-bottom: 1px solid #bdc3c7; padding-bottom: 25px; margin-bottom: 35px;">
           <h1 style="font-size: 20pt; font-weight: bold; margin: 0; color: #2c3e50; letter-spacing: 1px;">[VOTRE NOM]</h1>
           <div style="font-size: 11pt; color: #7f8c8d; margin-top: 8px; font-style: italic;">[Votre Titre Exécutif]</div>
@@ -491,6 +516,7 @@ export const createTemplates = (formData?: {
             <strong style="color: #2c3e50;">[Votre Nom]</strong><br>
             <em style="color: #7f8c8d; font-size: 10pt;">[Votre Titre]</em>
           </div>
+        </div>
         </div>
       </div>
     `

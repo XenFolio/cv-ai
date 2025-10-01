@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Shield, Bell, User, Palette, Key, RefreshCw, Database } from 'lucide-react';
+import { Bot, Shield, Bell, User, Palette, Key, RefreshCw, Database, FileText, Settings as SettingsIcon } from 'lucide-react';
 import { BackButton } from '../UI/BackButton';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useProfile } from '../../hooks/useProfile';
@@ -62,6 +62,17 @@ type SettingsType = {
     website: string;
     profession: string;
     company: string;
+  };
+  rules: {
+    autoSave: boolean;
+    autoBackup: boolean;
+    spellCheck: boolean;
+    grammarCheck: boolean;
+    formatValidation: boolean;
+    contentFiltering: boolean;
+    professionalLanguage: boolean;
+    maxLengthCheck: boolean;
+    requiredFields: boolean;
   };
 };
 
@@ -151,6 +162,17 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
         website: '',
         profession: '',
         company: ''
+      },
+      rules: {
+        autoSave: true,
+        autoBackup: true,
+        spellCheck: true,
+        grammarCheck: true,
+        formatValidation: true,
+        contentFiltering: false,
+        professionalLanguage: true,
+        maxLengthCheck: true,
+        requiredFields: true
       }
     };
   };
@@ -190,6 +212,7 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
 
   const sections = [
     { id: 'ai', label: 'Intelligence Artificielle', icon: Bot },
+    { id: 'rules', label: 'Règles', icon: SettingsIcon },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'privacy', label: 'Confidentialité', icon: Shield },
     { id: 'appearance', label: 'Apparence', icon: Palette },
@@ -321,9 +344,20 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
         website: '',
         profession: '',
         company: ''
+      },
+      rules: {
+        autoSave: true,
+        autoBackup: true,
+        spellCheck: true,
+        grammarCheck: true,
+        formatValidation: true,
+        contentFiltering: false,
+        professionalLanguage: true,
+        maxLengthCheck: true,
+        requiredFields: true
       }
     };
-    
+
     setSettings(defaultSettings);
   };
 
@@ -1046,10 +1080,109 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
     );
   };
 
+  const renderRulesSettings = () => (
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <SettingsIcon className="w-5 h-5 text-violet-600" />
+          <span>Règles de l'Éditeur</span>
+        </h3>
+
+        <div className="space-y-6">
+          {/* Règles de sauvegarde */}
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-4">Sauvegarde automatique</h4>
+            <div className="space-y-4">
+              {[
+                { key: 'autoSave', label: 'Sauvegarde automatique', description: 'Sauvegarde automatiquement votre travail toutes les 30 secondes' },
+                { key: 'autoBackup', label: 'Sauvegarde de sécurité', description: 'Crée des copies de sauvegarde quotidiennement' }
+              ].map((option) => (
+                <div key={option.key} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl">
+                  <div>
+                    <h5 className="font-medium text-gray-900">{option.label}</h5>
+                    <p className="text-sm text-gray-600">{option.description}</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.rules[option.key as keyof typeof settings.rules]}
+                      onChange={(e) => updateSetting('rules', option.key, e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Validation du contenu */}
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-4">Validation du contenu</h4>
+            <div className="space-y-4">
+              {[
+                { key: 'spellCheck', label: 'Vérification orthographique', description: 'Souligne les erreurs d\'orthographe en temps réel' },
+                { key: 'grammarCheck', label: 'Vérification grammaticale', description: 'Détecte les erreurs de grammaire et de syntaxe' },
+                { key: 'formatValidation', label: 'Validation du format', description: 'Vérifie la conformité avec les standards professionnels' },
+                { key: 'maxLengthCheck', label: 'Limite de caractères', description: 'Alerte si le contenu dépasse les limites recommandées' },
+                { key: 'requiredFields', label: 'Champs obligatoires', description: 'Vérifie que toutes les sections requises sont complétées' }
+              ].map((option) => (
+                <div key={option.key} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl">
+                  <div>
+                    <h5 className="font-medium text-gray-900">{option.label}</h5>
+                    <p className="text-sm text-gray-600">{option.description}</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.rules[option.key as keyof typeof settings.rules]}
+                      onChange={(e) => updateSetting('rules', option.key, e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Filtres de contenu */}
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-4">Filtres de contenu</h4>
+            <div className="space-y-4">
+              {[
+                { key: 'contentFiltering', label: 'Filtrage de contenu', description: 'Bloque automatiquement le contenu inapproprié' },
+                { key: 'professionalLanguage', label: 'Langage professionnel', description: 'Suggère des alternatives plus professionnelles' }
+              ].map((option) => (
+                <div key={option.key} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl">
+                  <div>
+                    <h5 className="font-medium text-gray-900">{option.label}</h5>
+                    <p className="text-sm text-gray-600">{option.description}</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.rules[option.key as keyof typeof settings.rules]}
+                      onChange={(e) => updateSetting('rules', option.key, e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderActiveSection = () => {
     switch (activeSection) {
       case 'ai':
         return renderAISettings();
+      case 'rules':
+        return renderRulesSettings();
       case 'notifications':
         return renderNotificationSettings();
       case 'privacy':

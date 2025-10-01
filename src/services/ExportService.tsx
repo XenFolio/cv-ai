@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { saveAs } from 'file-saver';
-import { CVData } from '../types/cv';
+import { CVData, PersonalSection, ExperienceItem, EducationItem, SkillsSection, CVSection } from '@/types/cv';
+import { templates } from '@/components/CVCreator/templates';
 
 interface ExportOptions {
   format: 'pdf' | 'docx';
@@ -26,7 +27,7 @@ class ExportService {
       width: element.scrollWidth,
       height: element.scrollHeight,
       logging: false,
-      letterRendering: true,
+
       foreignObjectRendering: true
     });
 
@@ -134,10 +135,10 @@ class ExportService {
   }
 
   private generateWordHTML(cvData: CVData): string {
-    const personal = cvData.sections.find(s => s.type === 'personal')?.content || {};
-    const experience = cvData.sections.find(s => s.type === 'experience')?.content || [];
-    const education = cvData.sections.find(s => s.type === 'education')?.content || [];
-    const skills = cvData.sections.find(s => s.type === 'skills')?.content || {};
+    const personal = (cvData.sections.find((s: CVSection) => s.type === 'personal')?.content as PersonalSection) || {};
+    const experience = (cvData.sections.find((s: CVSection) => s.type === 'experience')?.content as ExperienceItem[]) || [];
+    const education = (cvData.sections.find((s: CVSection) => s.type === 'education')?.content as EducationItem[]) || [];
+    const skills = (cvData.sections.find((s: CVSection) => s.type === 'skills')?.content as SkillsSection) || {};
 
     return `
     <!DOCTYPE html>
@@ -254,7 +255,7 @@ class ExportService {
       ${experience.length > 0 ? `
       <div class="section">
         <div class="section-title">Expérience Professionnelle</div>
-        ${experience.map((exp: any) => `
+        ${experience.map((exp: ExperienceItem) => `
           <div class="experience-item">
             <div class="item-header">${exp.position || exp.title}</div>
             <div class="item-subheader">${exp.company}</div>
@@ -269,7 +270,7 @@ class ExportService {
       ${education.length > 0 ? `
       <div class="section">
         <div class="section-title">Formation</div>
-        ${education.map((edu: any) => `
+        ${education.map((edu: EducationItem) => `
           <div class="education-item">
             <div class="item-header">${edu.degree || edu.diploma}</div>
             <div class="item-subheader">${edu.institution}</div>
@@ -359,10 +360,19 @@ class ExportService {
   }
 
   private generateTemplateHTML(cvData: CVData, templateId: string): string {
-    // This would be expanded to support different templates
+    const template = templates.find(t => t.id === templateId);
+
+    const primaryColor = template ? '#' + template.theme.primaryColor : '#3b82f6';
+    const fontFamily = template ? `'${template.theme.font}', -apple-system, BlinkMacSystemFont, sans-serif` : 'Inter, -apple-system, BlinkMacSystemFont, sans-serif';
+
+    // Ajuster les styles pour le template créatif (marges réduites)
+    const headerMarginTop = templateId === '2' ? '10px' : '30px';
+    const headerMarginBottom = templateId === '2' ? '20px' : '40px';
+    const containerPadding = templateId === '2' ? '20px' : '40px 20px';
+
     const baseStyles = `
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=${template?.theme.font === 'Inter' ? 'Inter:wght@300;400;500;600;700&display=swap' : 'noto-sans:wght@300;400;500;600;700&display=swap'}');
 
         * {
           box-sizing: border-box;
@@ -371,7 +381,7 @@ class ExportService {
         }
 
         body {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          font-family: ${fontFamily};
           line-height: 1.6;
           color: #333;
           background: white;
@@ -380,13 +390,14 @@ class ExportService {
         .cv-container {
           max-width: 800px;
           margin: 0 auto;
-          padding: 40px 20px;
+          padding: ${containerPadding};
         }
 
         .cv-header {
           text-align: center;
-          margin-bottom: 40px;
-          padding-bottom: 20px;
+          margin-top: ${headerMarginTop};
+          margin-bottom: ${headerMarginBottom};
+          padding-bottom: 10px;
           border-bottom: 2px solid #e5e7eb;
         }
 
@@ -421,7 +432,7 @@ class ExportService {
           color: #1f2937;
           margin-bottom: 16px;
           padding-bottom: 8px;
-          border-bottom: 2px solid #3b82f6;
+          border-bottom: 2px solid ${primaryColor};
         }
 
         .cv-item {
@@ -441,7 +452,7 @@ class ExportService {
         }
 
         .cv-item-company {
-          color: #3b82f6;
+          color: ${primaryColor};
           font-weight: 500;
         }
 
@@ -479,7 +490,7 @@ class ExportService {
 
         .cv-skill-tag {
           background-color: #eff6ff;
-          color: #1d4ed8;
+          color: ${primaryColor};
           padding: 4px 12px;
           border-radius: 9999px;
           font-size: 0.875rem;
@@ -492,20 +503,31 @@ class ExportService {
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>${cvData.sections.find(s => s.type === 'personal')?.content.name || 'CV'}</title>
+        <title>${(cvData.sections.find(s => s.type === 'personal')?.content as PersonalSection)?.name || 'CV'}</title>
         ${baseStyles}
       </head>
       <body>
         <div class="cv-container">
-          ${this.generateCVContent(cvData)}
+          ${this.generateCVContent(cvData, templateId)}
         </div>
       </body>
       </html>
     `;
   }
 
-  private generateCVContent(cvData: CVData): string {
-    const personal = cvData.sections.find(s => s.type === 'personal')?.content || {};
+  private generateCVContent(cvData: CVData, templateId: string): string {
+    const template = templates.find(t => t.id === templateId);
+
+    const personal = (cvData.sections.find(s => s.type === 'personal')?.content as PersonalSection) || {};
+
+    const sectionTitles = template?.sectionTitles || {
+      profileTitle: 'Résumé Professionnel',
+      experienceTitle: 'Expérience Professionnelle',
+      educationTitle: 'Formation',
+      skillsTitle: 'Compétences',
+      languagesTitle: 'Langues',
+      contactTitle: 'CONTACT'
+    };
 
     return `
       <!-- Header -->
@@ -522,19 +544,19 @@ class ExportService {
       <!-- Summary -->
       ${personal.summary ? `
       <div class="cv-section">
-        <h2 class="cv-section-title">Résumé Professionnel</h2>
+        <h2 class="cv-section-title">${sectionTitles.profileTitle}</h2>
         <p>${personal.summary}</p>
       </div>
       ` : ''}
 
       <!-- Experience -->
-      ${this.generateExperienceSection(cvData)}
+      ${this.generateExperienceSection(cvData, sectionTitles)}
 
       <!-- Education -->
-      ${this.generateEducationSection(cvData)}
+      ${this.generateEducationSection(cvData, sectionTitles)}
 
       <!-- Skills -->
-      ${this.generateSkillsSection(cvData)}
+      ${this.generateSkillsSection(cvData, sectionTitles)}
 
       <!-- Additional Sections -->
       ${cvData.sections.filter(s => !['personal', 'experience', 'education', 'skills'].includes(s.type) && s.visible).map(section => `
@@ -546,15 +568,15 @@ class ExportService {
     `;
   }
 
-  private generateExperienceSection(cvData: CVData): string {
-    const experience = cvData.sections.find(s => s.type === 'experience')?.content || [];
+  private generateExperienceSection(cvData: CVData, sectionTitles: Record<string, string>): string {
+    const experience = (cvData.sections.find(s => s.type === 'experience')?.content as ExperienceItem[]) || [];
 
     if (!experience.length) return '';
 
     return `
       <div class="cv-section">
-        <h2 class="cv-section-title">Expérience Professionnelle</h2>
-        ${experience.map((exp: any) => `
+        <h2 class="cv-section-title">${sectionTitles.experienceTitle}</h2>
+        ${experience.map((exp: ExperienceItem) => `
           <div class="cv-item">
             <div class="cv-item-header">
               <div>
@@ -570,15 +592,15 @@ class ExportService {
     `;
   }
 
-  private generateEducationSection(cvData: CVData): string {
-    const education = cvData.sections.find(s => s.type === 'education')?.content || [];
+  private generateEducationSection(cvData: CVData, sectionTitles: Record<string, string>): string {
+    const education = (cvData.sections.find(s => s.type === 'education')?.content as EducationItem[]) || [];
 
     if (!education.length) return '';
 
     return `
       <div class="cv-section">
-        <h2 class="cv-section-title">Formation</h2>
-        ${education.map((edu: any) => `
+        <h2 class="cv-section-title">${sectionTitles.educationTitle}</h2>
+        ${education.map((edu: EducationItem) => `
           <div class="cv-item">
             <div class="cv-item-header">
               <div>
@@ -594,14 +616,14 @@ class ExportService {
     `;
   }
 
-  private generateSkillsSection(cvData: CVData): string {
-    const skills = cvData.sections.find(s => s.type === 'skills')?.content || {};
+  private generateSkillsSection(cvData: CVData, sectionTitles: Record<string, string>): string {
+    const skills = (cvData.sections.find(s => s.type === 'skills')?.content as SkillsSection) || {};
 
     if ((!skills.technical?.length) && (!skills.soft?.length)) return '';
 
     return `
       <div class="cv-section">
-        <h2 class="cv-section-title">Compétences</h2>
+        <h2 class="cv-section-title">${sectionTitles.skillsTitle}</h2>
         <div class="cv-skills-grid">
           ${skills.technical?.length ? `
             <div class="cv-skill-category">
@@ -614,7 +636,7 @@ class ExportService {
           ${skills.soft?.length ? `
             <div class="cv-skill-category">
               <div class="cv-skill-category-title">Compétences Douces</div>
-              <div class="cv-skills-list">
+              <div class="cv-skill-list">
                 ${skills.soft.map((skill: string) => `<span class="cv-skill-tag">${skill}</span>`).join('')}
               </div>
             </div>
@@ -625,5 +647,4 @@ class ExportService {
   }
 }
 
-export const exportService = new ExportService();
 export default ExportService;
