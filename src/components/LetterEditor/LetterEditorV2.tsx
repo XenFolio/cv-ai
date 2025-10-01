@@ -2,16 +2,18 @@ import React, { useEffect } from 'react';
 import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
 import { NavigationIcons } from '../UI/iconsData';
 import { TemplateCarousel } from './TemplateCarousel';
-import { EditorToolbar } from './EditorToolbar';
 import { LinkDialog } from './LinkDialog';
 import { EditorFooter } from './EditorFooter';
 import { MarginModal } from './MarginModal';
+import { NewToolbar } from './NewToolbar';
+import { EditorContent } from './EditorContent';
+import { NotificationToast } from './NotificationToast';
 import { FileText } from 'lucide-react';
 import { useLetterEditor } from '../../hooks/useLetterEditor';
 import { useMarginManager } from '../../hooks/useMarginManager';
 import { LetterExportService } from '../../services/LetterExportService';
 
-interface LetterEditorProps {
+interface LetterEditorV2Props {
   onSave?: (content: string) => void;
   onExport?: (content: string, format: 'pdf' | 'docx' | 'html') => void;
   initialContent?: string;
@@ -26,7 +28,7 @@ interface LetterEditorProps {
   onBack?: () => void;
 }
 
-export const LetterEditor: React.FC<LetterEditorProps> = ({
+export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
   onSave,
   onExport,
   initialContent = '',
@@ -154,40 +156,30 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
     marginManager.openMarginModal(currentTemplateData.style.padding);
   };
 
+  // Gestionnaire de contenu
+  const handleContentInput = (content: string) => {
+    letterEditor.setContent(content);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    document.execCommand('insertText', false, text);
+  };
+
+  const currentTemplateData = letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates];
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 p-0">
       {/* Notification Toast */}
-      {letterEditor.notification.visible && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 transform ${
-          letterEditor.notification.visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-        } ${
-          letterEditor.notification.type === 'success' ? 'bg-green-500 text-white' :
-          letterEditor.notification.type === 'error' ? 'bg-red-500 text-white' :
-          'bg-blue-500 text-white'
-        }`}>
-          <div className="flex items-center space-x-2">
-            {letterEditor.notification.type === 'success' && (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            )}
-            {letterEditor.notification.type === 'error' && (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            )}
-            {letterEditor.notification.type === 'info' && (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-            )}
-            <span className="font-medium">{letterEditor.notification.message}</span>
-          </div>
-        </div>
-      )}
+      <NotificationToast
+        message={letterEditor.notification.message}
+        type={letterEditor.notification.type}
+        visible={letterEditor.notification.visible}
+      />
 
       {/* Breadcrumb Navigation */}
-      <div className="max-w-full mx-auto px-4 py-2">
+      <div className="max-w-full mx-auto px-4 py-0">
         <BreadcrumbNavigation
           items={[
             {
@@ -211,29 +203,37 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
         {/* Éditeur */}
         <div className="flex-1 flex flex-col min-w-0 lg:w-2/3">
           {/* Toolbar */}
-          <EditorToolbar
-            onSave={handleSave}
-            onExportPDF={exportToPDF}
-            onUndo={() => document.execCommand('undo')}
-            onRedo={() => document.execCommand('redo')}
-            onTogglePreview={letterEditor.togglePreview}
-            isPreview={letterEditor.isPreview}
-            showSidebar={letterEditor.showSidebar}
-            onToggleSidebar={letterEditor.toggleSidebar}
-            onFormatCommand={letterEditor.execCommand}
-            onInsertLink={letterEditor.insertLink}
-            onInsertImage={letterEditor.insertImage}
-            onFontChange={letterEditor.changeFontFamily}
-            onFontSizeChange={letterEditor.changeFontSize}
-            onColorChange={letterEditor.changeTextColor}
+          <NewToolbar
+            // Formatage
             currentFont={letterEditor.currentFontFamily}
             currentFontSize={letterEditor.currentFontSize}
             showFontFamily={letterEditor.showFontFamily}
             showFontSize={letterEditor.showFontSize}
             showColorPicker={letterEditor.showColorPicker}
+            onFontChange={letterEditor.changeFontFamily}
+            onFontSizeChange={letterEditor.changeFontSize}
+            onColorChange={letterEditor.changeTextColor}
             onToggleFontFamily={letterEditor.toggleFontFamily}
             onToggleFontSize={letterEditor.toggleFontSize}
             onToggleColorPicker={letterEditor.toggleColorPicker}
+            onFormatCommand={letterEditor.execCommand}
+            onAlignCommand={(alignment) => letterEditor.execCommand(`justify${alignment.charAt(0).toUpperCase() + alignment.slice(1)}`)}
+
+            // Actions
+            onUndo={() => document.execCommand('undo')}
+            onRedo={() => document.execCommand('redo')}
+            onInsertLink={letterEditor.insertLink}
+            onInsertImage={letterEditor.insertImage}
+
+            // Export
+            onSave={handleSave}
+            onExportPDF={exportToPDF}
+            onTogglePreview={letterEditor.togglePreview}
+            isPreview={letterEditor.isPreview}
+
+            // Options
+            showSidebar={letterEditor.showSidebar}
+            onToggleSidebar={letterEditor.toggleSidebar}
             showMarginGuides={letterEditor.showMarginGuides}
             onToggleMarginGuides={letterEditor.toggleMarginGuides}
             showBorders={letterEditor.showBorders}
@@ -264,57 +264,21 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
 
           {/* Editor Content */}
           <div className={`bg-gray-50 relative flex-1 overflow-auto ${!letterEditor.showBorders ? 'letter-no-borders' : ''}`} style={{ width: '100%', minHeight: '400px' }} ref={letterEditor.editorContainerRef}>
-            {letterEditor.isPreview ? (
-              <div
-                className={`outline-none bg-white shadow-lg mx-auto letter-container ${!letterEditor.showBorders ? 'letter-no-borders' : ''}`}
-                style={{
-                  width: '210mm',
-                  minHeight: '297mm',
-                  fontFamily: letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates].style.fontFamily,
-                  fontSize: letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates].style.fontSize,
-                  lineHeight: letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates].style.lineHeight,
-                  color: letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates].style.color,
-                  boxSizing: 'border-box',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                }}
-                dangerouslySetInnerHTML={{ __html: letterEditor.content }}
-              />
-            ) : (
-              <div
-                ref={letterEditor.editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                className={`letter-root outline-none bg-white shadow-lg mx-auto p-0`}
-                style={{
-                  width: '210mm',
-                  minHeight: '297mm',
-                  fontFamily: letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates].style.fontFamily,
-                  fontSize: letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates].style.fontSize,
-                  lineHeight: letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates].style.lineHeight,
-                  color: letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates].style.color,
-                  boxSizing: 'border-box',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                  position: 'relative',
-                  zIndex: 5,
-                  marginBottom: '20px'
-                }}
-                onInput={() => {
-                  // Laisser le DOM gérer le contenu naturellement
-                  letterEditor.setContent(letterEditor.editorRef.current?.innerHTML || '');
-                }}
-                onPaste={(e) => {
-                  e.preventDefault();
-                  const text = e.clipboardData.getData('text/plain');
-                  document.execCommand('insertText', false, text);
-                }}
-                dangerouslySetInnerHTML={{ __html: initialContent || letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates].template }}
-              />
-            )}
+            <EditorContent
+              editorRef={letterEditor.editorRef}
+              content={letterEditor.content}
+              isPreview={letterEditor.isPreview}
+              currentTemplate={currentTemplateData}
+              showBorders={letterEditor.showBorders}
+              onInput={handleContentInput}
+              onPaste={handlePaste}
+              initialContent={initialContent}
+            />
           </div>
 
           {/* Footer */}
           <EditorFooter
-            currentTemplateName={letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates].name}
+            currentTemplateName={currentTemplateData.name}
             characterCount={letterEditor.editorRef.current?.innerHTML.length || 0}
             autoSaveEnabled={true}
           />

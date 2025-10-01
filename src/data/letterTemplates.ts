@@ -249,7 +249,7 @@ export const createTemplates = (formData?: {
           <p style="margin: 5px 0 0 0; opacity: 0.9;">Candidature au poste de <strong>${formData?.poste || '[Intitulé du poste]'}</strong></p>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px;">
           <div style="background: #f8f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
             <h3 style="color: #667eea; margin: 0 0 10px 0; font-size: 12pt;">Candidat</h3>
             <strong>[Votre Prénom Nom]</strong><br>

@@ -16,7 +16,7 @@ import {
   Redo2,
   Type,
   Palette,
-  
+  FileUp,
   Printer,
   Menu,
   X,
@@ -118,7 +118,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <div className="lg:hidden">
           <button
             onClick={onToggleSidebar}
-            className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+            className="p-1.5 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-600 rounded transition-colors"
             title="Afficher les templates"
           >
             {showSidebar ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -129,17 +129,17 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <div className="flex items-center gap-1 pr-2 lg:pr-3 border-r border-gray-200">
           <button
             onClick={onSave}
-            className="p-1.5 lg:p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
+            className="p-1.5 lg:p-2 text-gray-600 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Sauvegarder"
           >
             <Save className="w-4 h-4" />
           </button>
           <button
             onClick={onExportPDF}
-            className="p-1.5 lg:p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+            className="p-1.5 lg:p-2 text-red-600 hover:bg-red-50  rounded transition-colors"
             title="Exporter PDF"
           >
-            <Save className="w-4 h-4" />
+            <FileUp className="w-4 h-4" />
           </button>
         </div>
 
@@ -147,14 +147,14 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <div className="flex items-center gap-1 pr-2 lg:pr-3 border-r border-gray-200">
           <button
             onClick={onUndo}
-            className="p-1.5 lg:p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+            className="p-1.5 lg:p-2 text-gray-600 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Annuler"
           >
             <Undo2 className="w-4 h-4" />
           </button>
           <button
             onClick={onRedo}
-            className="p-1.5 lg:p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+            className="p-1.5 lg:p-2 text-gray-600 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Rétablir"
           >
             <Redo2 className="w-4 h-4" />
@@ -165,21 +165,21 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <div className="flex items-center gap-1 pr-2 lg:pr-3 border-r border-gray-200">
           <button
             onClick={() => onFormatCommand('bold')}
-            className="p-1.5 lg:p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors font-bold"
+            className="p-1.5 lg:p-2 text-gray-700 hover:bg-violet-50  hover:text-indigo-600 rounded transition-colors font-bold"
             title="Gras"
           >
             <Bold className="w-4 h-4" />
           </button>
           <button
             onClick={() => onFormatCommand('italic')}
-            className="p-1.5 lg:p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors italic"
+            className="p-1.5 lg:p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors italic"
             title="Italique"
           >
             <Italic className="w-4 h-4" />
           </button>
           <button
             onClick={() => onFormatCommand('underline')}
-            className="p-1.5 lg:p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors underline"
+            className="p-1.5 lg:p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors underline"
             title="Souligné"
           >
             <Underline className="w-4 h-4" />
@@ -192,7 +192,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           <div className="relative font-family" ref={fontFamilyRef}>
             <button
               onClick={onToggleFontFamily}
-              className="p-1.5 lg:p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center gap-1 min-w-[80px] lg:min-w-[100px]"
+              className="p-1.5 lg:p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors flex items-center gap-1 min-w-[80px] lg:min-w-[100px]"
               title="Police"
             >
               <Type className="w-4 h-4" />
@@ -231,7 +231,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           <div className="relative font-size" ref={fontSizeRef}>
             <button
               onClick={onToggleFontSize}
-              className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors flex items-center gap-1"
+              className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors flex items-center gap-1"
               title="Taille"
             >
               <span className="text-xs font-mono">{currentFontSize}</span>
@@ -268,7 +268,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           <div className="relative color-picker" ref={colorPickerRef}>
             <button
               onClick={onToggleColorPicker}
-              className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+              className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
               title="Couleur du texte"
             >
               <Palette className="w-4 h-4" />
@@ -303,28 +303,28 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <div className="flex items-center gap-1 pr-3 border-r border-gray-200">
           <button
             onClick={() => onFormatCommand('justifyLeft')}
-            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Aligner à gauche"
           >
             <AlignLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => onFormatCommand('justifyCenter')}
-            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Centrer"
           >
             <AlignCenter className="w-4 h-4" />
           </button>
           <button
             onClick={() => onFormatCommand('justifyRight')}
-            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Aligner à droite"
           >
             <AlignRight className="w-4 h-4" />
           </button>
           <button
             onClick={() => onFormatCommand('justifyFull')}
-            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Justifier"
           >
             <AlignJustify className="w-4 h-4" />
@@ -335,14 +335,14 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <div className="flex items-center gap-1 pr-3 border-r border-gray-200">
           <button
             onClick={() => onFormatCommand('insertUnorderedList')}
-            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Liste à puces"
           >
             <List className="w-4 h-4" />
           </button>
           <button
             onClick={() => onFormatCommand('insertOrderedList')}
-            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Liste numérotée"
           >
             <ListOrdered className="w-4 h-4" />
@@ -353,14 +353,14 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <div className="flex items-center gap-1 pr-3 border-r border-gray-200">
           <button
             onClick={onInsertLink}
-            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Insérer un lien"
           >
             <Link className="w-4 h-4" />
           </button>
           <button
             onClick={onInsertImage}
-            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 hover:text-indigo-600 rounded transition-colors"
             title="Insérer une image"
           >
             <Image className="w-4 h-4" />
@@ -371,7 +371,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <div className="flex items-center gap-1">
           <button
             onClick={onOpenRulesModal}
-            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 hover:text-indigo-600 rounded transition-colors"
             title="Règles de l'éditeur"
           >
             <Ruler className="w-4 h-4" />
@@ -380,8 +380,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
             onClick={onToggleMultiplePages}
             className={`p-2 rounded transition-colors ${
               allowMultiplePages
-                ? 'text-green-600 bg-green-50'
-                : 'text-gray-700 hover:bg-gray-50'
+              ? 'text-green-600 bg-green-50 hover:text-green-600'
+              : 'text-gray-700 hover:bg-violet-50 hover:text-indigo-600'
             }`}
             title={allowMultiplePages ? "Pages multiples activées" : "Activer les pages multiples"}
           >
@@ -393,7 +393,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
             className={`p-2 rounded transition-colors ${
               showBorders
                 ? 'text-indigo-600 bg-indigo-50'
-                : 'text-gray-700 hover:bg-gray-50'
+                : 'text-gray-700 hover:bg-violet-50'
             }`}
             title="Afficher/masquer les bordures"
           >
@@ -402,7 +402,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
          
           <button
             onClick={onExportPDF}
-            className="p-2 text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="p-2 text-gray-700 hover:bg-violet-50 hover:text-indigo-600 rounded transition-colors"
             title="Imprimer"
           >
             <Printer className="w-4 h-4" />

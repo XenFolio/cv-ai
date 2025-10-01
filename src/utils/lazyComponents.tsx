@@ -15,7 +15,7 @@ export const lazyComponentsMap = {
   // Composants spécialisés (chargés rarement)
   Models: lazy(() => import('../components/Models/Models').then(module => ({ default: module.Models }))),
   AIChat: lazy(() => import('../components/Chat/AIChat').then(module => ({ default: module.AIChat }))),
-  LetterEditor: lazy(() => import('../components/LetterEditor/LetterEditor').then(module => ({ default: module.LetterEditor }))),
+  LetterEditor: lazy(() => import('../components/LetterEditor/LetterEditorV2').then(module => ({ default: module.LetterEditorV2 }))),
   CVCreatorDemo: lazy(() => import('../components/CVCreator/CVCreatorDemo').then(module => ({ default: module.CVCreatorDemo }))),
   JobSearch: lazy(() => import('../components/JobSearch/JobSearch').then(module => ({ default: module.JobSearch }))),
 };

@@ -74,7 +74,7 @@
 .letter-content {
   margin: 0;
   padding: 0;
-  border: 1px solid red;
+  border: 1px solid #9ca3af;
 }
 
 /* Styles dynamiques pour les marges personnalisées - SUR LETTER-CONTAINER */
