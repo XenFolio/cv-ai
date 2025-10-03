@@ -97,6 +97,8 @@ export interface CoverLetterResponse {
   skillsHighlight: string[];
 }
 
+export type CorrectionMode = "strict" | "premium";
+
 // Utility function to extract text from different file types
 const extractTextFromFile = async (file: File): Promise<string> => {
   // Import mammoth dynamically for Word documents
@@ -769,19 +771,19 @@ const callOpenAIForGrammarCheck = async (prompt: string, profile?: { openai_api_
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4', // GPT-4 pour la correction grammaticale
         messages: [
           {
             role: 'system',
-            content: 'Tu es un correcteur grammatical expert. Tu analyses les textes en français et fournis des corrections précises sans réécrire le contenu. Sois concis et utile.'
+            content: 'Tu es un correcteur grammatical professionnel expert en français. Tu corriges avec une précision absolue tout en conservant le style et le sens original. Tu réponds UNIQUEMENT avec le texte corrigé, sans aucun commentaire.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.3, // Plus bas pour plus de précision en grammaire
-        max_tokens: 1500 // Suffisant pour la grammaire
+        temperature: 0.1, // Très bas pour une précision maximale en grammaire
+        max_tokens: 2000 // Suffisant pour les textes longs
       })
     });
 
@@ -1104,23 +1106,66 @@ export const useOpenAI = () => {
     }
   };
 
-  const checkGrammar = async (text: string): Promise<string | null> => {
-    setIsLoading(true);
-    setError(null);
+  const checkGrammar = async (
+  text: string,
+  mode: CorrectionMode = "strict"
+): Promise<string | null> => {
+  setIsLoading(true);
+  setError(null);
 
-    try {
-      // Call OpenAI API for grammar checking (GPT-3.5 Turbo)
-      const grammarResult = await callOpenAIForGrammarCheck(text, profile);
+  try {
+    // Prompts différents selon le mode choisi
+    const prompts = {
+      strict: `Corrige uniquement les fautes dans le texte ci-dessous.
 
-      setIsLoading(false);
-      return grammarResult;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la vérification grammaticale.';
-      setError(errorMessage);
-      setIsLoading(false);
-      return null;
-    }
-  };
+TEXTE :
+${text}
+
+CONSIGNES :
+- Corrige l'orthographe, la grammaire, la conjugaison, les accords et la ponctuation
+- Conserve le style et la formulation d'origine
+- Ne modifie pas les noms propres, dates, chiffres, ni informations techniques
+- Ne réécris pas le texte, ne fais aucune reformulation
+- Si le texte est déjà correct, rends-le identique
+- Réponds uniquement avec le texte corrigé, sans guillemets, sans explications`,
+
+      premium: `Améliore ce texte en le corrigeant et en l'optimisant pour un rendu professionnel.
+
+TEXTE À AMÉLIORER :
+${text}
+
+CONSIGNES D'AMÉLIORATION :
+1. Corrige toutes les fautes : orthographe, grammaire, conjugaison, accords, ponctuation
+2. Améliore la syntaxe et la formulation pour plus de clarté et d'impact
+3. Optimise le style pour qu'il soit plus professionnel et élégant
+4. Remplace les termes faibles par des synonymes plus précis et percutants
+5. Améliore la structure des phrases pour une meilleure fluidité
+6. Vérifie la cohérence des temps et des accords
+7. Assure-toi que le ton est approprié au contexte professionnel
+
+RÈGLES IMPORTANTES :
+- Conserve le sens et les informations essentielles
+- Ne modifie pas les noms propres, dates, chiffres et données techniques
+- Améliore sans dénaturer le message original
+- Si le texte est déjà parfait, renvoie-le identique
+- Réponds uniquement avec le texte amélioré, sans guillemets ni explications`
+    };
+
+    // Sélectionner le prompt selon le mode
+    const selectedPrompt = prompts[mode];
+
+    // Call OpenAI API for grammar checking (GPT-4)
+    const grammarResult = await callOpenAIForGrammarCheck(selectedPrompt, profile);
+
+    setIsLoading(false);
+    return grammarResult;
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la vérification grammaticale.';
+    setError(errorMessage);
+    setIsLoading(false);
+    return null;
+  }
+};
 
   const generateCoverLetter = async (prompt: string): Promise<CoverLetterResponse | null> => {
     setIsLoading(true);

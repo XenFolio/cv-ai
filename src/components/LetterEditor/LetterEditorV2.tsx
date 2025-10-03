@@ -286,6 +286,89 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
     document.execCommand('insertText', false, text);
   };
 
+  // Correction grammaticale
+  const handleGrammarCheck = async () => {
+    if (!letterEditor.editorRef.current) return;
+
+    try {
+      letterEditor.showNotification('✍️ Correction grammaticale en cours...', 'info');
+
+      // Récupérer le contenu actuel de l'éditeur
+      const currentContent = letterEditor.editorRef.current.innerHTML;
+
+      if (!currentContent.trim()) {
+        letterEditor.showNotification('Aucun texte à corriger.', 'warning');
+        return;
+      }
+
+      // Extraire le texte mais préserver les sauts de page et la structure
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = currentContent;
+
+      // Remplacer TOUS les types de sauts de page par des marqueurs spéciaux
+      let contentWithMarkers = currentContent;
+
+      // Sauts de page avec style CSS
+      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*style="[^"]*page-break-after[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
+      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*style="[^"]*page-break-before[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
+      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*style="[^"]*break-after[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
+      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*style="[^"]*break-before[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
+
+      // Sauts de page avec classes
+      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*class="[^"]*page-break[^"]*"[^>]*><\/div>/gi, '[[PAGE_BREAK]]');
+      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*class="[^"]*page-break[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
+      contentWithMarkers = contentWithMarkers.replace(/<p[^>]*class="[^"]*page-break[^"]*"[^>]*>.*?<\/p>/gi, '[[PAGE_BREAK]]');
+
+      // Sauts de page avec <hr>
+      contentWithMarkers = contentWithMarkers.replace(/<hr[^>]*class="[^"]*page-break[^"]*"[^>]*>/gi, '[[PAGE_BREAK]]');
+      contentWithMarkers = contentWithMarkers.replace(/<hr[^>]*style="[^"]*page-break[^"]*"[^>]*>/gi, '[[PAGE_BREAK]]');
+
+      // Sauts de page spécifiques à l'éditeur
+      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*data-page-break="true"[^>]*><\/div>/gi, '[[PAGE_BREAK]]');
+      contentWithMarkers = contentWithMarkers.replace(/<span[^>]*data-page-break="true"[^>]*><\/span>/gi, '[[PAGE_BREAK]]');
+
+      // Sauts de page manuels ou personnalisés
+      contentWithMarkers = contentWithMarkers.replace(/<!-- PAGE_BREAK -->/gi, '[[PAGE_BREAK]]');
+      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*content="[^"]*page-break[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
+
+      // Sauts de ligne multiples qui pourraient être des sauts de page
+      contentWithMarkers = contentWithMarkers.replace(/(<br[^>]*>\s*){5,}/gi, '[[PAGE_BREAK]]');
+      contentWithMarkers = contentWithMarkers.replace(/(\n\s*){5,}/gi, '[[PAGE_BREAK]]');
+
+      // Extraire le texte pour correction
+      tempDiv.innerHTML = contentWithMarkers.replace(/<br[^>]*>/gi, '\n').replace(/<\/p>/gi, '\n\n');
+      const plainText = tempDiv.textContent || tempDiv.innerText || '';
+
+      // Appeler la fonction de correction grammaticale avec le mode strict
+      const correctedText = await openAI.checkGrammar(plainText, "strict");
+
+      if (correctedText) {
+        // Reconstruire le HTML en préservant la structure originale
+        let formattedContent = correctedText
+          .replace(/\n\n+/g, '</p><p>') // Paragraphes
+          .replace(/\n/g, '<br>') // Sauts de ligne simples
+          .replace(/^/, '<p>') // Première balise p
+          .replace(/$/, '</p>'); // Dernière balise p
+
+        // Restaurer les sauts de page avec des <br> simples
+        formattedContent = formattedContent.replace(/\[\[PAGE_BREAK\]\]/g, '<br><br>');
+
+        // Nettoyer les paragraphes vides
+        formattedContent = formattedContent.replace(/<p><\/p>/g, '').replace(/<p><br><\/p>/g, '<p>&nbsp;</p>');
+
+        // Mettre à jour le contenu de l'éditeur avec le texte corrigé
+        letterEditor.setContent(formattedContent);
+        LetterExportService.saveToLocalStorage(formattedContent, letterEditor.currentTemplate);
+        letterEditor.showNotification('✅ Correction grammaticale terminée avec succès !', 'success');
+      } else {
+        letterEditor.showNotification('Erreur lors de la correction. Vérifiez votre clé API.', 'error');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la correction grammaticale:', error);
+      letterEditor.showNotification('Erreur lors de la correction grammaticale. Veuillez réessayer.', 'error');
+    }
+  };
+
   const currentTemplateData = letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates];
 
   return (
@@ -344,6 +427,7 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
             onInsertLink={letterEditor.insertLink}
             onInsertImage={letterEditor.insertImage}
             onAIAction={handleAIAction}
+            onCheckGrammar={handleGrammarCheck}
             isAILoading={openAI.isLoading}
 
             // Export
