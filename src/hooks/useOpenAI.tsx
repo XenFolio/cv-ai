@@ -99,6 +99,28 @@ export interface CoverLetterResponse {
 
 export type CorrectionMode = "strict" | "premium";
 
+export interface GrammarError {
+  position: {
+    start: number;
+    end: number;
+  };
+  original: string;
+  correction: string;
+  type: 'orthographe' | 'grammaire' | 'conjugaison' | 'accord' | 'ponctuation';
+  explanation: string;
+  severity?: 'critique' | 'majeure' | 'mineure';
+}
+
+export interface StyleSuggestion {
+  paragraphIndex: number;
+  originalText: string;
+  suggestions: {
+    text: string;
+    type: 'vocabulary' | 'structure' | 'clarity' | 'impact' | 'professionalism';
+    explanation: string;
+  }[];
+}
+
 // Utility function to extract text from different file types
 const extractTextFromFile = async (file: File): Promise<string> => {
   // Import mammoth dynamically for Word documents
@@ -1106,66 +1128,203 @@ export const useOpenAI = () => {
     }
   };
 
+  const analyzeGrammarErrors = async (text: string): Promise<{ errors: GrammarError[], correctedText: string }> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const analysisPrompt = `Analyse ce texte et identifie TOUTES les erreurs grammaticales, orthographiques et de style.
+
+TEXTE À ANALYSER :
+${text}
+
+CONSIGNES :
+1. Identifie toutes les erreurs : orthographe, grammaire, conjugaison, accords, ponctuation, style
+2. Pour chaque erreur, indique :
+   - La position exacte (caractères start/end)
+   - Le texte original avec l'erreur
+   - La correction proposée
+   - Le type d'erreur (orthographe, grammaire, conjugaison, accord, ponctuation, style, professionnel)
+   - La sévérité (critique, majeure, mineure)
+   - Une explication claire et concise
+
+RÈGLES DE SÉVÉRITÉ :
+- Critique : faute d'orthographe évidente, erreur de grammaire grave, faute de conjugaison
+- Majeure : accord incorrect, ponctuation manquante, formulation maladroite
+- Mineure : suggestion de style, amélioration de formulation
+
+FORMAT DE RÉPONSE OBLIGATOIRE - JSON UNIQUEMENT :
+{
+  "errors": [
+    {
+      "position": {"start": 0, "end": 10},
+      "original": "texte erroné",
+      "correction": "texte corrigé",
+      "type": "orthographe",
+      "severity": "critique",
+      "explanation": "explication de l'erreur"
+    }
+  ],
+  "correctedText": "texte complet corrigé avec TOUS les sauts de ligne préservés exactement comme l'original"
+}
+
+IMPORTANT : Réponds UNIQUEMENT avec le JSON valide, sans aucun autre texte.`;
+
+      // Appeler l'API pour l'analyse
+      const response = await callOpenAIForGrammarCheck(analysisPrompt, profile);
+
+      try {
+        const result = JSON.parse(response);
+
+        // Valider la structure
+        if (result.errors && Array.isArray(result.errors) && result.correctedText) {
+          setIsLoading(false);
+          return {
+            errors: result.errors,
+            correctedText: result.correctedText
+          };
+        } else {
+          throw new Error('Format de réponse invalide');
+        }
+      } catch (parseError) {
+        console.error('Erreur parsing JSON:', parseError);
+        // Fallback : retourner un résultat vide
+        setIsLoading(false);
+        return {
+          errors: [],
+          correctedText: text
+        };
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'analyse grammaticale.';
+      setError(errorMessage);
+      setIsLoading(false);
+      return {
+        errors: [],
+        correctedText: text
+      };
+    }
+  };
+
   const checkGrammar = async (
   text: string,
   mode: CorrectionMode = "strict"
 ): Promise<string | null> => {
-  setIsLoading(true);
-  setError(null);
+    setIsLoading(true);
+    setError(null);
 
-  try {
-    // Prompts différents selon le mode choisi
-    const prompts = {
-      strict: `Corrige uniquement les fautes dans le texte ci-dessous.
+    try {
+      const prompt = mode === "premium"
+        ? `Tu es un correcteur grammatical AVANCÉ. Corrige les erreurs grammaticales et améliore le style professionnel de ce texte.
 
 TEXTE :
 ${text}
 
-CONSIGNES :
-- Corrige l'orthographe, la grammaire, la conjugaison, les accords et la ponctuation
-- Conserve le style et la formulation d'origine
-- Ne modifie pas les noms propres, dates, chiffres, ni informations techniques
-- Ne réécris pas le texte, ne fais aucune reformulation
-- Si le texte est déjà correct, rends-le identique
-- Réponds uniquement avec le texte corrigé, sans guillemets, sans explications`,
+RÈGLES POUR LE MODE PREMIUM :
+- Corrige toutes les erreurs grammaticales et orthographiques
+- Améliore le vocabulaire professionnel sans changer le sens
+- Optimise la structure des phrases pour plus de clarté
+- Améliore les formulations pour un style plus professionnel
+- Conserve TOUS les sauts de ligne à l'identique
+- Garde le ton et l'intention originaux
+- Réponds uniquement avec le texte corrigé et amélioré, sans guillemets ni explications`
 
-      premium: `Améliore ce texte en le corrigeant et en l'optimisant pour un rendu professionnel.
+        : `Tu es un correcteur grammatical STRICT. Corrige UNIQUEMENT les erreurs objectives dans ce texte.
 
-TEXTE À AMÉLIORER :
+TEXTE :
 ${text}
 
-CONSIGNES D'AMÉLIORATION :
-1. Corrige toutes les fautes : orthographe, grammaire, conjugaison, accords, ponctuation
-2. Améliore la syntaxe et la formulation pour plus de clarté et d'impact
-3. Optimise le style pour qu'il soit plus professionnel et élégant
-4. Remplace les termes faibles par des synonymes plus précis et percutants
-5. Améliore la structure des phrases pour une meilleure fluidité
-6. Vérifie la cohérence des temps et des accords
-7. Assure-toi que le ton est approprié au contexte professionnel
+RÈGLES ABSOLUES :
+- Corrige SEULEMENT les erreurs objectives :
+  * Orthographe (fautes d'orthographe pures)
+  * Conjugaison (temps verbaux, accord du verbe)
+  * Accords (sujet-verbe, nom-adjectif, participe passé)
+  * Ponctuation (manquante ou incorrecte)
+- NE MODIFIE JAMAIS les expressions idiomatiques ou tournures stylistiques
+- NE CHANGE JAMAIS le vocabulaire ou le style d'écriture
+- NE MODIFIE JAMAIS la structure des phrases
+- NE MODIFIE JAMAIS les formulations ou expressions personnelles
+- NE PROPOSE JAMAIS de synonymes ou reformulations
+- Conserve TOUS les sauts de ligne à l'identique
+- Si un mot est correct orthographiquement, même si une meilleure formulation existe, NE LE MODIFIE PAS
+- Réponds uniquement avec le texte corrigé, sans guillemets ni explications`;
 
-RÈGLES IMPORTANTES :
-- Conserve le sens et les informations essentielles
-- Ne modifie pas les noms propres, dates, chiffres et données techniques
-- Améliore sans dénaturer le message original
-- Si le texte est déjà parfait, renvoie-le identique
-- Réponds uniquement avec le texte amélioré, sans guillemets ni explications`
-    };
+      // Call OpenAI API for grammar checking (GPT-4)
+      const grammarResult = await callOpenAIForGrammarCheck(prompt, profile);
 
-    // Sélectionner le prompt selon le mode
-    const selectedPrompt = prompts[mode];
+      setIsLoading(false);
+      return grammarResult;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la vérification grammaticale.';
+      setError(errorMessage);
+      setIsLoading(false);
+      return null;
+    }
+  };
 
-    // Call OpenAI API for grammar checking (GPT-4)
-    const grammarResult = await callOpenAIForGrammarCheck(selectedPrompt, profile);
+  const getStyleSuggestions = async (text: string): Promise<StyleSuggestion[]> => {
+    setIsLoading(true);
+    setError(null);
 
-    setIsLoading(false);
-    return grammarResult;
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la vérification grammaticale.';
-    setError(errorMessage);
-    setIsLoading(false);
-    return null;
-  }
-};
+    try {
+      const stylePrompt = `Tu es un expert en style professionnel et en amélioration de textes. Propose des améliorations stylistiques pour ce texte SANS corriger les fautes.
+
+TEXTE À ANALYSER :
+${text}
+
+CONSIGNES :
+1. Identifie les paragraphes (séparés par des sauts de ligne doubles)
+2. Pour chaque paragraphe, propose 2-3 suggestions d'amélioration stylistique maximum
+3. Les suggestions peuvent porter sur :
+   - Enrichissement du vocabulaire (termes plus professionnels)
+   - Amélioration de la structure des phrases
+   - Renforcement de l'impact et de la clarté
+   - Amélioration du professionnalisme
+4. NE CORRIGE PAS les fautes d'orthographe ou de grammaire
+5. Propose UNIQUEMENT des améliorations de style et de formulation
+
+FORMAT DE RÉPONSE OBLIGATOIRE - JSON UNIQUEMENT :
+{
+  "suggestions": [
+    {
+      "paragraphIndex": 0,
+      "originalText": "texte original du paragraphe",
+      "suggestions": [
+        {
+          "text": "version améliorée du paragraphe",
+          "type": "vocabulary",
+          "explanation": "explication de l'amélioration"
+        }
+      ]
+    }
+  ]
+}
+
+IMPORTANT : Réponds UNIQUEMENT avec le JSON valide, sans aucun autre texte.`;
+
+      const response = await callOpenAIForGrammarCheck(stylePrompt, profile);
+
+      try {
+        const result = JSON.parse(response);
+
+        if (result.suggestions && Array.isArray(result.suggestions)) {
+          setIsLoading(false);
+          return result.suggestions;
+        } else {
+          throw new Error('Format de réponse invalide');
+        }
+      } catch (parseError) {
+        console.error('Erreur parsing JSON suggestions:', parseError);
+        setIsLoading(false);
+        return [];
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'analyse stylistique.';
+      setError(errorMessage);
+      setIsLoading(false);
+      return [];
+    }
+  };
 
   const generateCoverLetter = async (prompt: string): Promise<CoverLetterResponse | null> => {
     setIsLoading(true);
@@ -1239,6 +1398,8 @@ RÈGLES IMPORTANTES :
     editCVField,
     generateContent,
     checkGrammar,
+    analyzeGrammarErrors,
+    getStyleSuggestions,
     generateCoverLetter,
     isLoading,
     error

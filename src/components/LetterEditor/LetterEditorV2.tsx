@@ -12,7 +12,15 @@ import { FileText } from 'lucide-react';
 import { useLetterEditor } from '../../hooks/useLetterEditor';
 import { useMarginManager } from '../../hooks/useMarginManager';
 import { LetterExportService } from '../../services/LetterExportService';
-import { useOpenAI } from '../../hooks/useOpenAI';
+import { useOpenAI, GrammarError, StyleSuggestion } from '../../hooks/useOpenAI';
+import { X, CheckCircle, AlertCircle } from 'lucide-react';
+
+// Étendre l'interface Window pour les propriétés personnalisées
+declare global {
+  interface Window {
+    originalHTMLForGrammar?: string;
+  }
+}
 
 interface LetterEditorV2Props {
   onSave?: (content: string) => void;
@@ -35,6 +43,14 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
   initialContent = '',
   formData,
 }) => {
+  // États pour la modale d'analyse grammaticale
+  const [showGrammarModal, setShowGrammarModal] = React.useState(false);
+  const [grammarErrors, setGrammarErrors] = React.useState<GrammarError[]>([]);
+  const [originalTextForGrammar, setOriginalTextForGrammar] = React.useState('');
+  const [correctedTextForGrammar, setCorrectedTextForGrammar] = React.useState('');
+  const [activeGrammarTab, setActiveGrammarTab] = React.useState<'correction' | 'suggestions'>('correction');
+  const [styleSuggestions, setStyleSuggestions] = React.useState<StyleSuggestion[]>([]);
+
   // Hooks principaux
   const letterEditor = useLetterEditor({ initialContent, formData });
   const openAI = useOpenAI();
@@ -286,87 +302,407 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
     document.execCommand('insertText', false, text);
   };
 
-  // Correction grammaticale
+  // Correction grammaticale avec analyse et modale
   const handleGrammarCheck = async () => {
     if (!letterEditor.editorRef.current) return;
 
     try {
-      letterEditor.showNotification('✍️ Correction grammaticale en cours...', 'info');
+      letterEditor.showNotification('🔍 Analyse grammaticale en cours...', 'info');
 
       // Récupérer le contenu actuel de l'éditeur
       const currentContent = letterEditor.editorRef.current.innerHTML;
 
       if (!currentContent.trim()) {
-        letterEditor.showNotification('Aucun texte à corriger.', 'warning');
+        letterEditor.showNotification('Aucun texte à analyser.', 'warning');
         return;
       }
 
-      // Extraire le texte mais préserver les sauts de page et la structure
+      // Préserver les <br> en les marquant AVANT l'extraction du texte
+      let markedContent = currentContent;
+      let brIndex = 0;
+
+      // Marquer chaque <br> avec un index unique pour préserver la position exacte
+      markedContent = markedContent.replace(/<br[^>]*>/gi, () => `[[BR_MARKER_${brIndex++}]]`);
+
+      // Marquer les fins de paragraphes
+      markedContent = markedContent.replace(/<\/p>/gi, () => `[[P_MARKER_${brIndex++}]]`);
+      markedContent = markedContent.replace(/<p[^>]*>/gi, ''); // Supprimer les balises <p> ouvrantes
+
+      // Extraire le texte brut pour l'analyse en préservant les marqueurs
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = currentContent;
+      tempDiv.innerHTML = markedContent;
+      let plainText = tempDiv.textContent || tempDiv.innerText || '';
 
-      // Remplacer TOUS les types de sauts de page par des marqueurs spéciaux
-      let contentWithMarkers = currentContent;
+      // Remplacer les marqueurs par des sauts de ligne pour l'IA
+      plainText = plainText.replace(/\[\[BR_MARKER_\d+\]\]/gi, '\n');
+      plainText = plainText.replace(/\[\[P_MARKER_\d+\]\]/gi, '\n\n');
 
-      // Sauts de page avec style CSS
-      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*style="[^"]*page-break-after[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
-      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*style="[^"]*page-break-before[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
-      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*style="[^"]*break-after[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
-      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*style="[^"]*break-before[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
+      // Conserver le HTML original pour la restauration finale
+      const originalHTML = currentContent;
 
-      // Sauts de page avec classes
-      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*class="[^"]*page-break[^"]*"[^>]*><\/div>/gi, '[[PAGE_BREAK]]');
-      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*class="[^"]*page-break[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
-      contentWithMarkers = contentWithMarkers.replace(/<p[^>]*class="[^"]*page-break[^"]*"[^>]*>.*?<\/p>/gi, '[[PAGE_BREAK]]');
+      // Appeler la fonction d'analyse des erreurs grammaticales
+      const analysisResult = await openAI.analyzeGrammarErrors(plainText);
 
-      // Sauts de page avec <hr>
-      contentWithMarkers = contentWithMarkers.replace(/<hr[^>]*class="[^"]*page-break[^"]*"[^>]*>/gi, '[[PAGE_BREAK]]');
-      contentWithMarkers = contentWithMarkers.replace(/<hr[^>]*style="[^"]*page-break[^"]*"[^>]*>/gi, '[[PAGE_BREAK]]');
+      if (analysisResult && analysisResult.errors.length > 0) {
+        // Stocker les résultats pour la modale
+        setGrammarErrors(analysisResult.errors);
+        setOriginalTextForGrammar(plainText);
+        setCorrectedTextForGrammar(analysisResult.correctedText);
 
-      // Sauts de page spécifiques à l'éditeur
-      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*data-page-break="true"[^>]*><\/div>/gi, '[[PAGE_BREAK]]');
-      contentWithMarkers = contentWithMarkers.replace(/<span[^>]*data-page-break="true"[^>]*><\/span>/gi, '[[PAGE_BREAK]]');
+        // Stocker aussi l'HTML original pour la restauration finale
+        window.originalHTMLForGrammar = originalHTML;
 
-      // Sauts de page manuels ou personnalisés
-      contentWithMarkers = contentWithMarkers.replace(/<!-- PAGE_BREAK -->/gi, '[[PAGE_BREAK]]');
-      contentWithMarkers = contentWithMarkers.replace(/<div[^>]*content="[^"]*page-break[^"]*"[^>]*>.*?<\/div>/gi, '[[PAGE_BREAK]]');
-
-      // Sauts de ligne multiples qui pourraient être des sauts de page
-      contentWithMarkers = contentWithMarkers.replace(/(<br[^>]*>\s*){5,}/gi, '[[PAGE_BREAK]]');
-      contentWithMarkers = contentWithMarkers.replace(/(\n\s*){5,}/gi, '[[PAGE_BREAK]]');
-
-      // Extraire le texte pour correction
-      tempDiv.innerHTML = contentWithMarkers.replace(/<br[^>]*>/gi, '\n').replace(/<\/p>/gi, '\n\n');
-      const plainText = tempDiv.textContent || tempDiv.innerText || '';
-
-      // Appeler la fonction de correction grammaticale avec le mode strict
-      const correctedText = await openAI.checkGrammar(plainText, "strict");
-
-      if (correctedText) {
-        // Reconstruire le HTML en préservant la structure originale
-        let formattedContent = correctedText
-          .replace(/\n\n+/g, '</p><p>') // Paragraphes
-          .replace(/\n/g, '<br>') // Sauts de ligne simples
-          .replace(/^/, '<p>') // Première balise p
-          .replace(/$/, '</p>'); // Dernière balise p
-
-        // Restaurer les sauts de page avec des <br> simples
-        formattedContent = formattedContent.replace(/\[\[PAGE_BREAK\]\]/g, '<br><br>');
-
-        // Nettoyer les paragraphes vides
-        formattedContent = formattedContent.replace(/<p><\/p>/g, '').replace(/<p><br><\/p>/g, '<p>&nbsp;</p>');
-
-        // Mettre à jour le contenu de l'éditeur avec le texte corrigé
-        letterEditor.setContent(formattedContent);
-        LetterExportService.saveToLocalStorage(formattedContent, letterEditor.currentTemplate);
-        letterEditor.showNotification('✅ Correction grammaticale terminée avec succès !', 'success');
+        // Afficher la modale d'analyse
+        setShowGrammarModal(true);
+        letterEditor.showNotification(`✅ ${analysisResult.errors.length} erreur${analysisResult.errors.length > 1 ? 's' : ''} détectée${analysisResult.errors.length > 1 ? 's' : ''}`, 'info');
       } else {
-        letterEditor.showNotification('Erreur lors de la correction. Vérifiez votre clé API.', 'error');
+        letterEditor.showNotification('✅ Aucune erreur détectée ! Votre texte est parfait.', 'success');
       }
     } catch (error) {
-      console.error('Erreur lors de la correction grammaticale:', error);
-      letterEditor.showNotification('Erreur lors de la correction grammaticale. Veuillez réessayer.', 'error');
+      console.error('Erreur lors de l\'analyse grammaticale:', error);
+      letterEditor.showNotification('Erreur lors de l\'analyse grammaticale. Veuillez réessayer.', 'error');
     }
+  };
+
+  const handleStyleSuggestions = async () => {
+    if (!letterEditor.editorRef.current) return;
+
+    try {
+      letterEditor.showNotification('💡 Analyse stylistique en cours...', 'info');
+
+      // Récupérer le contenu actuel de l'éditeur
+      const currentContent = letterEditor.editorRef.current.innerHTML;
+
+      if (!currentContent.trim()) {
+        letterEditor.showNotification('Aucun texte à analyser.', 'warning');
+        return;
+      }
+
+      // Extraire le texte brut pour l'analyse
+      const textContent = currentContent.replace(/<[^>]*>/g, '');
+
+      // Appeler l'API pour les suggestions stylistiques
+      const suggestions = await openAI.getStyleSuggestions(textContent);
+
+      if (suggestions && suggestions.length > 0) {
+        setStyleSuggestions(suggestions);
+        setOriginalTextForGrammar(textContent);
+        setActiveGrammarTab('suggestions');
+        setShowGrammarModal(true);
+        letterEditor.showNotification(`💡 ${suggestions.length} suggestion${suggestions.length > 1 ? 's' : ''} stylistique${suggestions.length > 1 ? 's' : ''} disponible${suggestions.length > 1 ? 's' : ''}`, 'info');
+      } else {
+        letterEditor.showNotification('✅ Votre texte est déjà bien formulé !', 'success');
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'analyse stylistique:', error);
+      letterEditor.showNotification('Erreur lors de l\'analyse stylistique. Veuillez réessayer.', 'error');
+    }
+  };
+
+  const handleApplyStyleSuggestion = (paragraphIndex: number, suggestionText: string) => {
+    if (!letterEditor.editorRef.current) return;
+
+    try {
+      // Séparer le texte en paragraphes
+      const paragraphs = originalTextForGrammar.split(/\n\s*\n/);
+
+      if (paragraphs[paragraphIndex]) {
+        // Remplacer le paragraphe par la suggestion
+        paragraphs[paragraphIndex] = suggestionText;
+
+        // Reconstruire le texte avec les sauts de ligne
+        const newText = paragraphs.join('\n\n');
+
+        // Préserver les <br> existants
+        const finalHTML = newText.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+
+        // Mettre à jour le contenu de l'éditeur
+        letterEditor.editorRef.current.innerHTML = finalHTML;
+        letterEditor.setContent(finalHTML);
+
+        letterEditor.showNotification('✅ Suggestion stylistique appliquée !', 'success');
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'application de la suggestion:', error);
+      letterEditor.showNotification('Erreur lors de l\'application de la suggestion.', 'error');
+    }
+  };
+
+  // Appliquer une seule correction
+  const handleApplySingleCorrection = (error: GrammarError) => {
+    if (!letterEditor.editorRef.current) return;
+
+    try {
+      // Récupérer le contenu actuel de l'éditeur
+      const currentContent = letterEditor.editorRef.current.innerHTML;
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = currentContent;
+      const plainText = tempDiv.textContent || tempDiv.innerText || '';
+
+      // Vérifier si le texte original correspond à ce qui est attendu
+      const textAtPosition = plainText.substring(error.position.start, error.position.end);
+
+      if (textAtPosition === error.original) {
+        // Appliquer la correction sur le texte brut
+        const correctedText = plainText.substring(0, error.position.start) +
+                            error.correction +
+                            plainText.substring(error.position.end);
+
+        // Reconstruire le HTML en préservant les sauts de ligne de manière visible
+        let formattedContent = correctedText
+          .replace(/\n\n+/g, '</p><p><br><br>') // Doubles sauts de ligne = paragraphes avec espacement visible
+          .replace(/\n/g, '<br>') // Sauts simples = <br>
+          .replace(/^/, '<p>') // Ajouter la première balise p
+          .replace(/$/, '</p>'); // Ajouter la dernière balise p
+
+        // Nettoyer les paragraphes vides mais préserver les <br> importants
+        formattedContent = formattedContent.replace(/<p><\/p>/g, '<p>&nbsp;</p>');
+        formattedContent = formattedContent.replace(/<p><br><\/p>/g, '<p>&nbsp;</p>');
+        formattedContent = formattedContent.replace(/<p><br><br><\/p>/g, '<p>&nbsp;</p>');
+
+        // S'assurer que les paragraphes consécutifs ont bien des <br> entre eux pour l'espacement visuel
+        formattedContent = formattedContent.replace(/<\/p><p>/g, '</p><br><br><p>');
+
+        // Nettoyer les double <br> qui pourraient apparaître
+        formattedContent = formattedContent.replace(/<br><br><br><br>/g, '<br><br>');
+        formattedContent = formattedContent.replace(/<br><br><br>/g, '<br><br>');
+
+        // Mettre à jour l'éditeur avec le contenu corrigé
+        letterEditor.setContent(formattedContent);
+        LetterExportService.saveToLocalStorage(formattedContent, letterEditor.currentTemplate);
+
+        // Retirer l'erreur de la liste
+        setGrammarErrors(prev => prev.filter(e =>
+          !(e.position.start === error.position.start &&
+            e.position.end === error.position.end &&
+            e.original === error.original)
+        ));
+
+        // S'il n'y a plus d'erreurs, fermer la modale
+        if (grammarErrors.length <= 1) {
+          setShowGrammarModal(false);
+          setGrammarErrors([]);
+          setOriginalTextForGrammar('');
+          setCorrectedTextForGrammar('');
+          delete window.originalHTMLForGrammar;
+        }
+
+        letterEditor.showNotification('✅ Correction appliquée avec succès !', 'success');
+      } else {
+        // Si le texte ne correspond pas, essayer de trouver l'erreur dans le texte
+        const foundIndex = plainText.indexOf(error.original);
+        if (foundIndex !== -1) {
+          // Appliquer la correction à la position trouvée
+          const correctedText = plainText.substring(0, foundIndex) +
+                              error.correction +
+                              plainText.substring(foundIndex + error.original.length);
+
+          // Reconstruire le HTML en préservant les sauts de ligne de manière visible
+          let formattedContent = correctedText
+            .replace(/\n\n+/g, '</p><p><br><br>') // Doubles sauts de ligne = paragraphes avec espacement visible
+            .replace(/\n/g, '<br>') // Sauts simples = <br>
+            .replace(/^/, '<p>') // Ajouter la première balise p
+            .replace(/$/, '</p>'); // Ajouter la dernière balise p
+
+          // Nettoyer les paragraphes vides mais préserver les <br> importants
+          formattedContent = formattedContent.replace(/<p><\/p>/g, '<p>&nbsp;</p>');
+          formattedContent = formattedContent.replace(/<p><br><\/p>/g, '<p>&nbsp;</p>');
+          formattedContent = formattedContent.replace(/<p><br><br><\/p>/g, '<p>&nbsp;</p>');
+
+          // S'assurer que les paragraphes consécutifs ont bien des <br> entre eux pour l'espacement visuel
+          formattedContent = formattedContent.replace(/<\/p><p>/g, '</p><br><br><p>');
+
+          // Nettoyer les double <br> qui pourraient apparaître
+          formattedContent = formattedContent.replace(/<br><br><br><br>/g, '<br><br>');
+          formattedContent = formattedContent.replace(/<br><br><br>/g, '<br><br>');
+
+          letterEditor.setContent(formattedContent);
+          LetterExportService.saveToLocalStorage(formattedContent, letterEditor.currentTemplate);
+
+          setGrammarErrors(prev => prev.filter(e =>
+            !(e.position.start === error.position.start &&
+              e.position.end === error.position.end &&
+              e.original === error.original)
+          ));
+
+          if (grammarErrors.length <= 1) {
+            setShowGrammarModal(false);
+            setGrammarErrors([]);
+            setOriginalTextForGrammar('');
+            setCorrectedTextForGrammar('');
+            delete window.originalHTMLForGrammar;
+          }
+
+          letterEditor.showNotification('✅ Correction appliquée avec succès !', 'success');
+        } else {
+          letterEditor.showNotification('⚠️ Impossible d\'appliquer cette correction automatiquement.', 'warning');
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'application de la correction:', error);
+      letterEditor.showNotification('Erreur lors de l\'application de la correction.', 'error');
+    }
+  };
+
+  // Appliquer toutes les corrections
+  const handleApplyAllCorrections = () => {
+    if (!letterEditor.editorRef.current) return;
+
+    try {
+      // Utiliser directement le texte corrigé fourni par l'IA
+      // C'est plus fiable car l'IA a déjà appliqué toutes les corrections
+      let formattedContent = correctedTextForGrammar;
+
+      // Reconstruire le HTML en préservant TOUS les sauts de ligne de manière visible
+      formattedContent = formattedContent
+        .replace(/\n\n+/g, '</p><p><br><br>') // Doubles sauts de ligne = paragraphes séparés par des sauts visibles
+        .replace(/\n/g, '<br>') // Sauts simples = <br>
+        .replace(/^/, '<p>') // Ajouter la première balise p
+        .replace(/$/, '</p>'); // Ajouter la dernière balise p
+
+      // Nettoyer les paragraphes vides mais préserver les <br> importants
+      formattedContent = formattedContent.replace(/<p><\/p>/g, '<p>&nbsp;</p>');
+      formattedContent = formattedContent.replace(/<p><br><\/p>/g, '<p>&nbsp;</p>');
+      formattedContent = formattedContent.replace(/<p><br><br><\/p>/g, '<p>&nbsp;</p>');
+
+      // S'assurer que les paragraphes consécutifs ont bien des <br> entre eux pour l'espacement visuel
+      formattedContent = formattedContent.replace(/<\/p><p>/g, '</p><br><br><p>');
+
+      // Nettoyer les double <br> qui pourraient apparaître
+      formattedContent = formattedContent.replace(/<br><br><br><br>/g, '<br><br>');
+      formattedContent = formattedContent.replace(/<br><br><br>/g, '<br><br>');
+
+      // Mettre à jour l'éditeur avec le contenu corrigé
+      letterEditor.setContent(formattedContent);
+      LetterExportService.saveToLocalStorage(formattedContent, letterEditor.currentTemplate);
+
+      // Fermer la modale et vider les erreurs
+      setShowGrammarModal(false);
+      setGrammarErrors([]);
+      setOriginalTextForGrammar('');
+      setCorrectedTextForGrammar('');
+      delete window.originalHTMLForGrammar;
+
+      letterEditor.showNotification('✅ Toutes les corrections ont été appliquées avec succès !', 'success');
+    } catch (error) {
+      console.error('Erreur lors de l\'application des corrections:', error);
+      letterEditor.showNotification('Erreur lors de l\'application des corrections.', 'error');
+    }
+  };
+
+
+
+  // Fonction pour colorer le texte avec les erreurs - approche sans décalage
+  const renderTextWithErrors = (text: string, errors: GrammarError[], onApplyCorrection?: (error: GrammarError) => void) => {
+    if (errors.length === 0) return text;
+
+    const elements: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    // Trier les erreurs par position
+    const sortedErrors = [...errors].sort((a, b) => a.position.start - b.position.start);
+
+    const handleMouseMove = (e: React.MouseEvent, errorIndex: number) => {
+      const tooltip = document.getElementById(`tooltip-${errorIndex}`);
+      if (tooltip) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        // Positionner le centre du tooltip exactement au centre du texte souligné
+        tooltip.style.left = `${rect.left + rect.width / 2}px`;
+        tooltip.style.top = `${rect.top - 8}px`;
+        // Le transform translate(-50%, -100%) déplace le tooltip pour le centrer horizontalement et le placer au-dessus
+      }
+    };
+
+    sortedErrors.forEach((error, index) => {
+      // Ajouter le texte avant l'erreur
+      if (error.position.start > lastIndex) {
+        elements.push(
+          <span key={`text-${index}`} style={{ display: 'inline' }}>
+            {text.substring(lastIndex, error.position.start)}
+          </span>
+        );
+      }
+
+      // Ajouter le texte avec l'erreur - approche ultra-simple pour un alignement parfait
+      elements.push(
+        <span
+          key={`error-${index}`}
+          className={`relative inline cursor-help group ${
+            error.severity === 'critique' ? 'text-red-600' :
+            error.severity === 'majeure' ? 'text-orange-600' :
+            'text-blue-600'
+          }`}
+          style={{
+            display: 'inline',
+            textDecoration: 'underline',
+            textDecorationColor: error.severity === 'critique' ? '#dc2626' :
+                                 error.severity === 'majeure' ? '#ea580c' : '#2563eb',
+            textDecorationThickness: '2px',
+            textDecorationSkipInk: 'none',
+            fontWeight: '500'
+          }}
+          title={`${error.type}: ${error.explanation}`}
+          onMouseMove={(e) => handleMouseMove(e, index)}
+        >
+          {error.original}
+
+          {/* Tooltip positionné dynamiquement */}
+          <div
+            id={`tooltip-${index}`}
+            className="fixed opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-[9999] max-w-xs shadow-lg"
+            style={{
+              pointerEvents: 'none',
+              left: '0px',
+              top: '0px',
+              transform: 'translate(-50%, -100%)'
+            }}
+          >
+            <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2">
+              <div className="font-semibold text-yellow-300 mb-1">{error.type}</div>
+              <div className="mb-1">{error.explanation}</div>
+              <div className="text-green-300 font-semibold">→ {error.correction}</div>
+              {onApplyCorrection && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onApplyCorrection(error);
+                  }}
+                  className="mt-2 w-full px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors"
+                  style={{ pointerEvents: 'auto' }}
+                  title="Appliquer cette correction"
+                >
+                  Appliquer
+                </button>
+              )}
+            </div>
+            {/* Flèche du tooltip */}
+            <div
+              className="absolute top-full left-1/2 w-0 h-0"
+              style={{
+                transform: 'translateX(-50%)',
+                borderLeft: '6px solid transparent',
+                borderRight: '6px solid transparent',
+                borderTop: '6px solid #1f2937'
+              }}
+            />
+          </div>
+        </span>
+      );
+
+      lastIndex = error.position.end;
+    });
+
+    // Ajouter le reste du texte
+    if (lastIndex < text.length) {
+      elements.push(
+        <span key="text-end" style={{ display: 'inline' }}>
+          {text.substring(lastIndex)}
+        </span>
+      );
+    }
+
+    return elements;
   };
 
   const currentTemplateData = letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates];
@@ -428,6 +764,7 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
             onInsertImage={letterEditor.insertImage}
             onAIAction={handleAIAction}
             onCheckGrammar={handleGrammarCheck}
+            onStyleSuggestions={handleStyleSuggestions}
             isAILoading={openAI.isLoading}
 
             // Export
@@ -487,23 +824,231 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
           />
         </div>
 
-        {/* Template Carousel */}
+        {/* Template Carousel OU Modale d'analyse grammaticale */}
         <div className={`w-full lg:w-1/3 order-first transition-all duration-300 ${letterEditor.showSidebar ? 'block' : 'hidden lg:block'}`}>
-          <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white p-4 rounded-t-lg shadow-lg">
-            <div className="flex items-center justify-center gap-2">
-              <FileText className="w-5 h-5" />
-              <h2 className="text-xl font-bold">Modèles de Lettres</h2>
+          {showGrammarModal ? (
+            /* Modale d'analyse grammaticale (remplace le carousel) */
+            <div className="bg-white rounded-lg shadow-lg">
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-t-lg shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    <h2 className="text-xl font-bold">Correction Grammaticale</h2>
+                  </div>
+                  <button
+                    onClick={() => setShowGrammarModal(false)}
+                    className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                    title="Fermer l'analyse"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Contenu de l'analyse avec onglets */}
+              <div className="p-4 max-h-[600px] overflow-y-auto">
+                {/* Onglets */}
+                <div className="flex border-b border-gray-200 mb-4">
+                  <button
+                    onClick={() => setActiveGrammarTab('correction')}
+                    className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
+                      activeGrammarTab === 'correction'
+                        ? 'text-orange-600 border-b-2 border-orange-500 bg-orange-50'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    🔍 Correction grammaticale
+                  </button>
+                  <button
+                    onClick={() => setActiveGrammarTab('suggestions')}
+                    className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
+                      activeGrammarTab === 'suggestions'
+                        ? 'text-blue-600 border-b-2 border-blue-500 bg-blue-50'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    💡 Suggestions stylistiques
+                  </button>
+                </div>
+
+                {/* Contenu de l'onglet actif */}
+                {activeGrammarTab === 'correction' && (
+                  <div className="space-y-4">
+                    {grammarErrors.length > 0 ? (
+                      <>
+                        {/* En-tête avec résumé */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <h3 className="font-semibold text-blue-800 flex items-center gap-2 mb-2">
+                            <AlertCircle className="w-4 h-4" />
+                            {grammarErrors.length} erreur{grammarErrors.length > 1 ? 's' : ''} détectée{grammarErrors.length > 1 ? 's' : ''}
+                          </h3>
+                          <p className="text-sm text-blue-700">
+                            Corrections des erreurs d'orthographe, de grammaire et de ponctuation uniquement.
+                            Les expressions et le style personnel sont préservés.
+                          </p>
+                        </div>
+
+                        {/* Texte avec erreurs surlignées */}
+                        <div className="bg-white border border-gray-200 rounded-lg p-4">
+                          <div className="mb-3 flex items-center justify-between">
+                            <h4 className="font-semibold text-gray-800">📄 Votre lettre avec les erreurs</h4>
+                            <div className="flex items-center gap-3 text-xs">
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                <span className="text-gray-600">Critique</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                                <span className="text-gray-600">Majeure</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                                <span className="text-gray-600">Mineure</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-sm p-3 bg-gray-50 rounded border border-gray-100" style={{ fontVariantLigatures: 'normal', textRendering: 'optimizeLegibility', WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>
+                            {renderTextWithErrors(originalTextForGrammar, grammarErrors, handleApplySingleCorrection)}
+                          </div>
+                        </div>
+
+                        {/* Actions globales */}
+                        <div className="flex gap-3">
+                          <button
+                            onClick={handleApplyAllCorrections}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Appliquer toutes les corrections
+                          </button>
+                          <button
+                            onClick={() => setShowGrammarModal(false)}
+                            className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="text-green-600 text-lg font-semibold mb-2">✅ Aucune erreur détectée !</div>
+                        <p className="text-gray-600">Votre texte ne contient aucune faute d'orthographe ou de grammaire.</p>
+                        <button
+                          onClick={() => setActiveGrammarTab('suggestions')}
+                          className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                        >
+                          Voir les suggestions stylistiques →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeGrammarTab === 'suggestions' && (
+                  <div className="space-y-4">
+                    {styleSuggestions.length > 0 ? (
+                      <>
+                        {/* En-tête des suggestions */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <h3 className="font-semibold text-blue-800 flex items-center gap-2 mb-2">
+                            <FileText className="w-4 h-4" />
+                            {styleSuggestions.length} suggestion{styleSuggestions.length > 1 ? 's' : ''} stylistique{styleSuggestions.length > 1 ? 's' : ''}
+                          </h3>
+                          <p className="text-sm text-blue-700">
+                            Améliorations proposées pour enrichir votre vocabulaire et renforcer l'impact de votre texte.
+                          </p>
+                        </div>
+
+                        {/* Liste des suggestions par paragraphe */}
+                        {styleSuggestions.map((suggestion, index) => (
+                          <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+                            <h4 className="font-semibold text-gray-800 mb-2">Paragraphe {index + 1}</h4>
+
+                            {/* Texte original */}
+                            <div className="mb-3 p-3 bg-gray-50 rounded border border-gray-100">
+                              <p className="text-sm text-gray-600 font-medium mb-1">Original :</p>
+                              <p className="text-sm text-gray-800 italic">"{suggestion.originalText}"</p>
+                            </div>
+
+                            {/* Suggestions */}
+                            <div className="space-y-2">
+                              <p className="text-sm text-gray-600 font-medium">Suggestions :</p>
+                              {suggestion.suggestions.map((sugg, suggIndex) => (
+                                <div key={suggIndex} className="flex items-start justify-between p-3 bg-blue-50 rounded border border-blue-100">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className={`text-xs px-2 py-1 rounded ${
+                                        sugg.type === 'vocabulary' ? 'bg-purple-100 text-purple-700' :
+                                        sugg.type === 'structure' ? 'bg-green-100 text-green-700' :
+                                        sugg.type === 'clarity' ? 'bg-yellow-100 text-yellow-700' :
+                                        sugg.type === 'impact' ? 'bg-red-100 text-red-700' :
+                                        'bg-blue-100 text-blue-700'
+                                      }`}>
+                                        {sugg.type}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-800 mb-1">"{sugg.text}"</p>
+                                    <p className="text-xs text-gray-600">{sugg.explanation}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleApplyStyleSuggestion(index, sugg.text)}
+                                    className="ml-2 p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                    title="Appliquer cette suggestion"
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Actions */}
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setShowGrammarModal(false)}
+                            className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                          >
+                            Fermer
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="text-gray-600 text-lg font-semibold mb-2">Analysez votre texte</div>
+                        <p className="text-gray-500 mb-4">Cliquez sur le bouton ci-dessous pour obtenir des suggestions stylistiques personnalisées.</p>
+                        <button
+                          onClick={handleStyleSuggestions}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          💡 Analyser le style
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <TemplateCarousel
-            currentTemplate={letterEditor.currentTemplate}
-            onTemplateSelect={(templateKey) => {
-              letterEditor.loadTemplate(templateKey);
-              // Réappliquer les marges après le changement de template
-              setTimeout(() => marginManager.reapplyMargins(), 100);
-            }}
-            formData={formData}
-          />
+          ) : (
+            /* Template Carousel normal */
+            <>
+              <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white p-4 rounded-t-lg shadow-lg">
+                <div className="flex items-center justify-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  <h2 className="text-xl font-bold">Modèles de Lettres</h2>
+                </div>
+              </div>
+              <TemplateCarousel
+                currentTemplate={letterEditor.currentTemplate}
+                onTemplateSelect={(templateKey) => {
+                  letterEditor.loadTemplate(templateKey);
+                  // Réappliquer les marges après le changement de template
+                  setTimeout(() => marginManager.reapplyMargins(), 100);
+                }}
+                formData={formData}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>

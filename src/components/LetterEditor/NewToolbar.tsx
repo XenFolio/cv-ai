@@ -39,6 +39,8 @@ interface NewToolbarProps {
   onExportText?: () => void;
   onAnalyzeTone?: () => void;
   onCheckGrammar?: () => void;
+  onStyleSuggestions?: () => void;
+  isAILoading?: boolean;
 
   // Options
   showSidebar: boolean;

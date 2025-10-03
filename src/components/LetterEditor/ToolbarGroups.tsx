@@ -10,7 +10,8 @@ import {
   ToggleRight,
   Ruler,
   Sparkles,
-  CheckCircle
+  CheckCircle,
+  Lightbulb
 } from 'lucide-react';
 import { FontSelector } from './FontSelector';
 import { FontSizeSelector } from './FontSizeSelector';
@@ -49,6 +50,8 @@ interface ToolbarGroupsProps {
   onExportText?: () => void;
   onAnalyzeTone?: () => void;
   onCheckGrammar?: () => void;
+  onStyleSuggestions?: () => void;
+  isAILoading?: boolean;
 
   // Options
   showSidebar: boolean;
@@ -228,6 +231,22 @@ export const getToolbarGroups = (props: ToolbarGroupsProps) => {
           >
             <CheckCircle className="w-4 h-4" />
           </button>
+          {props.onStyleSuggestions && (
+            <button
+              onClick={props.onStyleSuggestions}
+              disabled={props.isAILoading}
+              className={`
+                p-1.5 rounded transition-all duration-200
+                ${props.isAILoading
+                  ? 'text-blue-600 bg-blue-100 cursor-not-allowed'
+                  : 'text-gray-700 hover:bg-blue-100 hover:text-blue-600 cursor-pointer'
+                }
+              `}
+              title="Suggestions stylistiques"
+            >
+              <Lightbulb className="w-4 h-4" />
+            </button>
+          )}
         </div>
       )
     },
