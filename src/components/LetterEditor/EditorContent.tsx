@@ -107,7 +107,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
-          className={`letter-content outline-none bg-white mx-auto p-0`}
+          className={`letter-content outline-none focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none bg-white mx-auto p-0`}
           style={getTemplateStyles()}
           onInput={handleInput}
           onKeyDown={handleKeyDown}

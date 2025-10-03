@@ -78,6 +78,17 @@
   border: 1px solid #9ca3af;
 }
 
+/* Supprimer tous les styles de focus sur l'éditeur */
+.letter-content:focus,
+.letter-content:focus-visible,
+.letter-content:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border: 1px solid #9ca3af !important;
+  ring: 0 !important;
+  ring-offset: 0 !important;
+}
+
 /* Styles dynamiques pour les marges personnalisées - SUR LETTER-CONTAINER */
 /* Note: 1mm ≈ 3.78px à 96 DPI */
 
