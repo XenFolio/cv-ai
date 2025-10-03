@@ -1,18 +1,20 @@
 import React from 'react';
-import { Save, FileDown, Eye, EyeOff } from 'lucide-react';
+import { Save, FileDown, FileText, BarChart3, FileType } from 'lucide-react';
 
 interface ExportButtonsProps {
   onSave: () => void;
   onExportPDF: () => void;
-  onTogglePreview: () => void;
-  isPreview: boolean;
+  onExportWord?: () => void;
+  onExportText?: () => void;
+  onAnalyzeTone?: () => void;
 }
 
 export const ExportButtons: React.FC<ExportButtonsProps> = ({
   onSave,
   onExportPDF,
-  onTogglePreview,
-  isPreview,
+  onExportWord,
+  onExportText,
+  onAnalyzeTone,
 }) => {
   return (
     <div className="flex items-center border-l border-gray-300 pl-2">
@@ -32,25 +34,35 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
         <FileDown className="w-4 h-4" />
       </button>
 
-      <button
-        onClick={onTogglePreview}
-        className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ml-1 ${
-          isPreview
-            ? 'bg-purple-100 text-indigo-600 hover:bg-purple-200'
-            : 'text-gray-700 hover:bg-gray-100'
-        }`}
-        title={isPreview ? 'Mode édition' : 'Mode aperçu'}
-      >
-        {isPreview ? (
-          <>
-            <EyeOff className="w-4 h-4" />
-          </>
-        ) : (
-          <>
-            <Eye className="w-4 h-4" />
-          </>
-        )}
-      </button>
+      {onExportWord && (
+        <button
+          onClick={onExportWord}
+          className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-purple-100 hover:text-indigo-600 rounded transition-colors ml-1"
+          title="Exporter en Word"
+        >
+          <FileText className="w-4 h-4" />
+        </button>
+      )}
+
+      {onExportText && (
+        <button
+          onClick={onExportText}
+          className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-purple-100 hover:text-indigo-600 rounded transition-colors ml-1"
+          title="Exporter en texte ATS"
+        >
+          <FileType className="w-4 h-4" />
+        </button>
+      )}
+
+      {onAnalyzeTone && (
+        <button
+          onClick={onAnalyzeTone}
+          className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-purple-100 hover:text-indigo-600 rounded transition-colors ml-1"
+          title="Analyser le ton et l'équilibre"
+        >
+          <BarChart3 className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 };

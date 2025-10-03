@@ -9,7 +9,8 @@
       "Bash(npm run build:*)",
       "Bash(git commit:*)",
       "Bash(npm run)",
-      "Read(//e//**)"
+      "Read(//e//**)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

@@ -72,6 +72,13 @@ export const useMarginManager = ({
     return () => clearTimeout(timeoutId);
   }, [customMargins, applyMargins]);
 
+  // Appliquer les marges directement sur l'éditeur ref si disponible
+  useEffect(() => {
+    if (editorRef && editorRef.current) {
+      applyMargins(editorRef.current, customMargins);
+    }
+  }, [customMargins, applyMargins, editorRef]);
+
   // Parser les marges depuis un template (format CSS)
   const parseMarginsFromTemplate = useCallback((templatePadding: string): Margins => {
     let newMargins = { top: 20, right: 20, bottom: 20, left: 20 };

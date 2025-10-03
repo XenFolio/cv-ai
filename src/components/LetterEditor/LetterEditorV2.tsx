@@ -12,10 +12,11 @@ import { FileText } from 'lucide-react';
 import { useLetterEditor } from '../../hooks/useLetterEditor';
 import { useMarginManager } from '../../hooks/useMarginManager';
 import { LetterExportService } from '../../services/LetterExportService';
+import { useOpenAI } from '../../hooks/useOpenAI';
 
 interface LetterEditorV2Props {
   onSave?: (content: string) => void;
-  onExport?: (content: string, format: 'pdf' | 'docx' | 'html') => void;
+  onExport?: (content: string, format: 'pdf' | 'docx' | 'html' | 'text') => void;
   initialContent?: string;
   formData?: {
     poste: string;
@@ -36,6 +37,7 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
 }) => {
   // Hooks principaux
   const letterEditor = useLetterEditor({ initialContent, formData });
+  const openAI = useOpenAI();
   const marginManager = useMarginManager({
     onMarginsChange: () => {
       // Synchroniser les marges avec le reste de l'application
@@ -118,6 +120,123 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
       letterEditor.showNotification('Erreur lors de l\'export PDF. Veuillez réessayer.', 'error');
     }
   };
+
+  // Export en texte brut optimisé pour ATS
+  const exportToText = () => {
+    if (!letterEditor.editorRef.current) return;
+
+    try {
+      const content = letterEditor.editorRef.current.innerHTML;
+      console.log('Contenu à exporter en texte:', content);
+
+      LetterExportService.exportToText(content, {
+        format: 'text',
+        filename: 'lettre-motivation-ats.txt'
+      });
+
+      if (onExport) {
+        onExport(content, 'text');
+      }
+
+      letterEditor.showNotification('Fichier texte ATS exporté avec succès !', 'success');
+    } catch (error) {
+      console.error('Erreur lors de l\'export texte:', error);
+      letterEditor.showNotification('Erreur lors de l\'export texte. Veuillez réessayer.', 'error');
+    }
+  };
+
+  // Gestionnaire d'action IA
+  const handleAIAction = async () => {
+    if (!letterEditor.editorRef.current) return;
+
+    const currentContent = letterEditor.content.trim();
+
+    try {
+      if (!currentContent) {
+        // Mode génération : pas de contenu existant
+        if (!formData) {
+          letterEditor.showNotification('Veuillez remplir les informations du formulaire dans l\'onglet Lettre pour générer une lettre.', 'warning');
+          return;
+        }
+
+        // Vérifier si les informations minimales sont disponibles
+        const hasAnyInfo = formData.poste.trim() || formData.entreprise.trim() || formData.secteur.trim() || formData.experience.trim();
+        if (!hasAnyInfo) {
+          letterEditor.showNotification('Veuillez remplir au moins une information (poste, entreprise, secteur ou expérience) pour générer une lettre.', 'warning');
+          return;
+        }
+
+        letterEditor.showNotification('✍️ Génération de votre lettre avec IA...', 'info');
+
+        const { generateLetterContent } = await import('../../services/LetterAIService');
+
+        const generatedContent = await generateLetterContent(
+          formData,
+          openAI.generateContent
+        );
+
+        if (generatedContent) {
+          // Post-traitement pour s'assurer que les sauts de ligne sont corrects (sans markdown)
+          const formattedContent = generatedContent
+            .replace(/\*\*/g, '') // Supprimer le markdown gras
+            .replace(/\*/g, '') // Supprimer le markdown italique
+            .replace(/\n\n+/g, '<br><br>') // Convertir double sauts de ligne en sauts visibles
+            .replace(/\n/g, '<br>') // Convertir sauts de ligne simples en <br>
+            .replace(/^/, '') // Pas de balise <p> au début
+            .replace(/$/, ''); // Pas de balise </p> à la fin
+
+          letterEditor.setContent(formattedContent);
+          LetterExportService.saveToLocalStorage(formattedContent, letterEditor.currentTemplate);
+          letterEditor.showNotification('✅ Lettre générée avec succès !', 'success');
+        } else {
+          letterEditor.showNotification('Erreur lors de la génération. Vérifiez la clé API.', 'error');
+        }
+      } else {
+        // Mode amélioration : contenu existant
+        letterEditor.showNotification('✍️ Amélioration de votre lettre avec IA...', 'info');
+
+        const { improveTextWithAI, detectTone, detectLanguage, analyzeStructure, extractKeywords } =
+          await import('../../services/LetterAIService');
+
+        // Construire une analyse locale du document pour fournir du contexte à l'IA
+        const documentAnalysis = {
+          hasFormulePolitesse: /(cordialement|sincèrement|respectueusement)/i.test(currentContent),
+          tone: detectTone(currentContent),
+          language: detectLanguage(currentContent),
+          structure: analyzeStructure(currentContent),
+          existingKeywords: extractKeywords(currentContent)
+        };
+
+        const improvedContent = await improveTextWithAI(
+          currentContent,
+          documentAnalysis,
+          '', // pas d'analyse stockée
+          openAI.generateContent
+        );
+
+        if (improvedContent) {
+          // Post-traitement pour s'assurer que les sauts de ligne sont corrects (sans markdown)
+          const formattedContent = improvedContent
+            .replace(/\*\*/g, '') // Supprimer le markdown gras
+            .replace(/\*/g, '') // Supprimer le markdown italique
+            .replace(/\n\n+/g, '<br><br>') // Convertir double sauts de ligne en sauts visibles
+            .replace(/\n/g, '<br>') // Convertir sauts de ligne simples en <br>
+            .replace(/^/, '') // Pas de balise <p> au début
+            .replace(/$/, ''); // Pas de balise </p> à la fin
+
+          letterEditor.setContent(formattedContent);
+          LetterExportService.saveToLocalStorage(formattedContent, letterEditor.currentTemplate);
+          letterEditor.showNotification('✅ Lettre améliorée avec succès !', 'success');
+        } else {
+          letterEditor.showNotification('Erreur lors de l\'amélioration. Vérifiez la clé API.', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Erreur IA:', error);
+      letterEditor.showNotification('Erreur lors du traitement IA.', 'error');
+    }
+  };
+
 
   // Sauvegarder (utilise LetterExportService)
   const handleSave = () => {
@@ -224,13 +343,14 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
             onRedo={() => document.execCommand('redo')}
             onInsertLink={letterEditor.insertLink}
             onInsertImage={letterEditor.insertImage}
+            onAIAction={handleAIAction}
+            isAILoading={openAI.isLoading}
 
             // Export
             onSave={handleSave}
             onExportPDF={exportToPDF}
-            onTogglePreview={letterEditor.togglePreview}
-            isPreview={letterEditor.isPreview}
-
+            onExportText={exportToText}
+            
             // Options
             showSidebar={letterEditor.showSidebar}
             onToggleSidebar={letterEditor.toggleSidebar}
@@ -267,7 +387,6 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
             <EditorContent
               editorRef={letterEditor.editorRef}
               content={letterEditor.content}
-              isPreview={letterEditor.isPreview}
               currentTemplate={currentTemplateData}
               showBorders={letterEditor.showBorders}
               onInput={handleContentInput}

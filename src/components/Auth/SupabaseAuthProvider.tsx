@@ -88,7 +88,7 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
         // Créer une promesse avec timeout pour getSession
         const sessionPromise = supabase!.auth.getSession();
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout getSession')), 8000)
+          setTimeout(() => reject(new Error('Timeout getSession')), 15000)
         );
         
         const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
@@ -114,7 +114,11 @@ export const SupabaseAuthProvider: React.FC<SupabaseAuthProviderProps> = ({ chil
           }
         }
       } catch (error) {
-        console.error('Erreur lors de l\'initialisation de l\'auth:', error);
+        if (error instanceof Error && error.message === 'Timeout getSession') {
+          console.warn('Timeout de connexion Supabase - Mode hors-ligne activé');
+        } else {
+          console.error('Erreur lors de l\'initialisation de l\'auth:', error);
+        }
         setSession(null);
         setUser(null);
         setProfile(null);

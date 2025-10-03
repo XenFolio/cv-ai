@@ -16,7 +16,7 @@ interface LetterEditorOptions {
 
 interface NotificationState {
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'warning';
   visible: boolean;
 }
 
@@ -26,8 +26,7 @@ export const useLetterEditor = ({ initialContent = '', formData }: LetterEditorO
   // État de l'éditeur
   const [content, setContent] = useState(initialContent);
   const [currentTemplate, setCurrentTemplate] = useState('moderne');
-  const [isPreview, setIsPreview] = useState(false);
-
+  
   // États UI
   const [showSidebar, setShowSidebar] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -52,6 +51,7 @@ export const useLetterEditor = ({ initialContent = '', formData }: LetterEditorO
     type: 'info',
     visible: false
   });
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Refs
   const editorRef = useRef<HTMLDivElement>(null);
@@ -62,43 +62,60 @@ export const useLetterEditor = ({ initialContent = '', formData }: LetterEditorO
 
   // Charger le contenu sauvegardé au démarrage
   useEffect(() => {
-    if (!initialContent) {
-      try {
-        const savedData = localStorage.getItem('letter-editor-content');
-        if (savedData) {
-          const { content: savedContent, template } = JSON.parse(savedData);
-          if (savedContent) {
-            setContent(savedContent);
-            if (template) {
-              setCurrentTemplate(template);
-            }
+    // Toujours charger depuis localStorage si disponible, même avec initialContent
+    try {
+      const savedData = localStorage.getItem('letter-editor-content');
+      if (savedData) {
+        const { content: savedContent, template } = JSON.parse(savedData);
+        if (savedContent) {
+          setContent(savedContent);
+          if (template) {
+            setCurrentTemplate(template);
           }
         }
-      } catch (error) {
-        console.error('Erreur lors du chargement:', error);
+      } else if (initialContent) {
+        // Utiliser initialContent seulement si rien dans localStorage
+        setContent(initialContent);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement:', error);
+      // En cas d'erreur, utiliser initialContent si disponible
+      if (initialContent) {
+        setContent(initialContent);
       }
     }
+
+    // Nettoyage du timer au démontage
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
   }, [initialContent]);
 
+  
   // Notifications
-  const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info') => {
-    setNotification({ message, type, visible: true });
-    setTimeout(() => {
+  const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info'| 'warning') => {
+    // Nettoyer le timer précédent
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+
+        setNotification({ message, type, visible: true });
+    notificationTimeoutRef.current = setTimeout(() => {
       setNotification(prev => ({ ...prev, visible: false }));
+      notificationTimeoutRef.current = null;
     }, 4000);
   }, []);
 
   // Templates
   const loadTemplate = useCallback((templateKey: string) => {
     setCurrentTemplate(templateKey);
-    const templateData = createTemplates(formData);
-    const newContent = templateData[templateKey as keyof typeof templateData].template;
-    setContent(newContent);
-  }, [formData]);
+    // On ne change plus le contenu, seulement le style est appliqué dynamiquement via currentTemplate
+  }, []);
 
   // Toggle handlers
-  const togglePreview = useCallback(() => setIsPreview(prev => !prev), []);
-  const toggleSidebar = useCallback(() => setShowSidebar(prev => !prev), []);
+    const toggleSidebar = useCallback(() => setShowSidebar(prev => !prev), []);
   const toggleFontFamily = useCallback(() => setShowFontFamily(prev => !prev), []);
   const toggleFontSize = useCallback(() => setShowFontSize(prev => !prev), []);
   const toggleColorPicker = useCallback(() => setShowColorPicker(prev => !prev), []);
@@ -142,7 +159,7 @@ export const useLetterEditor = ({ initialContent = '', formData }: LetterEditorO
       editorRef.current.focus();
 
       if (command === 'justifyLeft' || command === 'justifyCenter' || command === 'justifyRight' || command === 'justifyFull') {
-        // Logique spéciale pour l'alignement
+        // Logique spéciale pour l'alignement - n'affecte que la sélection
         const selection = window.getSelection();
         let alignment = '';
         switch(command) {
@@ -152,26 +169,30 @@ export const useLetterEditor = ({ initialContent = '', formData }: LetterEditorO
           case 'justifyFull': alignment = 'justify'; break;
         }
 
-        if (selection && selection.rangeCount > 0) {
+        if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
           const range = selection.getRangeAt(0);
-          let element: HTMLElement | null = range.commonAncestorContainer as HTMLElement;
 
-          if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
-            element = range.commonAncestorContainer.parentElement;
+          // Créer une div autour de la sélection avec l'alignement
+          const div = document.createElement('div');
+          div.style.textAlign = alignment;
+
+          try {
+            // Envelopper la sélection dans la div alignée
+            range.surroundContents(div);
+          } catch {
+            // Si surroundContents échoue, utiliser une approche différente
+            const contents = range.extractContents();
+            div.appendChild(contents);
+            range.insertNode(div);
           }
 
-          while (element && element !== editorRef.current) {
-            const style = window.getComputedStyle(element);
-            if (style.display === 'block' || style.display === 'flex' || element.tagName === 'DIV' || element.tagName === 'P') {
-              element.style.textAlign = alignment;
-              break;
-            }
-            element = element.parentElement;
-          }
+          // Restaurer la sélection
+          selection.removeAllRanges();
+          selection.addRange(range);
 
-          if (!element || element === editorRef.current) {
-            editorRef.current.style.textAlign = alignment;
-          }
+        } else {
+          // Si aucune sélection, utiliser la commande standard
+          document.execCommand(command, false, value);
         }
 
         setContent(editorRef.current.innerHTML);
@@ -277,7 +298,6 @@ export const useLetterEditor = ({ initialContent = '', formData }: LetterEditorO
     // État
     content,
     currentTemplate,
-    isPreview,
     showSidebar,
     showColorPicker,
     showFontSize,
@@ -307,7 +327,6 @@ export const useLetterEditor = ({ initialContent = '', formData }: LetterEditorO
     loadTemplate,
 
     // Toggle actions
-    togglePreview,
     toggleSidebar,
     toggleFontFamily,
     toggleFontSize,
@@ -338,5 +357,18 @@ export const useLetterEditor = ({ initialContent = '', formData }: LetterEditorO
     // Setters
     setCurrentFontSize,
     setCurrentFontFamily,
+
+    // Actions
+    saveToLocalStorage: useCallback(() => {
+      try {
+        const dataToSave = {
+          content,
+          template: currentTemplate
+        };
+        localStorage.setItem('letter-editor-content', JSON.stringify(dataToSave));
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde:', error);
+      }
+    }, [content, currentTemplate]),
   };
 };

@@ -47,7 +47,7 @@ export const preloadComponent = (componentKey: LazyComponentKey): void => {
     Settings: () => import('../components/Settings/Settings'),
     Models: () => import('../components/Models/Models'),
     AIChat: () => import('../components/Chat/AIChat'),
-    LetterEditor: () => import('../components/LetterEditor/LetterEditor'),
+    LetterEditor: () => import('../components/LetterEditor/LetterEditorV2'),
     CVCreatorDemo: () => import('../components/CVCreator/CVCreatorDemo'),
     JobSearch: () => import('../components/JobSearch/JobSearch'),
   };

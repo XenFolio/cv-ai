@@ -688,9 +688,9 @@ IMPORTANT : Réponds UNIQUEMENT avec le JSON ATS PRO complet, aucun autre texte.
 };
 
 // Function to call OpenAI API for CV generation
-const callOpenAIForGeneration = async (userInfo: UserInfo, profile?: { openai_api_key?: string } | null): Promise<string> => {
+const callOpenAIForCVGeneration = async (userInfo: UserInfo, profile?: { openai_api_key?: string } | null): Promise<string> => {
   const apiKey = getApiKey(profile);
-  
+
   if (!apiKey) {
     throw new Error('Clé API OpenAI non configurée. Veuillez l\'ajouter dans les paramètres.');
   }
@@ -753,10 +753,10 @@ Réponds UNIQUEMENT avec le code HTML complet, sans texte supplémentaire.`;
   }
 };
 
-// Function to call OpenAI API for CV field editing
-const callOpenAIForFieldEditing = async (prompt: string, profile?: { openai_api_key?: string } | null): Promise<string> => {
+// Function to call OpenAI API for grammar checking (GPT-3.5 Turbo)
+const callOpenAIForGrammarCheck = async (prompt: string, profile?: { openai_api_key?: string } | null): Promise<string> => {
   const apiKey = getApiKey(profile);
-  
+
   if (!apiKey) {
     throw new Error('Clé API OpenAI non configurée. Veuillez l\'ajouter dans les paramètres.');
   }
@@ -769,25 +769,25 @@ const callOpenAIForFieldEditing = async (prompt: string, profile?: { openai_api_
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
-            content: 'Tu es un expert en rédaction de CV professionnel et coach de carrière. Tu aides à générer du contenu concis, percutant et optimisé pour les systèmes ATS. Tu peux également aider à préparer des entretiens d\'embauche en fournissant des conseils, des questions types, et des stratégies de réponse. Tu réponds toujours directement et de manière professionnelle.'
+            content: 'Tu es un correcteur grammatical expert. Tu analyses les textes en français et fournis des corrections précises sans réécrire le contenu. Sois concis et utile.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.7,
-        max_tokens: 500
+        temperature: 0.3, // Plus bas pour plus de précision en grammaire
+        max_tokens: 1500 // Suffisant pour la grammaire
       })
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      
+
       if (response.status === 401) {
         throw new Error('Clé API OpenAI invalide. Vérifiez votre clé dans les paramètres.');
       } else if (response.status === 429) {
@@ -800,7 +800,66 @@ const callOpenAIForFieldEditing = async (prompt: string, profile?: { openai_api_
     }
 
     const data = await response.json();
-    
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Réponse invalide de l\'API OpenAI');
+    }
+
+    return data.choices[0].message.content.trim();
+  } catch (error) {
+    console.error('OpenAI Grammar Check Error:', error);
+    throw error;
+  }
+};
+
+// Function to call OpenAI API for CV field editing
+const callOpenAIForFieldEditing = async (prompt: string, profile?: { openai_api_key?: string } | null): Promise<string> => {
+  const apiKey = getApiKey(profile);
+
+  if (!apiKey) {
+    throw new Error('Clé API OpenAI non configurée. Veuillez l\'ajouter dans les paramètres.');
+  }
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'Tu es un outil d\'analyse grammaticale et linguistique spécialisé. Ton rôle UNIQUE est d\'analyser et identifier les erreurs SANS JAMAIS modifier le texte original. Sois précis, factuel et ne crée JAMAIS de contenu. Réponds exclusivement avec le format JSON demandé.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        throw new Error('Clé API OpenAI invalide. Vérifiez votre clé dans les paramètres.');
+      } else if (response.status === 429) {
+        throw new Error('Limite de taux atteinte. Veuillez réessayer dans quelques minutes.');
+      } else if (response.status === 403) {
+        throw new Error('Accès refusé. Vérifiez que votre clé API a les bonnes permissions.');
+      } else {
+        throw new Error(`Erreur API OpenAI: ${errorData.error?.message || 'Erreur inconnue'}`);
+      }
+    }
+
+    const data = await response.json();
+
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       throw new Error('Réponse invalide de l\'API OpenAI');
     }
@@ -808,6 +867,77 @@ const callOpenAIForFieldEditing = async (prompt: string, profile?: { openai_api_
     return data.choices[0].message.content.trim();
   } catch (error) {
     console.error('OpenAI Field Editing Error:', error);
+    throw error;
+  }
+};
+
+// Function to call OpenAI API for content generation (HTML, text, etc.)
+const callOpenAIForGeneration = async (prompt: string, profile?: { openai_api_key?: string } | null): Promise<string> => {
+  const apiKey = getApiKey(profile);
+
+  if (!apiKey) {
+    throw new Error('Clé API OpenAI non configurée. Veuillez l\'ajouter dans les paramètres.');
+  }
+
+  console.log('🔑 Clé API trouvée:', apiKey ? 'Oui' : 'Non');
+  console.log('📤 Envoi de la requête à OpenAI pour génération...');
+  console.log('📊 Longueur du prompt:', prompt.length, 'caractères');
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'Agis comme un expert en recrutement et communication professionnelle. Rédige des lettres de motivation optimisées pour passer les filtres ATS et attirer l\'attention d\'un recruteur humain.\n\nStructure obligatoire avec formatage VISUEL EXPLICITE :\n1. **Introduction** : accroche personnalisée qui montre un vrai intérêt pour l\'entreprise et le poste (mentionner l\'entreprise et une valeur ou projet spécifique).\n   - IMMÉDIATEMENT APRÈS : SAUT DE LIGNE DOUBLE\n\n2. **Corps** : mettre en avant 2–3 compétences clés en utilisant les mots-clés, illustrer chaque compétence par un résultat concret, chiffré ou mesurable si possible, et faire un lien direct entre ces résultats et les besoins du poste.\n   - IMMÉDIATEMENT APRÈS : SAUT DE LIGNE DOUBLE\n\n3. **Conclusion** : exprimer la motivation à rejoindre l\'équipe, la disponibilité pour un entretien, et finir avec une formule polie professionnelle.\n\nFORMAT OBLIGATOIRE :\n- Utiliser DES SAUTS DE LIGNE DOUBLES (\\n\\n) entre CHAQUE section\n- Introduction = 1 paragraphe + SAUT DE LIGNE DOUBLE\n- Corps = 1-2 paragraphes + SAUT DE LIGNE DOUBLE  \n- Conclusion = 1 paragraphe\n\nContraintes :\n- Maximum 250 mots\n- FORMAT AÉRÉ OBLIGATOIRE : paragraphes séparés par des sauts de ligne doubles\n- AUCUN MONOBLOC : chaque section doit être visuellement séparée\n- Pas de répétition inutile\n- Pas de formulations trop génériques ("je suis motivé", "je suis passionné") sans preuve\n- Le texte doit donner envie à l\'employeur d\'aller voir le CV\n- Optimisation ATS : mots-clés intégrés naturellement dans le texte\n- Optimisation humaine : une accroche différenciante et un fil narratif clair (je comprends vos besoins → je vous montre mes résultats → je veux contribuer)\n\nTon : professionnel, confiant mais respectueux, pas trop scolaire. Style : clair, phrases courtes, vocabulaire précis, sans fioritures. Format : paragraphes aérés avec des sauts de ligne entre chaque section. Réponds directement avec le contenu demandé, sans aucun commentaire ou explication.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 3000
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        throw new Error('Clé API OpenAI invalide. Vérifiez votre clé dans les paramètres.');
+      } else if (response.status === 429) {
+        throw new Error('Limite de taux atteinte. Veuillez réessayer dans quelques minutes.');
+      } else if (response.status === 403) {
+        throw new Error('Accès refusé. Vérifiez que votre clé API a les bonnes permissions.');
+      } else {
+        throw new Error(`Erreur API OpenAI: ${errorData.error?.message || 'Erreur inconnue'}`);
+      }
+    }
+
+    const data = await response.json();
+
+    console.log('✅ Réponse reçue d\'OpenAI, status:', response.status);
+    console.log('📊 Structure de la réponse:', data ? 'Valide' : 'Invalide');
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('❌ Structure de réponse invalide:', data);
+      throw new Error('Réponse invalide de l\'API OpenAI');
+    }
+
+    const content = data.choices[0].message.content.trim();
+    console.log('📝 Longueur du contenu généré:', content.length, 'caractères');
+    console.log('🔍 Début du contenu généré:', content.substring(0, 100) + '...');
+
+    return content;
+  } catch (error) {
+    console.error('❌ OpenAI Generation Error:', error);
     throw error;
   }
 };
@@ -919,10 +1049,10 @@ export const useOpenAI = () => {
     setError(null);
 
     try {
-      
+
       // Call OpenAI API for CV generation
-      const generatedContent = await callOpenAIForGeneration(userInfo, profile);
-      
+      const generatedContent = await callOpenAIForCVGeneration(userInfo, profile);
+
       setIsLoading(false);
       return generatedContent;
     } catch (err) {
@@ -940,11 +1070,52 @@ export const useOpenAI = () => {
     try {
       // Call OpenAI API for field editing
       const editedContent = await callOpenAIForFieldEditing(request.prompt, profile);
-      
+
       setIsLoading(false);
       return editedContent;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'édition du champ CV.';
+      setError(errorMessage);
+      setIsLoading(false);
+      return null;
+    }
+  };
+
+/**
+ * Génère du contenu basé sur un prompt donné en utilisant l'API OpenAI.
+ * @param {{ prompt: string }} request - Objet contenant le prompt pour la génération de contenu.
+ * @returns {Promise<string | null>} - Promesse qui résout en une chaîne de caractère HTML ou texte générée par l'API OpenAI si la génération réussit, sinon null en cas d'erreur.
+ */
+  const generateContent = async (request: { prompt: string }): Promise<string | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Call OpenAI API for content generation (HTML, text, etc.)
+      const generatedContent = await callOpenAIForGeneration(request.prompt, profile);
+
+      setIsLoading(false);
+      return generatedContent;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la génération du contenu.';
+      setError(errorMessage);
+      setIsLoading(false);
+      return null;
+    }
+  };
+
+  const checkGrammar = async (text: string): Promise<string | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Call OpenAI API for grammar checking (GPT-3.5 Turbo)
+      const grammarResult = await callOpenAIForGrammarCheck(text, profile);
+
+      setIsLoading(false);
+      return grammarResult;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la vérification grammaticale.';
       setError(errorMessage);
       setIsLoading(false);
       return null;
@@ -1021,6 +1192,8 @@ export const useOpenAI = () => {
     analyzeFile,
     generateCVContent,
     editCVField,
+    generateContent,
+    checkGrammar,
     generateCoverLetter,
     isLoading,
     error
