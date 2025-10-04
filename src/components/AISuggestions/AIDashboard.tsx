@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MarketBenchmark, SkillDemand } from '../../services/MarketBenchmarkingService';
 import {
   Brain,
   TrendingUp,
@@ -47,7 +48,7 @@ const AIDashboard: React.FC<AIDashboardProps> = ({ userId, compact = false }) =>
   const [suggestions, setSuggestions] = useState<PersonalizedSuggestion[]>([]);
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
   const [careerPaths, setCareerPaths] = useState<CareerPath[]>([]);
-  const [marketInsights, setMarketInsights] = useState<any>(null);
+  const [marketInsights, setMarketInsights] = useState<MarketBenchmark | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'suggestions' | 'learning' | 'career' | 'chat'>('overview');
   const [progress, setProgress] = useState({
@@ -393,9 +394,9 @@ const AIDashboard: React.FC<AIDashboardProps> = ({ userId, compact = false }) =>
               <h4 className="font-medium text-gray-900 mb-3">Compétences les plus demandées</h4>
               <div className="space-y-2">
                 {marketInsights.skillDemand
-                  .filter((skill: any) => skill.demand_level === 'high')
+                  .filter((skill: SkillDemand) => skill.demand === 'high')
                   .slice(0, 3)
-                  .map((skill: any, index: number) => (
+                  .map((skill: SkillDemand, index: number) => (
                     <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <span className="text-sm font-medium">{skill.skill}</span>
                       <div className="flex items-center space-x-2">
@@ -470,7 +471,7 @@ const AIDashboard: React.FC<AIDashboardProps> = ({ userId, compact = false }) =>
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                 activeTab === tab.id
                   ? 'bg-indigo-600 text-white'

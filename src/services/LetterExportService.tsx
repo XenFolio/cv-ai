@@ -16,6 +16,16 @@ export interface TemplateStyle {
   padding?: string;
 }
 
+export interface TextRunOptions {
+  text: string;
+  size?: number;
+  font?: string;
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: { type: UnderlineType };
+}
+
 export interface ExportOptions {
   format: 'pdf' | 'html' | 'docx' | 'text';
   filename?: string;
@@ -339,8 +349,7 @@ export class LetterExportService {
         const alignment = this.parseAlignment(childElement);
 
         if (textContent.trim()) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const textRunOptions: any = {
+          const textRunOptions: TextRunOptions = {
             text: textContent,
             size: fontSize,
             font: fontFamily,

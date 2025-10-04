@@ -46,7 +46,7 @@ interface ChatMessage {
   timestamp: Date;
   type?: 'text' | 'suggestion' | 'action_plan' | 'resource' | 'progress';
   suggestions?: PersonalizedSuggestion[];
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 interface EnhancedAIChatProps {

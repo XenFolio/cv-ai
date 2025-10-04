@@ -184,11 +184,11 @@ class MarketBenchmarkingService {
     };
   }
 
-  private getDefaultBenchmark(industry: string, role: string, experienceLevel: string): MarketBenchmark {
+  private getDefaultBenchmark(industry: string, role: string, experienceLevel: 'junior' | 'mid' | 'senior' | 'lead' | 'executive'): MarketBenchmark {
     return {
       industry,
       role,
-      experienceLevel: experienceLevel as any,
+      experienceLevel,
       marketData: {
         averageATSScore: 75,
         topPercentileScore: 95,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { CVData, ExperienceItem } from '../../types/cv';
 import {
   FileText,
   Save,
@@ -43,7 +44,7 @@ interface CoverLetterData {
 }
 
 interface CoverLetterBuilderProps {
-  cvData?: any;
+  cvData?: CVData;
   jobDescription?: string;
   onSave?: (data: CoverLetterData) => void;
 }
@@ -146,7 +147,7 @@ const CoverLetterBuilder: React.FC<CoverLetterBuilderProps> = ({
       ] : [];
 
       const experience = cvData?.experience || [];
-      const achievements = experience.flatMap((exp: any) => exp.achievements || []);
+      const achievements = experience.flatMap((exp: ExperienceItem) => exp.achievements || []);
 
       const prompt = `
         Génère une lettre de motivation professionnelle pour:
@@ -156,7 +157,7 @@ const CoverLetterBuilder: React.FC<CoverLetterBuilderProps> = ({
         Entreprise: ${coverLetterData.companyInfo.companyName}
 
         Compétences principales: ${skills.slice(0, 5).join(', ')}
-        Expériences pertinentes: ${experience.slice(0, 2).map((exp: any) => exp.title).join(', ')}
+        Expériences pertinentes: ${experience.slice(0, 2).map((exp: ExperienceItem) => exp.title).join(', ')}
 
         Description du poste: ${jobDescription || 'Non spécifiée'}
 

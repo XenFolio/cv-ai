@@ -763,7 +763,7 @@ export const useSupabase = () => {
     const loadTemplates = async () => {
       try {
         setLoading(true);
-        
+
         if (!supabase) {
           console.log('Supabase non configuré - aucun template disponible');
           setTemplates([]);
@@ -791,7 +791,8 @@ export const useSupabase = () => {
 
     loadTemplates();
     loadActivities();
-  }, []);
+    loadProfile(); // ✅ Correction : charger automatiquement le profil au démarrage
+  }, [loadProfile]);
 
   return {
     templates,

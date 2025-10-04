@@ -1,28 +1,28 @@
 // Utilitaires d'optimisation des performances
 
-export const debounce = <T extends (...args: any[]) => void>(
-  func: T,
+export const debounce = <F extends (...args: unknown[]) => unknown>(
+  func: F,
   delay: number
-): T => {
+): (...args: Parameters<F>) => void => {
   let timeoutId: NodeJS.Timeout;
-  return ((...args: any[]) => {
+  return (...args: Parameters<F>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func.apply(null, args), delay);
-  }) as T;
+  };
 };
 
-export const throttle = <T extends (...args: any[]) => void>(
-  func: T,
+export const throttle = <F extends (...args: unknown[]) => unknown>(
+  func: F,
   limit: number
-): T => {
+): (...args: Parameters<F>) => void => {
   let inThrottle: boolean;
-  return ((...args: any[]) => {
+  return (...args: Parameters<F>) => {
     if (!inThrottle) {
       func.apply(null, args);
       inThrottle = true;
       setTimeout(() => (inThrottle = false), limit);
     }
-  }) as T;
+  };
 };
 
 export const measurePerformance = (name: string, fn: () => void) => {

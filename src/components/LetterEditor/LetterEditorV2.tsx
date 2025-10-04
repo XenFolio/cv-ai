@@ -188,7 +188,7 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
 
         const generatedContent = await generateLetterContent(
           formData,
-          openAI.generateContent
+          openAI.editCVField
         );
 
         if (generatedContent) {
@@ -227,7 +227,7 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
           currentContent,
           documentAnalysis,
           '', // pas d'analyse stockée
-          openAI.generateContent
+          openAI.editCVField
         );
 
         if (improvedContent) {
@@ -344,8 +344,33 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
       const analysisResult = await openAI.analyzeGrammarErrors(plainText);
 
       if (analysisResult && analysisResult.errors.length > 0) {
-        // Stocker les résultats pour la modale
-        setGrammarErrors(analysisResult.errors);
+        // Améliorer les positions des erreurs en les recalculant par rapport au HTML
+        const improvedErrors = analysisResult.errors.map(error => {
+          // Chercher le texte de l'erreur dans le contenu HTML original
+          const htmlContent = originalHTML;
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = htmlContent;
+          const fullHtmlText = tempDiv.textContent || tempDiv.innerText || '';
+
+          // Trouver la position réelle dans le HTML
+          const htmlPosition = fullHtmlText.indexOf(error.original);
+
+          if (htmlPosition !== -1) {
+            return {
+              ...error,
+              htmlPosition: {
+                start: htmlPosition,
+                end: htmlPosition + error.original.length
+              }
+            };
+          }
+
+          // Si pas trouvé, retourner l'erreur originale
+          return error;
+        });
+
+        // Stocker les résultats améliorés pour la modale
+        setGrammarErrors(improvedErrors);
         setOriginalTextForGrammar(plainText);
         setCorrectedTextForGrammar(analysisResult.correctedText);
 
@@ -382,7 +407,7 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
       const textContent = currentContent.replace(/<[^>]*>/g, '');
 
       // Appeler l'API pour les suggestions stylistiques
-      const suggestions = await openAI.getStyleSuggestions(textContent);
+      const suggestions = await openAI.suggestStyleImprovements(textContent);
 
       if (suggestions && suggestions.length > 0) {
         setStyleSuggestions(suggestions);
@@ -399,58 +424,130 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
     }
   };
 
-  const handleApplyStyleSuggestion = (paragraphIndex: number, suggestionText: string) => {
-    if (!letterEditor.editorRef.current) return;
-
-    try {
-      // Séparer le texte en paragraphes
-      const paragraphs = originalTextForGrammar.split(/\n\s*\n/);
-
-      if (paragraphs[paragraphIndex]) {
-        // Remplacer le paragraphe par la suggestion
-        paragraphs[paragraphIndex] = suggestionText;
-
-        // Reconstruire le texte avec les sauts de ligne
-        const newText = paragraphs.join('\n\n');
-
-        // Préserver les <br> existants
-        const finalHTML = newText.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
-
-        // Mettre à jour le contenu de l'éditeur
-        letterEditor.editorRef.current.innerHTML = finalHTML;
-        letterEditor.setContent(finalHTML);
-
-        letterEditor.showNotification('✅ Suggestion stylistique appliquée !', 'success');
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'application de la suggestion:', error);
-      letterEditor.showNotification('Erreur lors de l\'application de la suggestion.', 'error');
-    }
-  };
-
   // Appliquer une seule correction
   const handleApplySingleCorrection = (error: GrammarError) => {
     if (!letterEditor.editorRef.current) return;
 
     try {
-      // Récupérer le contenu actuel de l'éditeur
-      const currentContent = letterEditor.editorRef.current.innerHTML;
+      // Méthode améliorée: faire un recherche/remplacement intelligent dans le HTML
+      const currentHTML = letterEditor.editorRef.current.innerHTML;
+
+      // Créer une fonction pour remplacer en préservant le HTML existant
+      const replaceInHTML = (html: string, search: string, replace: string): string => {
+        // Échapper les caractères spéciaux pour la recherche
+        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        // Chercher et remplacer seulement dans les parties texte (pas dans les balises)
+        const regex = new RegExp(`(^|>)([^<]*?)(${escapedSearch})([^<]*?)(<|$)`, 'gi');
+
+        let newHTML = html;
+        let match;
+        let replacements = 0;
+
+        while ((match = regex.exec(html)) !== null && replacements < 1) { // Limiter à 1 remplacement
+          const fullMatch = match[0];
+          const beforeTag = match[1];
+          const beforeText = match[2];
+          const searchText = match[3];
+          const afterText = match[4];
+          const afterTag = match[5];
+
+          // Vérifier que c'est bien le texte qu'on cherche (case insensitive)
+          if (searchText.toLowerCase() === search.toLowerCase()) {
+            const replacement = beforeTag + beforeText + replace + afterText + afterTag;
+            newHTML = newHTML.replace(fullMatch, replacement);
+            replacements++;
+            break;
+          }
+        }
+
+        return newHTML;
+      };
+
+      // Appliquer la correction dans le HTML
+      const updatedHTML = replaceInHTML(currentHTML, error.original, error.correction);
+
+      // Vérifier si le remplacement a fonctionné
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = currentContent;
-      const plainText = tempDiv.textContent || tempDiv.innerText || '';
+      tempDiv.innerHTML = updatedHTML;
+      const updatedText = tempDiv.textContent || tempDiv.innerText || '';
 
-      // Vérifier si le texte original correspond à ce qui est attendu
-      const textAtPosition = plainText.substring(error.position.start, error.position.end);
+      if (updatedText.includes(error.correction) && !updatedText.includes(error.original)) {
+        // Succès: mettre à jour l'éditeur avec le HTML corrigé
+        letterEditor.setContent(updatedHTML);
+        LetterExportService.saveToLocalStorage(updatedHTML, letterEditor.currentTemplate);
+      } else {
+        // Échec: utiliser la méthode de repli (reconstruction complète)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = currentHTML;
+        const plainText = tempDiv.textContent || tempDiv.innerText || '';
 
-      if (textAtPosition === error.original) {
-        // Appliquer la correction sur le texte brut
-        const correctedText = plainText.substring(0, error.position.start) +
-                            error.correction +
-                            plainText.substring(error.position.end);
+        const correctedText = plainText.replace(
+          new RegExp(error.original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+          error.correction
+        );
 
-        // Reconstruire le HTML en préservant les sauts de ligne de manière visible
+        // Reconstruire le HTML en préservant les sauts de ligne
         let formattedContent = correctedText
-          .replace(/\n\n+/g, '</p><p><br><br>') // Doubles sauts de ligne = paragraphes avec espacement visible
+          .replace(/\n\n+/g, '</p><p><br><br>')
+          .replace(/\n/g, '<br>')
+          .replace(/^/, '<p>')
+          .replace(/$/, '</p>');
+
+        formattedContent = formattedContent.replace(/<p><\/p>/g, '<p>&nbsp;</p>');
+        formattedContent = formattedContent.replace(/<p><br><\/p>/g, '<p>&nbsp;</p>');
+        formattedContent = formattedContent.replace(/<\/p><p>/g, '</p><br><br><p>');
+
+        letterEditor.setContent(formattedContent);
+        LetterExportService.saveToLocalStorage(formattedContent, letterEditor.currentTemplate);
+      }
+
+      // Retirer l'erreur de la liste (approche simplifiée)
+      setGrammarErrors(prev => prev.filter(e => !(e.original === error.original && e.correction === error.correction)));
+
+      // S'il n'y a plus d'erreurs, fermer la modale
+      if (grammarErrors.length <= 1) {
+        setShowGrammarModal(false);
+        setGrammarErrors([]);
+        setOriginalTextForGrammar('');
+        setCorrectedTextForGrammar('');
+        delete window.originalHTMLForGrammar;
+      }
+
+      letterEditor.showNotification('✅ Correction appliquée avec succès !', 'success');
+    } catch (error) {
+      console.error('Erreur lors de l\'application de la correction:', error);
+      letterEditor.showNotification('Erreur lors de l\'application de la correction.', 'error');
+    }
+  };
+
+  // Appliquer une suggestion stylistique individuelle
+  const handleApplyStyleSuggestion = (paragraphIndex: number, suggestedText: string) => {
+    if (!letterEditor.editorRef.current) return;
+
+    try {
+      const editor = letterEditor.editorRef.current;
+      const currentHTML = editor.innerHTML;
+
+      // Extraire le texte actuel de l'éditeur
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = currentHTML;
+      const currentText = tempDiv.textContent || tempDiv.innerText || '';
+
+      // Diviser le texte en paragraphes
+      const paragraphs = currentText.split(/\n\n+/);
+
+      // Vérifier que l'index du paragraphe est valide
+      if (paragraphIndex >= 0 && paragraphIndex < paragraphs.length) {
+        // Remplacer le paragraphe spécifique
+        paragraphs[paragraphIndex] = suggestedText;
+
+        // Reconstruire le texte complet
+        const newText = paragraphs.join('\n\n');
+
+        // Convertir en HTML en préservant la structure
+        let formattedContent = newText
+          .replace(/\n\n+/g, '</p><p><br><br>') // Doubles sauts de ligne = paragraphes
           .replace(/\n/g, '<br>') // Sauts simples = <br>
           .replace(/^/, '<p>') // Ajouter la première balise p
           .replace(/$/, '</p>'); // Ajouter la dernière balise p
@@ -460,87 +557,30 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
         formattedContent = formattedContent.replace(/<p><br><\/p>/g, '<p>&nbsp;</p>');
         formattedContent = formattedContent.replace(/<p><br><br><\/p>/g, '<p>&nbsp;</p>');
 
-        // S'assurer que les paragraphes consécutifs ont bien des <br> entre eux pour l'espacement visuel
+        // S'assurer que les paragraphes consécutifs ont bien des <br> entre eux
         formattedContent = formattedContent.replace(/<\/p><p>/g, '</p><br><br><p>');
 
-        // Nettoyer les double <br> qui pourraient apparaître
-        formattedContent = formattedContent.replace(/<br><br><br><br>/g, '<br><br>');
-        formattedContent = formattedContent.replace(/<br><br><br>/g, '<br><br>');
-
-        // Mettre à jour l'éditeur avec le contenu corrigé
+        // Mettre à jour l'éditeur
         letterEditor.setContent(formattedContent);
         LetterExportService.saveToLocalStorage(formattedContent, letterEditor.currentTemplate);
 
-        // Retirer l'erreur de la liste
-        setGrammarErrors(prev => prev.filter(e =>
-          !(e.position.start === error.position.start &&
-            e.position.end === error.position.end &&
-            e.original === error.original)
-        ));
+        // Retirer la suggestion appliquée de la liste
+        setStyleSuggestions(prev => prev.filter((_, index) => index !== paragraphIndex));
 
-        // S'il n'y a plus d'erreurs, fermer la modale
-        if (grammarErrors.length <= 1) {
+        // Fermer la modale s'il n'y a plus de suggestions
+        if (styleSuggestions.length <= 1) {
           setShowGrammarModal(false);
-          setGrammarErrors([]);
-          setOriginalTextForGrammar('');
-          setCorrectedTextForGrammar('');
-          delete window.originalHTMLForGrammar;
+          setStyleSuggestions([]);
+          setActiveGrammarTab('correction');
         }
 
-        letterEditor.showNotification('✅ Correction appliquée avec succès !', 'success');
+        letterEditor.showNotification('✅ Suggestion stylistique appliquée avec succès !', 'success');
       } else {
-        // Si le texte ne correspond pas, essayer de trouver l'erreur dans le texte
-        const foundIndex = plainText.indexOf(error.original);
-        if (foundIndex !== -1) {
-          // Appliquer la correction à la position trouvée
-          const correctedText = plainText.substring(0, foundIndex) +
-                              error.correction +
-                              plainText.substring(foundIndex + error.original.length);
-
-          // Reconstruire le HTML en préservant les sauts de ligne de manière visible
-          let formattedContent = correctedText
-            .replace(/\n\n+/g, '</p><p><br><br>') // Doubles sauts de ligne = paragraphes avec espacement visible
-            .replace(/\n/g, '<br>') // Sauts simples = <br>
-            .replace(/^/, '<p>') // Ajouter la première balise p
-            .replace(/$/, '</p>'); // Ajouter la dernière balise p
-
-          // Nettoyer les paragraphes vides mais préserver les <br> importants
-          formattedContent = formattedContent.replace(/<p><\/p>/g, '<p>&nbsp;</p>');
-          formattedContent = formattedContent.replace(/<p><br><\/p>/g, '<p>&nbsp;</p>');
-          formattedContent = formattedContent.replace(/<p><br><br><\/p>/g, '<p>&nbsp;</p>');
-
-          // S'assurer que les paragraphes consécutifs ont bien des <br> entre eux pour l'espacement visuel
-          formattedContent = formattedContent.replace(/<\/p><p>/g, '</p><br><br><p>');
-
-          // Nettoyer les double <br> qui pourraient apparaître
-          formattedContent = formattedContent.replace(/<br><br><br><br>/g, '<br><br>');
-          formattedContent = formattedContent.replace(/<br><br><br>/g, '<br><br>');
-
-          letterEditor.setContent(formattedContent);
-          LetterExportService.saveToLocalStorage(formattedContent, letterEditor.currentTemplate);
-
-          setGrammarErrors(prev => prev.filter(e =>
-            !(e.position.start === error.position.start &&
-              e.position.end === error.position.end &&
-              e.original === error.original)
-          ));
-
-          if (grammarErrors.length <= 1) {
-            setShowGrammarModal(false);
-            setGrammarErrors([]);
-            setOriginalTextForGrammar('');
-            setCorrectedTextForGrammar('');
-            delete window.originalHTMLForGrammar;
-          }
-
-          letterEditor.showNotification('✅ Correction appliquée avec succès !', 'success');
-        } else {
-          letterEditor.showNotification('⚠️ Impossible d\'appliquer cette correction automatiquement.', 'warning');
-        }
+        letterEditor.showNotification('❌ Impossible de trouver le paragraphe à modifier.', 'error');
       }
     } catch (error) {
-      console.error('Erreur lors de l\'application de la correction:', error);
-      letterEditor.showNotification('Erreur lors de l\'application de la correction.', 'error');
+      console.error('Erreur lors de l\'application de la suggestion stylistique:', error);
+      letterEditor.showNotification('❌ Erreur lors de l\'application de la suggestion.', 'error');
     }
   };
 
@@ -599,8 +639,31 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
     const elements: React.ReactNode[] = [];
     let lastIndex = 0;
 
-    // Trier les erreurs par position
-    const sortedErrors = [...errors].sort((a, b) => a.position.start - b.position.start);
+    // Créer des erreurs améliorées avec des positions recalculées dans le texte actuel
+    const improvedErrors = errors.map(error => {
+      // Chercher le texte de l'erreur dans le texte fourni
+      const position = text.indexOf(error.original);
+
+      if (position !== -1) {
+        return {
+          ...error,
+          position: {
+            start: position,
+            end: position + error.original.length
+          }
+        };
+      }
+
+      // Si pas trouvé, retourner l'erreur originale (elle ne sera pas surlignée)
+      return error;
+    }).filter(error => {
+      // Garder seulement les erreurs qui ont été trouvées dans le texte
+      const textSegment = text.substring(error.position.start, error.position.end);
+      return textSegment === error.original || text.indexOf(error.original) !== -1;
+    });
+
+    // Trier les erreurs par position recalculée
+    const sortedErrors = [...improvedErrors].sort((a, b) => a.position.start - b.position.start);
 
     const handleMouseMove = (e: React.MouseEvent, errorIndex: number) => {
       const tooltip = document.getElementById(`tooltip-${errorIndex}`);

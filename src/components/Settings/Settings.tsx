@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Shield, Bell, User, Palette, Key, RefreshCw, Database, FileText, Settings as SettingsIcon } from 'lucide-react';
+import { Bot, Shield, Bell, User, Palette, Key, RefreshCw, Database,  Settings as SettingsIcon } from 'lucide-react';
 import { BackButton } from '../UI/BackButton';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useProfile } from '../../hooks/useProfile';
@@ -75,6 +75,7 @@ type SettingsType = {
     requiredFields: boolean;
   };
 };
+
 
 export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange }) => {
   const [activeSection, setActiveSection] = useState('ai');

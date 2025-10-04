@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Check if user already exists (in a real app, this would be done server-side)
       const existingUsers = JSON.parse(localStorage.getItem('cvAssistantUsers') || '[]');
-      const userExists = existingUsers.some((u: any) => u.email === email);
+      const userExists = existingUsers.some((u: User) => u.email === email);
       
       if (userExists) {
         throw new Error('Un compte avec cet email existe déjà.');

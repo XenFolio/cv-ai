@@ -118,6 +118,8 @@ export default defineConfig({
   },
   // Configuration pour le développement
   server: {
+    port: 5173, // Force l'utilisation du port 5173
+    strictPort: true, // Échoue si le port 5173 n'est pas disponible
     // Pré-transformation pour améliorer la vitesse en dev
     warmup: {
       clientFiles: [
