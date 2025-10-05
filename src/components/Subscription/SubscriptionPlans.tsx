@@ -7,6 +7,7 @@ import { stripePromise, createCheckoutSession, getSubscriptionPlans, formatPrice
 import { Check, Star, ArrowRight, CheckCircle, Crown } from 'lucide-react';
 import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
 import { NavigationIcons } from '../UI/iconsData';
+import { SubscriptionPlansSkeleton } from './SubscriptionPlansSkeleton';
 
 export function SubscriptionPlans() {
   const { user } = useAuthStore();
@@ -14,6 +15,7 @@ export function SubscriptionPlans() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [plansLoading, setPlansLoading] = useState<boolean>(true);
 
   // Auto-hide messages after 3 seconds
   useEffect(() => {
@@ -26,6 +28,15 @@ export function SubscriptionPlans() {
       return () => clearTimeout(timer);
     }
   }, [error, success]);
+
+  // Simuler le chargement des plans
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPlansLoading(false);
+    }, 2000); // 2 secondes de chargement
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Get current subscription to show active plan
   const { data: currentSubscription } = useQuery({
@@ -219,11 +230,7 @@ export function SubscriptionPlans() {
   };
 
   if (plansLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
-      </div>
-    );
+    return <SubscriptionPlansSkeleton />;
   }
 
   // Afficher un message si les plans ne chargent pas depuis l'API

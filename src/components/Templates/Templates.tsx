@@ -4,6 +4,7 @@ import { useSupabase } from '../../hooks/useSupabase';
 import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
 import { NavigationIcons } from '../UI/iconsData';
 import { useAppStore } from '../../store/useAppStore';
+import { TemplatesSkeleton } from './TemplatesSkeleton';
 
 interface Template {
   id: string;
@@ -210,7 +211,7 @@ export const Templates: React.FC = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string>('');
   const [previewTitle, setPreviewTitle] = useState<string>('');
-  
+
   const { templates, loading, error } = useSupabase();
 
   // Adapter les données Supabase au format attendu par le composant
@@ -400,38 +401,7 @@ export const Templates: React.FC = () => {
 
  // Afficher un état de chargement
  if (loading) {
-   return (
-     <div className="space-y-8">
-       <div className="text-left">
-         <BreadcrumbNavigation
-           items={[
-             {
-               label: 'Accueil',
-               icon: NavigationIcons.Home,
-               onClick: () => setActiveTab('dashboard')
-             },
-             
-             { label: 'Modèles', current: true }
-           ]}
-           showHome={false}
-           className="justify-start mb-4"
-         />
-         <p className="text-gray-600 max-w-2xl mx-auto">Chargement des templates...</p>
-       </div>
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-         {[1, 2, 3, 4, 5, 6].map((i) => (
-           <div key={i} className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/30 overflow-hidden animate-pulse">
-             <div className="h-48 bg-gray-200" />
-             <div className="p-6 space-y-4">
-               <div className="h-4 bg-gray-200 rounded w-3/4" />
-               <div className="h-3 bg-gray-200 rounded w-full" />
-               <div className="h-3 bg-gray-200 rounded w-1/2" />
-             </div>
-           </div>
-         ))}
-       </div>
-     </div>
-   );
+   return <TemplatesSkeleton />;
  }
 
  // Afficher une erreur si nécessaire
