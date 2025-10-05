@@ -24,7 +24,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ onBack }) => {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [userProfile, setUserProfile] = useState<any>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const conversationFlow = [
@@ -101,22 +100,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ onBack }) => {
     const userMessage = inputValue.trim();
     addMessage(userMessage, 'user');
     setInputValue('');
-
-    // Store user response
-    if (currentStep === 0) {
-      setUserProfile(prev => ({ ...prev, firstName: userMessage }));
-    } else if (currentStep <= conversationFlow.length) {
-      const currentField = conversationFlow[currentStep - 1];
-      let value = userMessage;
-      
-      if (currentField.type === 'list') {
-        value = userMessage.split(',').map(item => item.trim());
-      } else if (currentField.type === 'number') {
-        value = parseInt(userMessage) || 0;
-      }
-      
-      setUserProfile(prev => ({ ...prev, [currentField.field]: value }));
-    }
 
     // Generate AI response
     if (currentStep < conversationFlow.length) {

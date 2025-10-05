@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, Brain, Target, Award, TrendingUp, Users, CheckCircle } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 import { useAuth as useSupabaseAuth } from '../../hooks/useAuth';
-import { useAuth as useMockAuth } from './AuthProvider';
+import { useAuth as useMockAuth } from './AuthHooks';
 import { SupabaseAuthProvider } from './SupabaseAuthProvider';
 import { AuthProvider } from './AuthProvider';
 

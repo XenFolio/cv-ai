@@ -3,32 +3,17 @@ import {
   Send,
   Bot,
   User,
-  Sparkles,
   ArrowLeft,
-  Download,
   FileText,
-  Brain,
   Target,
   TrendingUp,
-  Lightbulb,
   BookOpen,
   Users,
-  Network,
-  GraduationCap,
-  Briefcase,
-  ChevronRight,
-  CheckCircle2,
+ 
   Clock,
   Zap,
   MessageSquare,
-  Mic,
-  Volume2,
-  VolumeX,
-  Copy,
-  MoreHorizontal,
-  ThumbsUp,
-  ThumbsDown,
-  RefreshCw
+  
 } from 'lucide-react';
 import { personalizedAIService, PersonalizedSuggestion, UserProfile } from '../../services/PersonalizedAIService';
 import { useOpenAI } from '../../hooks/useOpenAI';
@@ -81,25 +66,14 @@ const EnhancedAIChat: React.FC<EnhancedAIChatProps> = ({
   description = "Votre assistant personnel avec suggestions personnalisées",
   context
 }) => {
-  const { editCVField, isLoading, error } = useOpenAI();
+  const { editCVField, error } = useOpenAI();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [suggestions, setSuggestions] = useState<PersonalizedSuggestion[]>([]);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [conversationMode, setConversationMode] = useState<string>(mode);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    initializeChat();
-  }, [userId]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
 
   const initializeChat = useCallback(async () => {
     try {
@@ -134,6 +108,14 @@ const EnhancedAIChat: React.FC<EnhancedAIChatProps> = ({
       console.error('Error initializing chat:', error);
     }
   }, [context, mode]);
+
+  useEffect(() => {
+    initializeChat();
+  }, [userId, initializeChat]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
 
   const getWelcomeMessage = (currentMode: string): string => {
     const messages: Record<string, string> = {
@@ -563,7 +545,7 @@ Par quelle étape souhaitez-vous commencer ? Je peux vous fournir les ressources
         <div className="space-y-3">
           <ReactMarkdown>{message.content}</ReactMarkdown>
           <div className="grid grid-cols-1 gap-3 mt-4">
-            {message.suggestions.map((suggestion, index) => (
+            {message.suggestions.map((suggestion) => (
               <Card key={suggestion.id} variant="default" className="p-4">
                 <div className="flex items-start space-x-3">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
@@ -697,11 +679,7 @@ Par quelle étape souhaitez-vous commencer ? Je peux vous fournir les ressources
             <button
               key={action.id}
               onClick={() => handleQuickAction(action.id)}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                conversationMode === action.id
-                  ? `bg-${action.color}-100 text-${action.color}-700 border border-${action.color}-200`
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap bg-gray-100 text-gray-700 hover:bg-gray-200`}
             >
               <action.icon className="w-4 h-4" />
               <span>{action.label}</span>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState , useEffect} from "react";
 import {
   Search,
   Eye,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { QuickActions } from "./QuickActions";
+import { DocumentsSkeleton } from "./DocumentsSkeleton";
 import { useCVLibrary } from "../../hooks/useCVLibrary";
 import { useAppStore } from "../../store/useAppStore";
 import { BreadcrumbNavigation } from "../UI/BreadcrumbNavigation";
@@ -26,6 +27,7 @@ export const CVLibrary: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [sortBy, setSortBy] = useState<SortBy>("date");
+  const [documentsLoading, setDocumentsLoading] = useState<boolean>(true);
 
   // Hook pour la gestion des documents
   const { 
@@ -92,12 +94,25 @@ export const CVLibrary: React.FC = () => {
 
   const stats = getStats();
 
+  // Simuler le chargement des documents
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDocumentsLoading(false);
+    }, 2000); // 2 secondes de chargement
+
+    return () => clearTimeout(timer);
+  }, []);
+
   // ----------------------
   // Render
   // ----------------------
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {documentsLoading ? (
+        <DocumentsSkeleton />
+      ) : (
+        <>
+          {/* Header */}
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <BreadcrumbNavigation
@@ -351,8 +366,9 @@ export const CVLibrary: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      
-      <QuickActions/>  
+          <QuickActions/>
+        </>
+      )}
     </div>
   );
 };

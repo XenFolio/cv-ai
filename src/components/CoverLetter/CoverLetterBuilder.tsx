@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { CVData, ExperienceItem } from '../../types/cv';
+import { CVData, ExperienceItem, PersonalSection, SkillsSection } from '../../types/cv';
 import {
   FileText,
   Save,
-  Download,
   Eye,
   Edit3,
   Sparkles,
   Target,
   Briefcase,
   Building,
-  Mail,
-  Phone,
-  MapPin,
-  Link
 } from 'lucide-react';
 import { useOpenAI } from '../../hooks/useOpenAI';
 import Card from '../UI/Card';
@@ -86,17 +81,18 @@ const CoverLetterBuilder: React.FC<CoverLetterBuilderProps> = ({
 
   // Initialize with CV data if available
   useEffect(() => {
-    if (cvData?.personal) {
+    if (cvData) {
+      const personal = (cvData.sections.find((s) => s.type === 'personal')?.content as PersonalSection) || {};
       setCoverLetterData(prev => ({
         ...prev,
         personalInfo: {
           ...prev.personalInfo,
-          name: cvData.personal.name || '',
-          title: cvData.personal.title || '',
-          email: cvData.personal.email || '',
-          phone: cvData.personal.phone || '',
-          location: cvData.personal.location || '',
-          linkedin: cvData.personal.linkedin || ''
+          name: personal.name || '',
+          title: personal.title || '',
+          email: personal.email || '',
+          phone: personal.phone || '',
+          location: personal.location || '',
+          linkedin: personal.linkedin || '' // linkedin now in PersonalSection type
         }
       }));
     }
@@ -141,37 +137,30 @@ const CoverLetterBuilder: React.FC<CoverLetterBuilderProps> = ({
 
     setIsGenerating(true);
     try {
-      const skills = cvData?.skills ? [
-        ...cvData.skills.technical || [],
-        ...cvData.skills.soft || []
-      ] : [];
+      const skillsSection = (cvData?.sections.find((s) => s.type === 'skills')?.content as SkillsSection) || {};
+      const skills = [
+        ...(skillsSection.technical || []),
+        ...(skillsSection.soft || [])
+      ];
 
-      const experience = cvData?.experience || [];
-      const achievements = experience.flatMap((exp: ExperienceItem) => exp.achievements || []);
+      const experience = (cvData?.sections.find((s) => s.type === 'experience')?.content as ExperienceItem[]) || [];
 
-      const prompt = `
-        Génère une lettre de motivation professionnelle pour:
-
+      const cvContent = `
         Candidat: ${coverLetterData.personalInfo.name}
-        Poste: ${coverLetterData.companyInfo.position}
-        Entreprise: ${coverLetterData.companyInfo.companyName}
+        Titre: ${coverLetterData.personalInfo.title}
 
-        Compétences principales: ${skills.slice(0, 5).join(', ')}
-        Expériences pertinentes: ${experience.slice(0, 2).map((exp: ExperienceItem) => exp.title).join(', ')}
+        Compétences: ${skills.slice(0, 5).join(', ')}
+        Expériences: ${experience.slice(0, 2).map((exp: ExperienceItem) => exp.title + ' - ' + (exp.company || '')).join(', ')}
+      `.trim();
 
-        Description du poste: ${jobDescription || 'Non spécifiée'}
+      const companyInfo = `${coverLetterData.companyInfo.companyName} - ${coverLetterData.companyInfo.hiringManager || 'Responsable du recrutement'}`;
 
-        Style: ${selectedTemplate}
-
-        Structure la réponse avec:
-        1. Introduction percutante
-        2. Corps du texte mettant en valeur les compétences et expériences
-        3. Conclusion avec appel à l'action
-
-        Sois professionnel, concis et persuasif.
-      `;
-
-      const generatedContent = await generateCoverLetter(prompt);
+      const generatedContent = await generateCoverLetter({
+        cvContent,
+        jobDescription: jobDescription || '',
+        companyInfo,
+        tone: selectedTemplate
+      });
 
       if (generatedContent) {
         setCoverLetterData(prev => ({

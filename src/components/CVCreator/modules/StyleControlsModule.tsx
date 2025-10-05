@@ -35,10 +35,13 @@ export const StyleControlsModule: React.FC = () => {
     photoObjectFit,
     setPhotoObjectFit,
     selectedSection,
+    columnRatio,
+    setColumnRatio,
     availableFonts,
     availableColors,
     editableContent,
     sections,
+    setSectionsOrder,
     toggleSectionVisibility,
     pageMarginHorizontal,
     setPageMarginHorizontal,
@@ -81,8 +84,11 @@ export const StyleControlsModule: React.FC = () => {
       availableFonts={availableFonts}
       availableColors={availableColors}
       selectedSection={selectedSection}
+      columnRatio={columnRatio}
+      setColumnRatio={setColumnRatio}
       hasPhoto={!!editableContent.photo}
-      sections={sections?.map(s => ({ id: s.id, name: s.name, visible: s.visible }))}
+      sections={sections}
+      setSectionsOrder={setSectionsOrder}
       toggleSectionVisibility={toggleSectionVisibility}
       pageMarginHorizontal={pageMarginHorizontal}
       setPageMarginHorizontal={setPageMarginHorizontal}

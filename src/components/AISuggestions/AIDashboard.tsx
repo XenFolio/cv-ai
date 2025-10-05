@@ -1,36 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { MarketBenchmark, SkillDemand } from '../../services/MarketBenchmarkingService';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Brain,
   TrendingUp,
   Target,
-  Award,
   Clock,
-  Star,
   Zap,
   BarChart3,
-  Users,
   BookOpen,
-  Network,
-  GraduationCap,
   Briefcase,
   Lightbulb,
   ChevronRight,
   RefreshCw,
-  Calendar,
   MapPin,
   Building,
-  DollarSign,
-  CheckCircle2,
-  AlertCircle,
-  ArrowUpRight,
-  ArrowDownRight,
-  Activity,
-  MessageSquare,
-  FileText,
-  Sparkles
+  MessageSquare
 } from 'lucide-react';
-import { personalizedAIService, PersonalizedSuggestion, UserProfile, LearningPath, CareerPath } from '../../services/PersonalizedAIService';
+import { personalizedAIService, PersonalizedSuggestion, UserProfile, CareerPath } from '../../services/PersonalizedAIService';
 import { useSupabase } from '../../hooks/useSupabase';
 import PersonalizedSuggestions from './PersonalizedSuggestions';
 import EnhancedAIChat from './EnhancedAIChat';
@@ -46,23 +31,35 @@ const AIDashboard: React.FC<AIDashboardProps> = ({ userId, compact = false }) =>
   const { profile } = useSupabase();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [suggestions, setSuggestions] = useState<PersonalizedSuggestion[]>([]);
-  const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
-  const [careerPaths, setCareerPaths] = useState<CareerPath[]>([]);
-  const [marketInsights, setMarketInsights] = useState<MarketBenchmark | null>(null);
+  const [, setCareerPaths] = useState<CareerPath[]>([]);
+  const [marketInsights, setMarketInsights] = useState<{
+    skillDemand: {
+      skill: string;
+      demand_level: 'high' | 'medium' | 'low';
+      growth_rate: number;
+      salary_premium: number;
+    }[];
+    salary_range: {
+      entry: number;
+      mid: number;
+      senior: number;
+    };
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'suggestions' | 'learning' | 'career' | 'chat'>('overview');
-  const [progress, setProgress] = useState({
-    completedSuggestions: 0,
-    inProgressSuggestions: 0,
-    skillAcquisition: {} as Record<string, number>,
+  const [progress, setProgress] = useState<{
+    completedSuggestions: string[];
+    inProgressSuggestions: string[];
+    skillAcquisitionProgress: Record<string, number>;
+    overallProgress: number;
+  }>({
+    completedSuggestions: [],
+    inProgressSuggestions: [],
+    skillAcquisitionProgress: {},
     overallProgress: 0
   });
 
-  useEffect(() => {
-    initializeDashboard();
-  }, [profile]);
-
-  const initializeDashboard = async () => {
+  const initializeDashboard = useCallback(async () => {
     if (!profile) return;
 
     try {
@@ -70,16 +67,16 @@ const AIDashboard: React.FC<AIDashboardProps> = ({ userId, compact = false }) =>
 
       // Initialize user profile
       const profileData: Partial<UserProfile> = {
-        name: profile.full_name || '',
-        currentRole: profile.current_role || '',
-        currentCompany: profile.current_company || '',
-        experience: profile.experience_years || 0,
-        skills: profile.skills || [],
-        industry: profile.industry || '',
-        targetRole: profile.target_role || '',
-        location: profile.location || '',
-        careerGoals: profile.career_goals || [],
-        preferredIndustries: profile.preferred_industries || []
+        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Utilisateur',
+        currentRole: profile.profession || '',
+        currentCompany: profile.company || '',
+        experience: 0, // Pas de champ d'expérience dans le profil base de donnée
+        skills: [], // Pas de champ skills dans le profil base de donnée
+        industry: '', // Pas de champ industry dans le profil base de donnée
+        targetRole: '', // Pas de champ target_role dans le profil base de donnée
+        location: [profile.city, profile.postal_code, profile.country].filter(Boolean).join(', ') || '',
+        careerGoals: [], // Pas de champ career_goals dans le profil base de donnée
+        preferredIndustries: [] // Pas de champ preferred_industries dans le profil base de donnée
       };
 
       const initializedProfile = await personalizedAIService.initializeUserProfile(profileData);
@@ -109,13 +106,11 @@ const AIDashboard: React.FC<AIDashboardProps> = ({ userId, compact = false }) =>
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile]);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-50';
-    if (score >= 60) return 'text-amber-600 bg-amber-50';
-    return 'text-red-600 bg-red-50';
-  };
+  useEffect(() => {
+    initializeDashboard();
+  }, [initializeDashboard]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -394,9 +389,9 @@ const AIDashboard: React.FC<AIDashboardProps> = ({ userId, compact = false }) =>
               <h4 className="font-medium text-gray-900 mb-3">Compétences les plus demandées</h4>
               <div className="space-y-2">
                 {marketInsights.skillDemand
-                  .filter((skill: SkillDemand) => skill.demand === 'high')
+                  ?.filter((skill) => skill.demand_level === 'high')
                   .slice(0, 3)
-                  .map((skill: SkillDemand, index: number) => (
+                  .map((skill, index: number) => (
                     <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <span className="text-sm font-medium">{skill.skill}</span>
                       <div className="flex items-center space-x-2">
@@ -404,7 +399,7 @@ const AIDashboard: React.FC<AIDashboardProps> = ({ userId, compact = false }) =>
                         <span className="text-xs text-blue-600">+{skill.salary_premium}% salaire</span>
                       </div>
                     </div>
-                  ))}
+                  )) || []}
               </div>
             </div>
             <div>

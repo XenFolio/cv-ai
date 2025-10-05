@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
 import { NavigationIcons } from '../UI/iconsData';
 import { TemplateCarousel } from './TemplateCarousel';
+import { LetterTemplateSkeleton } from './LetterTemplateSkeleton';
 import { LinkDialog } from './LinkDialog';
 import { EditorFooter } from './EditorFooter';
 import { MarginModal } from './MarginModal';
@@ -43,6 +44,9 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
   initialContent = '',
   formData,
 }) => {
+  // État pour le chargement des templates
+  const [templatesLoading, setTemplatesLoading] = React.useState<boolean>(true);
+
   // États pour la modale d'analyse grammaticale
   const [showGrammarModal, setShowGrammarModal] = React.useState(false);
   const [grammarErrors, setGrammarErrors] = React.useState<GrammarError[]>([]);
@@ -105,6 +109,15 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [letterEditor]);
+
+  // Simuler le chargement des templates
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTemplatesLoading(false);
+    }, 2000); // 2 secondes de chargement
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Export PDF (utilise LetterExportService)
   const exportToPDF = async () => {
@@ -1095,21 +1108,27 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
           ) : (
             /* Template Carousel normal */
             <>
-              <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white p-4 rounded-t-lg shadow-lg">
-                <div className="flex items-center justify-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  <h2 className="text-xl font-bold">Modèles de Lettres</h2>
-                </div>
-              </div>
-              <TemplateCarousel
-                currentTemplate={letterEditor.currentTemplate}
-                onTemplateSelect={(templateKey) => {
-                  letterEditor.loadTemplate(templateKey);
-                  // Réappliquer les marges après le changement de template
-                  setTimeout(() => marginManager.reapplyMargins(), 100);
-                }}
-                formData={formData}
-              />
+              {templatesLoading ? (
+                <LetterTemplateSkeleton />
+              ) : (
+                <>
+                  <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white p-4 rounded-t-lg shadow-lg">
+                    <div className="flex items-center justify-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      <h2 className="text-xl font-bold">Modèles de Lettres</h2>
+                    </div>
+                  </div>
+                  <TemplateCarousel
+                    currentTemplate={letterEditor.currentTemplate}
+                    onTemplateSelect={(templateKey) => {
+                      letterEditor.loadTemplate(templateKey);
+                      // Réappliquer les marges après le changement de template
+                      setTimeout(() => marginManager.reapplyMargins(), 100);
+                    }}
+                    formData={formData}
+                  />
+                </>
+              )}
             </>
           )}
         </div>

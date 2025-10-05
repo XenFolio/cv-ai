@@ -31,8 +31,6 @@ interface BenchmarkData {
 const AdvancedATSScoring: React.FC<AdvancedATSScoringProps> = ({
   results,
   industry = 'Technology',
-  experienceLevel = 'Mid-level',
-  jobTitle = 'Professional',
   candidateInfo,
   jobInfo
 }) => {

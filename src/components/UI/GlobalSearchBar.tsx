@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Clock, TrendingUp, FileText, Briefcase, MessageSquare, Users } from 'lucide-react';
-import { ProfessionalIcon, NavigationIcons, DocumentIcons, CareerIcons } from './ProfessionalIcons';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Clock,  FileText, MessageSquare } from 'lucide-react';
+import { ProfessionalIcon } from './ProfessionalIcons';
+import { NavigationIcons, DocumentIcons, CareerIcons } from './iconsData';
 import { useNavigate } from 'react-router-dom';
 
 interface SearchResult {
@@ -9,7 +10,7 @@ interface SearchResult {
   title: string;
   description: string;
   path: string;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<{ className?: string; size?: string | number; color?: string }>;
   category?: string;
   relevance?: number;
 }
@@ -69,7 +70,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
   };
 
   // Simuler une recherche globale
-  const performSearch = async (searchQuery: string) => {
+  const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
       return;
@@ -83,7 +84,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
       const mockResults: SearchResult[] = [
         {
           id: '1',
-          type: 'cv',
+          type: 'cv' as const,
           title: 'Développeur Full Stack',
           description: 'CV créé le 15/09/2024',
           path: '/cv/analyze',
@@ -92,7 +93,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
         },
         {
           id: '2',
-          type: 'job',
+          type: 'job' as const,
           title: 'Développeur React Senior',
           description: 'Paris • CDI • 60-80k€',
           path: '/jobs',
@@ -101,7 +102,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
         },
         {
           id: '3',
-          type: 'template',
+          type: 'template' as const,
           title: 'Template Moderne',
           description: 'CV template design moderne',
           path: '/templates',
@@ -110,7 +111,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
         },
         {
           id: '4',
-          type: 'conversation',
+          type: 'conversation' as const,
           title: 'Conseils carrière',
           description: 'Conversation avec le coach IA',
           path: '/coach/chat-general',
@@ -125,7 +126,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
       setResults(mockResults.slice(0, maxResults));
       setLoading(false);
     }, 300);
-  };
+  }, [onSearch, maxResults]);
 
   // Gérer la recherche avec debounce
   useEffect(() => {
@@ -138,7 +139,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [query]);
+  }, [query, performSearch]);
 
   // Gérer le focus et le blur
   useEffect(() => {
@@ -172,7 +173,6 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0) {
-          const totalItems = recentSearches.length + results.length;
           if (selectedIndex < recentSearches.length) {
             handleRecentSearchSelect(recentSearches[selectedIndex]);
           } else {
@@ -225,7 +225,7 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
 
   // Rendre l'icône selon le type
   const getTypeIcon = (type: string) => {
-    const iconMap: Record<string, React.ComponentType<any>> = {
+    const iconMap: Record<string, React.ComponentType<{ className?: string; size?: string | number; color?: string }>> = {
       cv: DocumentIcons.FileText,
       job: CareerIcons.Briefcase,
       template: DocumentIcons.FileText,

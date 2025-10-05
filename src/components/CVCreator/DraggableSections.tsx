@@ -579,6 +579,7 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
                                   id={left.id}
                                   title={left.name}
                                   position="left"
+                                  alignment={left.alignment}
                                   onSectionClick={handleSectionClick}
                                   hasAdjacentSection={true}
                                   adjacentSectionColor={right ? sectionColors[right.id]?.background : undefined}
@@ -611,6 +612,7 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
                                   id={right.id}
                                   title={right.name}
                                   position="right"
+                                  alignment={right.alignment}
                                   onSectionClick={handleSectionClick}
                                   hasAdjacentSection={!!left}
                                   adjacentSectionColor={left ? sectionColors[left.id]?.background : undefined}
@@ -651,6 +653,7 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
                               <SectionWrapper
                                 id={section.id}
                                 title={section.name}
+                                alignment={section.alignment}
                                 onSectionClick={handleSectionClick}
                                 isFullWidth={section.width === "full"}
                                 width={section.width}

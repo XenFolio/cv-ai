@@ -1,6 +1,6 @@
 import React from 'react';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { colors, spacing, borderRadius, transitions } from '../../styles/theme';
+import { Loader2 } from 'lucide-react';
+import { spacing, borderRadius, transitions } from '../../styles/theme';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'success';

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock, FileText, CheckCircle, AlertCircle, TrendingUp, Wand2, Target, Loader2 } from 'lucide-react';
 import { useSupabase } from '../../hooks/useSupabase';
+import { RecentActivitySkeleton } from './RecentActivitySkeleton';
 
 interface RecentActivityProps {
   onShowAllActivities: () => void;
@@ -55,17 +56,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivit
       </div>
       
       {activitiesLoading ? (
-        <div className="space-y-3 max-h-64 overflow-y-auto">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-start space-x-3 p-2 rounded-xl animate-pulse">
-              <div className="w-8 h-8 bg-gray-200 rounded-lg" />
-              <div className="flex-1">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <RecentActivitySkeleton />
       ) : error ? (
         <div className="text-center py-8">
           <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />

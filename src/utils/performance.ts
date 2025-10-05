@@ -7,7 +7,7 @@ export const debounce = <F extends (...args: unknown[]) => unknown>(
   let timeoutId: NodeJS.Timeout;
   return (...args: Parameters<F>) => {
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func.apply(null, args), delay);
+    timeoutId = setTimeout(() => func(...args), delay);
   };
 };
 
@@ -18,7 +18,7 @@ export const throttle = <F extends (...args: unknown[]) => unknown>(
   let inThrottle: boolean;
   return (...args: Parameters<F>) => {
     if (!inThrottle) {
-      func.apply(null, args);
+      func(...args);
       inThrottle = true;
       setTimeout(() => (inThrottle = false), limit);
     }
@@ -69,8 +69,7 @@ export const smoothScroll = (element: Element, top: number = 0) => {
 
 // Gestionnaire d'événements optimisé
 export const createOptimizedEventHandler = (
-  eventHandler: EventListener,
-  options?: AddEventListenerOptions
+  eventHandler: EventListener
 ) => {
   if ('IntersectionObserver' in window) {
     return eventHandler;

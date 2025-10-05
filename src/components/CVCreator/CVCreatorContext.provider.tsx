@@ -1,6 +1,7 @@
-import React, { ReactNode } from 'react';
-import { CVCreatorContext } from './CVCreatorContext.hook';
+import React, { ReactNode, createContext } from 'react';
 import type { CVCreatorContextType } from './CVCreatorContext.types';
+
+export const CVCreatorContext = createContext<CVCreatorContextType | undefined>(undefined);
 
 interface CVCreatorProviderProps {
   children: ReactNode;

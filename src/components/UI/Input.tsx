@@ -1,6 +1,6 @@
 import React from 'react';
 import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
-import { spacing, borderRadius, transitions } from '../../styles/theme';
+import { borderRadius, transitions } from '../../styles/theme';
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
@@ -30,7 +30,6 @@ const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const [showPassword, setShowPassword] = React.useState(false);
-  const [isFocused, setIsFocused] = React.useState(false);
 
   const inputType = type === 'password' && showPassword ? 'text' : type;
 

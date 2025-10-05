@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Download, FileText, Award, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import {  FileText, Award, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { CVAnalysisResponse } from '../../hooks/useOpenAI';

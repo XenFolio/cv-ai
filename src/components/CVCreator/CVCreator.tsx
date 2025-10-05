@@ -5,6 +5,7 @@ import { useLocalStorageCV } from '../../hooks/useLocalStorageCV';
 import { useCVLibrary } from '../../hooks/useCVLibrary';
 import { useCVSections } from '../../hooks/useCVSections';
 import { CVTemplateCarousel } from './CVTemplateCarousel';
+import { TemplateSkeleton } from './TemplateSkeleton';
 import { CVCreatorProvider } from './CVCreatorContext.provider';
 import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
 import { useAppStore } from '../../store/useAppStore';
@@ -81,6 +82,7 @@ export const CVCreator: React.FC = () => {
   const [columnRatio, setColumnRatio] = useState<'1/2-1/2' | '1/3-2/3' | '2/3-1/3'>('1/2-1/2');
   const [pageMarginHorizontal, setPageMarginHorizontal] = useState<number>(20);
   const [pageMarginVertical, setPageMarginVertical] = useState<number>(20);
+  const [templatesLoading, setTemplatesLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   // État pour les couleurs de section
   const [sectionColors, setSectionColors] = useState<Record<string, {
@@ -131,8 +133,8 @@ export const CVCreator: React.FC = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      // Vérifier si le clic est en dehors des sections
-      if (!target.closest('[data-section]') && !target.closest('button')) {
+      // Vérifier si le clic est en dehors des sections et des contrôles
+      if (!target.closest('[data-section]') && !target.closest('button') && !target.closest('[data-controls]')) {
         setSelectedSection(null);
       }
     };
@@ -384,6 +386,15 @@ export const CVCreator: React.FC = () => {
       }
     }
   }, [loadFromLocalStorage, profile, profileLoading]);
+
+  // Simuler le chargement des templates
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTemplatesLoading(false);
+    }, 2000); // 2 secondes de chargement
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Effet pour sauvegarder automatiquement les modifications
   useEffect(() => {
@@ -649,7 +660,7 @@ export const CVCreator: React.FC = () => {
     } catch (error) {
       console.error('Erreur lors du téléchargement du CV:', error);
     }
-  }, [templates, selectedTemplate, editableContent, experiences, languages, educations, addCreatedCV]);
+  }, [selectedTemplate, editableContent, experiences, languages, educations, addCreatedCV]);
 
   const handleDownloadTemplate = useCallback(async (template: Template) => {
     try {
@@ -844,58 +855,62 @@ export const CVCreator: React.FC = () => {
         </div>
 
         <aside className="lg:col-span-3">
-          <CVTemplateCarousel
-          templates={templates}
-          selectedTemplate={selectedTemplate}
-          onTemplateSelect={(templateId, templateName) => {
-            setSelectedTemplate(templateId);
-            setSelectedTemplateName(templateName);
-            const template = templates.find(t => t.id === templateId);
-            if (template) {
-              // Appliquer automatiquement le thème du template
-              setCustomColor(template.theme.primaryColor);
-              setTitleColor(template.theme.primaryColor);
-              setCustomFont(template.theme.font);
-              // Définir l'alignement du nom selon le template
-              if (template.name === "Minimaliste") {
-                setNameAlignment('left');
-              } else {
-                setNameAlignment('center');
-              }
-              // Appliquer le nombre de colonnes du template
-              setLayoutColumns(template.layoutColumns);
-              // Appliquer les titres de sections du template
-              setEditableContent(prev => ({
-                ...prev,
-                profileTitle: template.sectionTitles.profileTitle,
-                experienceTitle: template.sectionTitles.experienceTitle,
-                educationTitle: template.sectionTitles.educationTitle,
-                skillsTitle: template.sectionTitles.skillsTitle,
-                languagesTitle: template.sectionTitles.languagesTitle,
-                contactTitle: template.sectionTitles.contactTitle
-              }));
-              // Appliquer l'ordre des sections du template
-              if (setSectionsOrderFunc && Array.isArray(template.sectionsOrder)) {
-                try {
-                  // Ajouter les propriétés manquantes (layer et order) à chaque section
-                  const sectionsWithOrder = template.sectionsOrder.map((section, index) => {
-                    // Type assertion to access properties that may exist on template sections
-                    const templateSection = section as unknown as Record<string, unknown>;
-                    return {
-                      ...section,
-                      layer: (templateSection.layer as number) ?? 1,
-                      order: index + 1
-                    } as SectionConfig;
-                  });
-                  setSectionsOrderFunc(sectionsWithOrder);
-                } catch (error) {
-                  console.warn('Erreur lors de l\'application de l\'ordre des sections:', error);
+          {templatesLoading ? (
+            <TemplateSkeleton />
+          ) : (
+            <CVTemplateCarousel
+              templates={templates}
+              selectedTemplate={selectedTemplate}
+              onTemplateSelect={(templateId, templateName) => {
+                setSelectedTemplate(templateId);
+                setSelectedTemplateName(templateName);
+                const template = templates.find(t => t.id === templateId);
+                if (template) {
+                  // Appliquer automatiquement le thème du template
+                  setCustomColor(template.theme.primaryColor);
+                  setTitleColor(template.theme.primaryColor);
+                  setCustomFont(template.theme.font);
+                  // Définir l'alignement du nom selon le template
+                  if (template.name === "Minimaliste") {
+                    setNameAlignment('left');
+                  } else {
+                    setNameAlignment('center');
+                  }
+                  // Appliquer le nombre de colonnes du template
+                  setLayoutColumns(template.layoutColumns);
+                  // Appliquer les titres de sections du template
+                  setEditableContent(prev => ({
+                    ...prev,
+                    profileTitle: template.sectionTitles.profileTitle,
+                    experienceTitle: template.sectionTitles.experienceTitle,
+                    educationTitle: template.sectionTitles.educationTitle,
+                    skillsTitle: template.sectionTitles.skillsTitle,
+                    languagesTitle: template.sectionTitles.languagesTitle,
+                    contactTitle: template.sectionTitles.contactTitle
+                  }));
+                  // Appliquer l'ordre des sections du template
+                  if (setSectionsOrderFunc && Array.isArray(template.sectionsOrder)) {
+                    try {
+                      // Ajouter les propriétés manquantes (layer et order) à chaque section
+                      const sectionsWithOrder = template.sectionsOrder.map((section, index) => {
+                        // Type assertion to access properties that may exist on template sections
+                        const templateSection = section as unknown as Record<string, unknown>;
+                        return {
+                          ...section,
+                          layer: (templateSection.layer as number) ?? 1,
+                          order: index + 1
+                        } as SectionConfig;
+                      });
+                      setSectionsOrderFunc(sectionsWithOrder);
+                    } catch (error) {
+                      console.warn('Erreur lors de l\'application de l\'ordre des sections:', error);
+                    }
+                  }
                 }
-              }
-            }
-          }}
-          onDownloadTemplate={handleDownloadTemplate}
-        />
+              }}
+              onDownloadTemplate={handleDownloadTemplate}
+            />
+          )}
 
         </aside>
       </div>

@@ -1,186 +1,132 @@
-import React, { useCallback } from 'react';
 import { Document, Packer, Paragraph, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { useCVCreator } from '../CVCreatorContext.hook';
-import { useCVLibrary, CVData } from '../../../hooks/useCVLibrary';
-import type { Template, SectionConfig } from '../types';
+import type { Template } from '../templates';
+import type { CVContent, CVExperience, CVLanguage, CVEducation } from '../types';
+import type { CVData } from '../../../hooks/useCVLibrary';
 
-interface ExportModuleProps {
-  templates: Template[];
-  selectedTemplate: string | null;
-}
+// Function to get skills based on category
+const getSkillsByCategory = (category: string): string[] => {
+  switch (category) {
+    case 'Développement': return ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Python', 'SQL', 'Git', 'Docker'];
+    case 'Marketing': return ['Google Analytics', 'SEO/SEM', 'Social Media', 'Content Marketing', 'Email Marketing', 'CRM'];
+    case 'Finance': return ['Excel', 'Modélisation financière', 'Analyse de risque', 'Bloomberg', 'SAP'];
+    default: return ['Communication', 'Travail d\'équipe', 'Résolution de problèmes', 'Adaptabilité'];
+  }
+};
 
-export const ExportModule: React.FC<ExportModuleProps> = ({
-  templates,
-  selectedTemplate
-}) => {
-  const {
-    editableContent,
-    experiences,
-    skills,
-    languages,
-    educations,
-    customFont,
-    customColor,
-    titleColor,
-    nameFontSize,
-    nameAlignment,
-    layoutColumns,
-    photoAlignment,
-    photoSize,
-    photoShape,
-    photoZoom,
-    photoPositionX,
-    photoPositionY,
-    photoRotation,
-    photoObjectFit,
-    sectionSpacing,
-    columnRatio,
-    pageMarginHorizontal,
-    pageMarginVertical,
-    sectionColors,
-    selectedTemplateName
-  } = useCVCreator();
+// Function to calculate ATS score
+const calculateATSScore = (template: Template, cvData: CVData): number => {
+  let score = template.atsScore; // Score de base du template
 
-  const { addCreatedCV } = useCVLibrary();
+  // Bonifications basées sur le contenu
+  if (cvData.name && cvData.name !== '[VOTRE NOM]') score += 2;
+  if (cvData.contact && !cvData.contact.includes('[')) score += 3;
+  if (cvData.profileContent && !cvData.profileContent.includes('Résumé de votre profil')) score += 3;
+  if (cvData.experiences.length > 0 && !cvData.experiences[0].content.includes('[Poste]')) score += 5;
+  if (cvData.skills.length >= 3) score += 3;
+  if (cvData.languages.length >= 1) score += 2;
+  if (cvData.educations.length > 0 && !cvData.educations[0].degree.includes('[Diplôme]')) score += 2;
 
-  const getSkillsByCategory = (category: string) => {
-    switch (category) {
-      case 'Développement': return ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Python', 'SQL', 'Git', 'Docker'];
-      case 'Marketing': return ['Google Analytics', 'SEO/SEM', 'Social Media', 'Content Marketing', 'Email Marketing', 'CRM'];
-      case 'Finance': return ['Excel', 'Modélisation financière', 'Analyse de risque', 'Bloomberg', 'SAP'];
-      default: return ['Communication', 'Travail d\'équipe', 'Résolution de problèmes', 'Adaptabilité'];
-    }
-  };
+  // Plafonner le score à 98
+  return Math.min(score, 98);
+};
 
-  const calculateATSScore = useCallback((template: Template, cvData: CVData): number => {
-    let score = template.atsScore; // Score de base du template
+// Main export function that generates the CV document
+export const generateCVDocument = async (
+  template: Template,
+  editableContent: CVContent,
+  experiences: CVExperience[],
+  languages: CVLanguage[],
+  educations: CVEducation[],
+  addCreatedCV: (name: string, cvData: CVData, templateName: string, atsScore: number) => Promise<string>
+): Promise<void> => {
+  // Get skills based on template category
+  const skills = getSkillsByCategory(template.category);
 
-    // Bonifications basées sur le contenu
-    if (cvData.name && cvData.name !== '[VOTRE NOM]') score += 2;
-    if (cvData.contact && !cvData.contact.includes('[')) score += 3;
-    if (cvData.profileContent && !cvData.profileContent.includes('Résumé de votre profil')) score += 3;
-    if (cvData.experiences.length > 0 && !cvData.experiences[0].content.includes('[Poste]')) score += 5;
-    if (cvData.skills.length >= 3) score += 3;
-    if (cvData.languages.length >= 1) score += 2;
-    if (cvData.educations.length > 0 && !cvData.educations[0].degree.includes('[Diplôme]')) score += 2;
+  // Generate languages string
+  const languagesString = languages.map(lang => `${lang.name} (${lang.level})`).join(' • ');
 
-    // Plafonner le score à 98
-    return Math.min(score, 98);
-  }, []);
+  // Generate educations string
+  const educationsString = educations.map(edu => `${edu.degree} - ${edu.school} - ${edu.year}`).join('\n');
 
-  const generateDocx = useCallback(async (template: Template) => {
-    const skills = getSkillsByCategory(template.category);
-
-    // Générer la chaîne de caractères pour les langues
-    const languagesString = languages.map(lang => `${lang.name} (${lang.level})`).join(' • ');
-
-    // Générer la chaîne de caractères pour les formations
-    const educationsString = educations.map(edu => `${edu.degree} - ${edu.school} - ${edu.year}`).join('\n');
-
-    const doc = new Document({
-      styles: {
-        default: {
-          document: { run: { font: customFont } }
-        },
-        paragraphStyles: [
-          {
-            id: 'Title',
-            name: 'Title',
-            basedOn: 'Normal',
-            run: { size: 48, bold: true, color: titleColor },
-            paragraph: { alignment: AlignmentType.CENTER, spacing: { after: 300 } }
-          },
-          {
-            id: 'Heading2',
-            name: 'Heading 2',
-            basedOn: 'Normal',
-            run: { size: 28, bold: true, color: titleColor },
-            paragraph: { spacing: { before: 200, after: 100 } }
-          }
-        ]
+  // Create document
+  const doc = new Document({
+    styles: {
+      default: {
+        document: { run: { font: 'Calibri' } } // Default fallbacks, will be overridden by custom fonts when available
       },
-      sections: [{
-        children: [
-          new Paragraph({ text: editableContent.name, style: 'Title' }),
-          new Paragraph({ text: editableContent.contact, alignment: AlignmentType.CENTER }),
-          new Paragraph({ text: editableContent.profileTitle, style: 'Heading2' }),
-          new Paragraph({ text: editableContent.profileContent }),
-          new Paragraph({ text: editableContent.experienceTitle, style: 'Heading2' }),
-          ...experiences.map(exp => [
-            new Paragraph({ text: exp.content, run: { bold: true } }),
-            new Paragraph({ text: exp.details })
-          ]).flat(),
-          new Paragraph({ text: editableContent.educationTitle, style: 'Heading2' }),
-          new Paragraph({ text: educationsString }),
-          new Paragraph({ text: editableContent.skillsTitle, style: 'Heading2' }),
-          ...skills.map(skill => new Paragraph({ text: `• ${skill}` })),
-          new Paragraph({ text: editableContent.languagesTitle, style: 'Heading2' }),
-          new Paragraph({ text: languagesString })
-        ]
-      }]
-    });
+      paragraphStyles: [
+        {
+          id: 'Title',
+          name: 'Title',
+          basedOn: 'Normal',
+          run: { size: 48, bold: true, color: '000000' }, // Fallback color
+          paragraph: { alignment: AlignmentType.CENTER, spacing: { after: 300 } }
+        },
+        {
+          id: 'Heading2',
+          name: 'Heading 2',
+          basedOn: 'Normal',
+          run: { size: 28, bold: true, color: '000000' }, // Fallback color
+          paragraph: { spacing: { before: 200, after: 100 } }
+        }
+      ]
+    },
+    sections: [{
+      children: [
+        new Paragraph({ text: editableContent.name, style: 'Title' }),
+        new Paragraph({ text: editableContent.contact, alignment: AlignmentType.CENTER }),
+        new Paragraph({ text: editableContent.profileTitle, style: 'Heading2' }),
+        new Paragraph({ text: editableContent.profileContent }),
+        new Paragraph({ text: editableContent.experienceTitle, style: 'Heading2' }),
+        ...experiences.flatMap(exp => [
+          new Paragraph({ text: exp.content, run: { bold: true } }),
+          new Paragraph({ text: exp.details })
+        ]),
+        new Paragraph({ text: editableContent.educationTitle, style: 'Heading2' }),
+        new Paragraph({ text: educationsString }),
+        new Paragraph({ text: editableContent.skillsTitle, style: 'Heading2' }),
+        ...skills.map(skill => new Paragraph({ text: `• ${skill}` })),
+        new Paragraph({ text: editableContent.languagesTitle, style: 'Heading2' }),
+        new Paragraph({ text: languagesString })
+      ]
+    }]
+  });
 
-    const blob = await Packer.toBlob(doc);
-    const fileName = `${template.name.replace(/\s+/g, '_').toLowerCase()}.docx`;
-    saveAs(blob, fileName);
+  // Generate blob and save file
+  const blob = await Packer.toBlob(doc);
+  const fileName = `${template.name.replace(/\s+/g, '_').toLowerCase()}.docx`;
+  saveAs(blob, fileName);
 
-    // Ajouter le CV créé à la bibliothèque
-    try {
-      const cvData: CVData = {
-        name: editableContent.name,
-        contact: editableContent.contact,
-        profileContent: editableContent.profileContent,
-        experiences: experiences,
-        skills: skills.map((skill, index) => ({ id: index + 1, content: skill })), // Convertir en format CVData
-        languages: languages,
-        educations: educations,
-        industry: template.category,
-        customFont: customFont,
-        customColor: customColor,
-        templateName: template.name
-      };
+  // Add created CV to library
+  try {
+    const cvData: CVData = {
+      name: editableContent.name,
+      contact: editableContent.contact,
+      profileContent: editableContent.profileContent,
+      experiences: experiences,
+      skills: skills.map((skill, index) => ({ id: index + 1, content: skill })),
+      languages: languages,
+      educations: educations,
+      industry: template.category,
+      customFont: 'Calibri', // Fallback
+      customColor: '000000', // Fallback
+      templateName: template.name
+    };
 
-      // Calculer un score ATS basé sur le template et le contenu
-      const atsScore = calculateATSScore(template, cvData);
+    // Calculate ATS score
+    const atsScore = calculateATSScore(template, cvData);
 
-      const docId = await addCreatedCV(
-        `${editableContent.name || 'CV'} - ${template.name}`,
-        cvData,
-        template.name,
-        atsScore
-      );
+    const docId = await addCreatedCV(
+      `${editableContent.name || 'CV'} - ${template.name}`,
+      cvData,
+      template.name,
+      atsScore
+    );
 
-      console.log(`✅ CV créé ajouté et sauvegardé avec l'ID: ${docId}`);
-    } catch (error) {
-      console.warn('Erreur lors de l\'ajout du CV créé à la bibliothèque:', error);
-      // Ne pas bloquer la génération du CV
-    }
-  }, [
-    editableContent,
-    experiences,
-    skills,
-    languages,
-    educations,
-    customFont,
-    titleColor,
-    addCreatedCV,
-    calculateATSScore
-  ]);
-
-  const handleDownload = useCallback(() => {
-    const template = templates.find(t => t.id === selectedTemplate);
-    if (template) {
-      generateDocx(template);
-    }
-  }, [templates, selectedTemplate, generateDocx]);
-
-  const handleTemplateDownload = useCallback((template: Template) => {
-    generateDocx(template);
-  }, [generateDocx]);
-
-  return {
-    handleDownload,
-    handleTemplateDownload
-  };
+    console.log(`✅ CV créé ajouté et sauvegardé avec l'ID: ${docId}`);
+  } catch (error) {
+    console.warn('Erreur lors de l\'ajout du CV créé à la bibliothèque:', error);
+    // Don't block CV generation
+  }
 };

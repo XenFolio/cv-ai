@@ -2,6 +2,7 @@ import React from 'react';
 import { CustomSelect } from './CustomSelect';
 import { Columns, RectangleVertical, AlignLeft, AlignCenter, AlignRight, Circle, Square, Plus, Minus, ZoomIn, ZoomOut, RotateCw, Move, RotateCcw, Maximize, Frame, Eye, EyeOff, Palette, ChevronDown, ChevronRight, MinusCircle, PlusCircle } from 'lucide-react';
 import { useCVCreator } from './CVCreatorContext.hook';
+import type { SectionConfig } from './types';
 
 // Fonction pour convertir hex en RGB
 const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
@@ -77,7 +78,12 @@ const ColorToneSelector: React.FC<{
   element: 'background' | 'title' | 'content';
   onColorSelect: (color: string) => void;
   currentColors: SectionColors;
-}> = ({ baseColor, element, onColorSelect, currentColors }) => {
+}> = ({ baseColor, element, onColorSelect, currentColors }: {
+  baseColor: string;
+  element: 'background' | 'title' | 'content';
+  onColorSelect: (color: string) => void;
+  currentColors: SectionColors;
+}) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const variations = generateColorVariations(baseColor);
 
@@ -85,7 +91,7 @@ const ColorToneSelector: React.FC<{
 
   return (
     <div className="relative">
-      <button
+      <div
         onClick={() => setIsExpanded(!isExpanded)}
         className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${currentValue === baseColor.replace('#', '') ? 'border-violet-500 shadow-md' : 'border-gray-300'
           }`}
@@ -99,14 +105,14 @@ const ColorToneSelector: React.FC<{
             <ChevronRight className="w-3 h-3 text-white drop-shadow-md" />
           )}
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[180px]">
           <div className="text-xs font-medium text-gray-700 mb-2">Variations de ton</div>
           <div className="grid grid-cols-6 gap-1">
             {variations.map((variation) => (
-              <button
+              <div
                 key={`${baseColor}-${variation.category}`}
                 onClick={() => {
                   onColorSelect(variation.value);
@@ -163,8 +169,11 @@ interface StyleControlsProps {
   availableFonts: string[];
   availableColors: Array<{ name: string; value: string; category: string }>;
   selectedSection?: string | null;
+  columnRatio?: '1/2-1/2' | '1/3-2/3' | '2/3-1/3';
+  setColumnRatio?: (ratio: '1/2-1/2' | '1/3-2/3' | '2/3-1/3') => void;
   hasPhoto?: boolean;
-  sections?: Array<{ id: string; name: string; visible: boolean }>;
+  sections?: SectionConfig[];
+  setSectionsOrder?: (sections: SectionConfig[]) => void;
   toggleSectionVisibility?: (sectionId: string) => void;
   pageMarginHorizontal?: number;
   setPageMarginHorizontal?: (margin: number) => void;
@@ -204,15 +213,21 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
   availableFonts,
   availableColors,
   selectedSection,
+  columnRatio = '1/2-1/2',
+  setColumnRatio,
   hasPhoto,
   sections,
+  setSectionsOrder,
   toggleSectionVisibility,
   pageMarginHorizontal = 20,
   setPageMarginHorizontal,
   pageMarginVertical = 20,
   setPageMarginVertical
 }) => {
-  const { sectionColors, updateSectionElementColor, sectionSpacing, setSectionSpacing, setSectionsOrder, sections: contextSections, cleanupLayers, columnRatio, setColumnRatio } = useCVCreator();
+  const { sectionColors, updateSectionElementColor, sectionSpacing, setSectionSpacing, cleanupLayers } = useCVCreator();
+
+  // Utiliser directement les sections passées en props, elles sont déjà réactives
+  const contextSections = sections || [];
 
   const handleResetAdjustments = () => {
     setPhotoZoom?.(100);
@@ -237,13 +252,13 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
       );
     }
     return (
-      <div className="bg-violet-50 rounded-lg shadow-sm p-3 mb-4 -mt-2 -ml-1 -mr-1">
+      <div data-controls className="bg-violet-50 rounded-lg shadow-sm p-3 mb-4 -mt-2 -ml-1 -mr-1">
         {/* Première ligne de contrôles */}
         <div className="flex items-start gap-4 mb-4">
           <div className="flex-shrink-0">
             <label className="block text-sm font-medium mb-2">Forme photo</label>
             <div className="flex gap-1">
-              <button
+              <div
                 onClick={() => setPhotoShape?.('circle')}
                 className={`p-1 rounded transition-all duration-200 ${photoShape === 'circle'
                   ? 'bg-violet-500 text-white shadow-md'
@@ -252,8 +267,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 title="Photo ronde"
               >
                 <Circle className="w-4 h-4" />
-              </button>
-              <button
+              </div>
+              <div
                 onClick={() => setPhotoShape?.('square')}
                 className={`p-1 rounded transition-all duration-200 ${photoShape === 'square'
                   ? 'bg-violet-500 text-white shadow-md'
@@ -262,8 +277,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 title="Photo carrée"
               >
                 <Square className="w-4 h-4" />
-              </button>
-              <button
+              </div>
+              <div
                 onClick={() => setPhotoShape?.('rounded')}
                 className={`p-1 rounded transition-all duration-200 ${photoShape === 'rounded'
                   ? 'bg-violet-500 text-white shadow-md'
@@ -272,14 +287,14 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 title="Photo arrondie"
               >
                 <div className="w-4 h-4 border border-current rounded" />
-              </button>
+              </div>
             </div>
           </div>
-
+          {/* { /* Taille photo */}
           <div className="flex-shrink-0">
             <label className="block text-sm font-medium mb-2">Taille photo</label>
             <div className="flex gap-1">
-              <button
+              <div
                 onClick={() => setPhotoSize?.('small')}
                 className={`px-2 py-1 rounded text-xs transition-all duration-200 ${photoSize === 'small'
                   ? 'bg-violet-500 text-white shadow-md'
@@ -288,8 +303,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 title="Petite photo"
               >
                 S
-              </button>
-              <button
+              </div>
+              <div
                 onClick={() => setPhotoSize?.('medium')}
                 className={`px-2 py-1 rounded text-xs transition-all duration-200 ${photoSize === 'medium'
                   ? 'bg-violet-500 text-white shadow-md'
@@ -298,8 +313,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 title="Photo moyenne"
               >
                 M
-              </button>
-              <button
+              </div>
+              <div
                 onClick={() => setPhotoSize?.('large')}
                 className={`px-2 py-1 rounded text-xs transition-all duration-200 ${photoSize === 'large'
                   ? 'bg-violet-500 text-white shadow-md'
@@ -308,14 +323,14 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 title="Grande photo"
               >
                 L
-              </button>
+              </div>
             </div>
           </div>
-
+          {/* Alignement photo */}
           <div className="flex-shrink-0">
             <label className="block text-sm font-medium mb-2">Alignement photo</label>
             <div className="flex gap-1">
-              <button
+              <div
                 onClick={() => setPhotoAlignment?.('left')}
                 className={`p-1 rounded transition-all duration-200 ${photoAlignment === 'left'
                   ? 'bg-violet-500 text-white shadow-md'
@@ -324,8 +339,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 title="Photo à gauche"
               >
                 <AlignLeft className="w-4 h-4" />
-              </button>
-              <button
+              </div>
+              <div
                 onClick={() => setPhotoAlignment?.('center')}
                 className={`p-1 rounded transition-all duration-200 ${photoAlignment === 'center'
                   ? 'bg-violet-500 text-white shadow-md'
@@ -334,8 +349,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 title="Photo centrée"
               >
                 <AlignCenter className="w-4 h-4" />
-              </button>
-              <button
+              </div>
+              <div
                 onClick={() => setPhotoAlignment?.('right')}
                 className={`p-1 rounded transition-all duration-200 ${photoAlignment === 'right'
                   ? 'bg-violet-500 text-white shadow-md'
@@ -344,14 +359,14 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 title="Photo à droite"
               >
                 <AlignRight className="w-4 h-4" />
-              </button>
+              </div>
             </div>
           </div>
 
           <div className="flex-shrink-0">
             <label className="block text-sm font-medium mb-2">Ajustement</label>
             <div className="flex gap-1">
-              <button
+              <div
                 onClick={() => setPhotoObjectFit?.(photoObjectFit === 'contain' ? 'cover' : 'contain')}
                 className={`p-1 rounded transition-all duration-200 ${photoObjectFit === 'contain'
                   ? 'bg-violet-500 text-white shadow-md'
@@ -367,7 +382,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 ) : (
                   <Maximize className="w-4 h-4" />
                 )}
-              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -378,13 +393,13 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
           <div className="flex-shrink-0">
             <label className="block text-sm font-medium mb-2">Zoom ({photoZoom}%)</label>
             <div className="flex gap-1">
-              <button
+              <div
                 onClick={() => setPhotoZoom?.(Math.max((photoZoom || 100) - 10, 50))}
                 className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                 title="Dézoomer"
               >
                 <ZoomOut className="w-4 h-4" />
-              </button>
+              </div>
               <input
                 type="range"
                 min="50"
@@ -394,26 +409,26 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 className="w-16 h-6"
                 title="Ajuster le zoom"
               />
-              <button
+              <div
                 onClick={() => setPhotoZoom?.(Math.min((photoZoom || 100) + 10, 200))}
                 className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                 title="Zoomer"
               >
                 <ZoomIn className="w-4 h-4" />
-              </button>
+              </div>
             </div>
           </div>
 
           <div className="flex-shrink-0">
             <label className="block text-sm font-medium mb-2">Position X ({photoPositionX}px)</label>
             <div className="flex gap-1">
-              <button
+              <div
                 onClick={() => setPhotoPositionX?.((photoPositionX || 0) - 5)}
                 className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                 title="Déplacer à gauche"
               >
                 <Move className="w-4 h-4 transform -rotate-90" />
-              </button>
+              </div>
               <input
                 type="range"
                 min="-50"
@@ -423,26 +438,26 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 className="w-16 h-6"
                 title="Ajuster position horizontale"
               />
-              <button
+              <div
                 onClick={() => setPhotoPositionX?.((photoPositionX || 0) + 5)}
                 className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                 title="Déplacer à droite"
               >
                 <Move className="w-4 h-4 transform rotate-90" />
-              </button>
+              </div>
             </div>
           </div>
 
           <div className="flex-shrink-0">
             <label className="block text-sm font-medium mb-2">Position Y ({photoPositionY}px)</label>
             <div className="flex gap-1">
-              <button
+              <div
                 onClick={() => setPhotoPositionY?.((photoPositionY || 0) - 5)}
                 className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                 title="Déplacer vers le haut"
               >
                 <Move className="w-4 h-4" />
-              </button>
+              </div>
               <input
                 type="range"
                 min="-50"
@@ -452,26 +467,26 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 className="w-16 h-6"
                 title="Ajuster position verticale"
               />
-              <button
+              <div
                 onClick={() => setPhotoPositionY?.((photoPositionY || 0) + 5)}
                 className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                 title="Déplacer vers le bas"
               >
                 <Move className="w-4 h-4 transform rotate-180" />
-              </button>
+              </div>
             </div>
           </div>
 
           <div className="flex-shrink-0">
             <label className="block text-sm font-medium mb-2">Rotation ({photoRotation}°)</label>
             <div className="flex gap-1">
-              <button
+              <div
                 onClick={() => setPhotoRotation?.((photoRotation || 0) - 15)}
                 className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                 title="Rotation gauche"
               >
                 <RotateCw className="w-4 h-4 transform scale-x-[-1]" />
-              </button>
+              </div>
               <input
                 type="range"
                 min="-180"
@@ -481,13 +496,13 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 className="w-16 h-6"
                 title="Ajuster la rotation"
               />
-              <button
+              <div
                 onClick={() => setPhotoRotation?.((photoRotation || 0) + 15)}
                 className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                 title="Rotation droite"
               >
                 <RotateCw className="w-4 h-4" />
-              </button>
+              </div>
             </div>
           </div>
 
@@ -495,13 +510,13 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
           <div className="flex-shrink-0">
             <label className="block text-sm font-medium mb-2">Réinitialiser</label>
             <div className="flex gap-1">
-              <button
+              <div
                 onClick={handleResetAdjustments}
                 className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                 title="Réinitialiser les styles de la photo"
               >
                 <RotateCcw className="w-4 h-4" />
-              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -514,31 +529,321 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
   // Déterminer si on affiche la couleur texte (pas pour la section nom)
   const showTextColor = selectedSection !== 'name';
 
+  // Toujours afficher les contrôles de base (police et mise en page) en premier
+  const renderBasicControls = () => (
+    <div className="flex items-start gap-2">
+      <div className="flex-shrink-0">
+        <label className="block text-sm font-medium mb-2">Police</label>
+        <div className="w-full">
+          <CustomSelect
+            value={customFont}
+            onChange={setCustomFont}
+            options={fontOptions}
+          />
+        </div>
+      </div>
+      {/* Mise en page */}
+        <div className="flex-shrink-0">
+          <div>
+            <label className="block text-sm font-medium mb-2">Mise en page</label>
+          </div>
+          <div className="flex gap-2 top-2">
+            <div className=''>
+              <div
+                onClick={() => {
+                  const newColumns = layoutColumns === 1 ? 2 : 1;
+                  setLayoutColumns?.(newColumns);
+
+                  // Ajuster automatiquement la disposition des sections selon le ratio de colonnes
+                  if (contextSections && setSectionsOrder) {
+                    if (newColumns === 2) {
+                      // Passer en mode 2 colonnes selon le ratio sélectionné
+                      const updatedSections = contextSections.map(section => {
+                        if (section.id === 'name' || section.id === 'profile') {
+                          return { ...section, width: 'full' as const };
+                        } else {
+                          // Appliquer le ratio de colonnes
+                          if (columnRatio === '1/3-2/3') {
+                            return { ...section, width: section.order === 0 ? '1/3' as const : '2/3' as const };
+                          } else if (columnRatio === '2/3-1/3') {
+                            return { ...section, width: section.order === 0 ? '2/3' as const : '1/3' as const };
+                          } else {
+                            // Par défaut 1/2-1/2
+                            return { ...section, width: 'half' as const };
+                          }
+                        }
+                      });
+                      setSectionsOrder?.(cleanupLayers(updatedSections));
+                    } else {
+                      // Passer en mode 1 colonne : toutes les sections en full
+                      const updatedSections = contextSections.map(section => ({
+                        ...section,
+                        width: 'full' as const
+                      }));
+                      setSectionsOrder?.(cleanupLayers(updatedSections));
+                    }
+                  }
+                }}
+                className="cursor-pointer leading-none p-0 flex items-center justify-center w-7 h-8 rounded-md text-sm font-medium transition-all bg-violet-500 text-white shadow-md hover:bg-violet-600 hover:shadow-lg"
+                title={layoutColumns === 1 ? "Passer à deux colonnes" : "Passer à une colonne"}
+              >
+                {layoutColumns === 1 ? (
+                  <Columns className="w-4 h-4" />
+                ) : (
+                  <RectangleVertical className="w-4 h-4" />
+                )}
+              </div>
+            </div>
+            {/* Combo ratio colonnes - visible seulement en mode 2 colonnes */}
+            {layoutColumns === 2 && (
+              <div className="w-full">
+                <CustomSelect
+                  value={columnRatio}
+                  onChange={(value) => {
+                    console.log('Changing column ratio from', columnRatio, 'to', value);
+                    const newRatio = value as '1/2-1/2' | '1/3-2/3' | '2/3-1/3' ;
+                    setColumnRatio?.(newRatio);
+
+                    // Appliquer immédiatement le nouveau ratio aux sections existantes
+                    if (contextSections && setSectionsOrder) {
+                      const updatedSections = contextSections.map(section => {
+                        if (section.id === 'name' || section.id === 'profile') {
+                          return { ...section, width: 'full' as const };
+                        } else {
+                          // Appliquer le nouveau ratio à toutes les autres sections
+                          if (newRatio === '1/3-2/3') {
+                            return { ...section, width: section.order === 0 ? '1/3' as const : '2/3' as const };
+                          } else if (newRatio === '2/3-1/3') {
+                            return { ...section, width: section.order === 0 ? '2/3' as const : '1/3' as const };
+                          } else {
+                            return { ...section, width: 'half' as const };
+                          }
+                        }
+                      });
+                      setSectionsOrder?.(cleanupLayers(updatedSections));
+                    }
+                  }}
+                  options={[
+                    { value: '1/2-1/2', label: '1/2-1/2' },
+                    { value: '1/3-2/3', label: '1/3-2/3' },
+                    { value: '2/3-1/3', label: '2/3-1/3' }
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+        
+    </div>
+        
+  );
+
   // Afficher les contrôles généraux quand aucune section n'est sélectionnée
   if (selectedSection === null && sections && toggleSectionVisibility) {
     return (
-      <div className="bg-violet-50 rounded-lg shadow-sm p-2">
+      <div data-controls className="bg-violet-50 rounded-lg shadow-sm p-2">
         <div className="space-y-4">
           {/* Contrôles principaux */}
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0">
-              <label className="block text-sm font-medium mb-2">Police</label>
-              <div className="w-full">
-                <CustomSelect
-                  value={customFont}
-                  onChange={setCustomFont}
-                  options={fontOptions}
-                />
+          {renderBasicControls()}
+
+          {/* Contrôle d'espacement sur ligne séparée */}
+          {setSectionSpacing && (
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium mb-2">
+                  Espacement entre sections
+                </label>
+                <div className="space-x-2 inline-flex">
+                  {[0, 1, 2, 3, 4].map((spacing) => (
+                    <div
+                      key={spacing}
+                      onClick={() => setSectionSpacing(spacing as 0 | 1 | 2 | 3 | 4)}
+                      className={`cursor-pointer h-[28px] px-2 flex items-center justify-center rounded text-xs transition-all duration-200 ${sectionSpacing === spacing
+                        ? 'bg-violet-500 text-white shadow-md'
+                        : 'bg-white text-gray-600 hover:bg-violet-100 border border-violet-200 hover:shadow-md'
+                        }`}
+                      title={`Espacement ${spacing === 0
+                        ? 'nul'
+                        : spacing === 1
+                          ? 'minimal'
+                          : spacing === 2
+                            ? 'petit'
+                            : spacing === 3
+                              ? 'moyen'
+                              : 'grand'
+                        }`}
+                    >
+                      {spacing}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Contrôles de marges de la page */}
+          {(setPageMarginHorizontal || setPageMarginVertical) && (
+            <div className="flex items-start gap-4 pt-4 border-t border-violet-200">
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium mb-2 flex items-center gap-1">
+                  <Maximize className="w-4 h-4" />
+                  Marges page
+                </label>
+                <div className="space-y-2">
+                  {/* Marge horizontale */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-600 w-16">Horizontal</span>
+                    <div
+                      onClick={() => setPageMarginHorizontal?.(Math.max((pageMarginHorizontal || 20) - 5, 0))}
+                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                      title="Réduire la marge horizontale"
+                    >
+                      <MinusCircle className="w-3 h-3" />
+                    </div>
+                    <span className="px-2 py-1 text-xs bg-white rounded border text-gray-700 min-w-[32px] text-center">
+                      {pageMarginHorizontal || 20}
+                    </span>
+                    <div
+                      onClick={() => setPageMarginHorizontal?.(Math.min((pageMarginHorizontal || 20) + 5, 50))}
+                      className=" p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                      title="Augmenter la marge horizontale"
+                    >
+                      <PlusCircle className="w-3 h-3" />
+                    </div>
+                  </div>
+
+                  {/* Marge verticale */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-600 w-16">Vertical</span>
+                    <div
+                      onClick={() => setPageMarginVertical?.(Math.max((pageMarginVertical || 20) - 5, 0))}
+                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                      title="Réduire la marge verticale"
+                    >
+                      <MinusCircle className="w-3 h-3" />
+                    </div>
+                    <span className="px-2 py-1 text-xs bg-white rounded border text-gray-700 min-w-[32px] text-center">
+                      {pageMarginVertical || 20}
+                    </span>
+                    <div
+                      onClick={() => setPageMarginVertical?.(Math.min((pageMarginVertical || 20) + 5, 50))}
+                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                      title="Augmenter la marge verticale"
+                    >
+                      <PlusCircle className="w-3 h-3" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Contrôles de couleurs globales */}
+          <div className="flex flex-col gap-4 pt-4 border-t border-violet-200">
+            <div className="flex-shrink-0 w-full">
+              <label className="block text-sm font-medium mb-2">Couleur titres</label>
+              <div className="flex gap-1">
+                {availableColors.reduce((acc, color) => {
+                  if (!acc.find(c => c.category === color.category)) {
+                    acc.push(color);
+                  }
+                  return acc;
+                }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
+                  <div
+                    key={color.category}
+                    onClick={() => setTitleColor(color.value)}
+                    className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${titleColor === color.value
+                      ? 'border-violet-500 shadow-lg ring-2 ring-violet-200'
+                      : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    style={{ backgroundColor: `#${color.value}` }}
+                    title={color.name}
+                  />
+                ))}
               </div>
             </div>
 
+            <div className="flex-shrink-0 w-full">
+              <label className="block text-sm font-medium mb-2">Couleur texte</label>
+              <div className="flex gap-1">
+                {availableColors.reduce((acc, color) => {
+                  if (!acc.find(c => c.category === color.category)) {
+                    acc.push(color);
+                  }
+                  return acc;
+                }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
+                  <div
+                    key={color.category}
+                    onClick={() => setCustomColor(color.value)}
+                    className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${customColor === color.value
+                      ? 'border-violet-500 shadow-lg ring-2 ring-violet-200'
+                      : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    style={{ backgroundColor: `#${color.value}` }}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Visibilité des sections */}
+          <div className="pt-4 border-t border-violet-200">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Visibilité des sections</h3>
+            <div className="grid grid-cols-1 gap-2">
+              {sections.map((section) => (
+                <div
+                  key={section.id}
+                  onClick={() => {
+                    console.log('Toggle section:', section.id, 'current visibility:', section.visible);
+                    toggleSectionVisibility(section.id);
+                  }}
+                  className={`flex items-center gap-2 p-2 rounded-md transition-all duration-200 text-left ${section.visible
+                    ? 'bg-white text-gray-700 hover:bg-gray-50'
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  title={section.visible ? 'Masquer la section' : 'Afficher la section'}
+                >
+                  {section.visible ? (
+                    <Eye className="w-4 h-4 text-violet-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-gray-400" />
+                  )}
+                  <span className="text-sm font-medium truncate">{section.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pour toutes les autres sections, afficher les contrôles appropriés
+  return (
+    <div data-controls className="bg-violet-50 rounded-lg shadow-sm p-3 mb-4 -mt-2 -ml-1 -mr-1">
+      <div className="flex flex-col gap-2">
+        {/* Contrôles de police */}
+        <div className="flex items-start gap-2">
+          <div className="flex-shrink-0">
+            <label className="block text-sm font-medium mb-2">Police</label>
+            <div className="w-full">
+              <CustomSelect
+                value={customFont}
+                onChange={setCustomFont}
+                options={fontOptions}
+              />
+            </div>
+          </div>
+          {/* Mise en page - visible seulement si aucune section n'est sélectionnée */}
+          {selectedSection === null && (
             <div className="flex-shrink-0">
               <div>
                 <label className="block text-sm font-medium mb-2">Mise en page</label>
               </div>
-              <div className="flex  gap-2  top-2 ">
+              <div className="flex gap-2 top-2">
                 <div className=''>
-                  <button
+                  <div
                     onClick={() => {
                       const newColumns = layoutColumns === 1 ? 2 : 1;
                       setLayoutColumns?.(newColumns);
@@ -562,18 +867,18 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                               }
                             }
                           });
-                          setSectionsOrder(cleanupLayers(updatedSections));
+                          setSectionsOrder?.(cleanupLayers(updatedSections));
                         } else {
                           // Passer en mode 1 colonne : toutes les sections en full
                           const updatedSections = contextSections.map(section => ({
                             ...section,
                             width: 'full' as const
                           }));
-                          setSectionsOrder(cleanupLayers(updatedSections));
+                          setSectionsOrder?.(cleanupLayers(updatedSections));
                         }
                       }
                     }}
-                    className="leading-none p-0 flex items-center justify-center w-7  h-7 rounded-md text-sm font-medium transition-all bg-violet-500 text-white shadow-md hover:bg-violet-600 hover:shadow-lg"
+                    className="cursor-pointer leading-none p-0 flex items-center justify-center w-7 h-8 rounded-md text-sm font-medium transition-all bg-violet-500 text-white shadow-md hover:bg-violet-600 hover:shadow-lg"
                     title={layoutColumns === 1 ? "Passer à deux colonnes" : "Passer à une colonne"}
                   >
                     {layoutColumns === 1 ? (
@@ -581,7 +886,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                     ) : (
                       <RectangleVertical className="w-4 h-4" />
                     )}
-                  </button>
+                  </div>
                 </div>
                 {/* Combo ratio colonnes - visible seulement en mode 2 colonnes */}
                 {layoutColumns === 2 && (
@@ -591,7 +896,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                       onChange={(value) => {
                         console.log('Changing column ratio from', columnRatio, 'to', value);
                         const newRatio = value as '1/2-1/2' | '1/3-2/3' | '2/3-1/3';
-                        setColumnRatio(newRatio);
+                        setColumnRatio?.(newRatio);
 
                         // Appliquer immédiatement le nouveau ratio aux sections existantes
                         if (contextSections && setSectionsOrder) {
@@ -609,7 +914,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                               }
                             }
                           });
-                          setSectionsOrder(cleanupLayers(updatedSections));
+                          setSectionsOrder?.(cleanupLayers(updatedSections));
                         }
                       }}
                       options={[
@@ -622,286 +927,15 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Contrôle d'espacement sur ligne séparée */}
-          {setSectionSpacing && (
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <label className="block text-sm font-medium mb-2">Espacement entre sections</label>
-                <div className="flex gap-1">
-                  {[0, 1, 2, 3, 4].map((spacing) => (
-                    <button
-                      key={spacing}
-                      onClick={() => setSectionSpacing(spacing as 0 | 1 | 2 | 3 | 4)}
-                      className={`px-2 py-1 rounded text-xs transition-all duration-200 ${sectionSpacing === spacing
-                        ? 'bg-violet-500 text-white shadow-md'
-                        : 'bg-white text-gray-600 hover:bg-violet-100'
-                        }`}
-                      title={`Espacement ${spacing === 0 ? 'nul' : spacing === 1 ? 'minimal' : spacing === 2 ? 'petit' : spacing === 3 ? 'moyen' : 'grand'}`}
-                    >
-                      {spacing}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
           )}
-
-          {/* Contrôles de marges de la page */}
-          {(setPageMarginHorizontal || setPageMarginVertical) && (
-            <div className="flex items-start gap-4 pt-4 border-t border-violet-200">
-              <div className="flex-shrink-0">
-                <label className="block text-sm font-medium mb-2 flex items-center gap-1">
-                  <Maximize className="w-4 h-4" />
-                  Marges page
-                </label>
-                <div className="space-y-2">
-                  {/* Marge horizontale */}
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-600 w-16">Horizontal</span>
-                    <button
-                      onClick={() => setPageMarginHorizontal?.(Math.max((pageMarginHorizontal || 20) - 5, 0))}
-                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
-                      title="Réduire la marge horizontale"
-                    >
-                      <MinusCircle className="w-3 h-3" />
-                    </button>
-                    <span className="px-2 py-1 text-xs bg-white rounded border text-gray-700 min-w-[32px] text-center">
-                      {pageMarginHorizontal || 20}
-                    </span>
-                    <button
-                      onClick={() => setPageMarginHorizontal?.(Math.min((pageMarginHorizontal || 20) + 5, 50))}
-                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
-                      title="Augmenter la marge horizontale"
-                    >
-                      <PlusCircle className="w-3 h-3" />
-                    </button>
-                  </div>
-
-                  {/* Marge verticale */}
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-600 w-16">Vertical</span>
-                    <button
-                      onClick={() => setPageMarginVertical?.(Math.max((pageMarginVertical || 20) - 5, 0))}
-                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
-                      title="Réduire la marge verticale"
-                    >
-                      <MinusCircle className="w-3 h-3" />
-                    </button>
-                    <span className="px-2 py-1 text-xs bg-white rounded border text-gray-700 min-w-[32px] text-center">
-                      {pageMarginVertical || 20}
-                    </span>
-                    <button
-                      onClick={() => setPageMarginVertical?.(Math.min((pageMarginVertical || 20) + 5, 50))}
-                      className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
-                      title="Augmenter la marge verticale"
-                    >
-                      <PlusCircle className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Contrôles de couleurs globales */}
-          <div className="flex flex-col gap-4 pt-4 border-t border-violet-200">
-            <div className="flex-shrink-0 w-full">
-              <label className="block text-sm font-medium mb-2">Couleur titres</label>
-              <div className="flex gap-1">
-                {availableColors.reduce((acc, color) => {
-                  if (!acc.find(c => c.category === color.category)) {
-                    acc.push(color);
-                  }
-                  return acc;
-                }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
-                  <button
-                    key={color.category}
-                    onClick={() => setTitleColor(color.value)}
-                    className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${titleColor === color.value
-                      ? 'border-violet-500 shadow-lg ring-2 ring-violet-200'
-                      : 'border-gray-300 hover:border-gray-400'
-                      }`}
-                    style={{ backgroundColor: `#${color.value}` }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="flex-shrink-0 w-full">
-              <label className="block text-sm font-medium mb-2">Couleur texte</label>
-              <div className="flex gap-1">
-                {availableColors.reduce((acc, color) => {
-                  if (!acc.find(c => c.category === color.category)) {
-                    acc.push(color);
-                  }
-                  return acc;
-                }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
-                  <button
-                    key={color.category}
-                    onClick={() => setCustomColor(color.value)}
-                    className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${customColor === color.value
-                      ? 'border-violet-500 shadow-lg ring-2 ring-violet-200'
-                      : 'border-gray-300 hover:border-gray-400'
-                      }`}
-                    style={{ backgroundColor: `#${color.value}` }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Visibilité des sections */}
-          <div className="pt-4 border-t border-violet-200">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Visibilité des sections</h3>
-            <div className="grid grid-cols-1 gap-2">
-              {sections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => {
-                    console.log('Toggle section:', section.id, 'current visibility:', section.visible);
-                    toggleSectionVisibility(section.id);
-                  }}
-                  className={`flex items-center gap-2 p-2 rounded-md transition-all duration-200 text-left ${section.visible
-                    ? 'bg-white text-gray-700 hover:bg-gray-50'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
-                  title={section.visible ? 'Masquer la section' : 'Afficher la section'}
-                >
-                  {section.visible ? (
-                    <Eye className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-gray-400" />
-                  )}
-                  <span className="text-sm font-medium truncate">{section.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
-      </div>
-    );
-  }
-
-  // Pour toutes les autres sections, afficher les contrôles appropriés
-  return (
-    <div className="bg-violet-50 rounded-lg shadow-sm p-3 mb-4 -mt-2 -ml-1 -mr-1">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-start gap-4">
-          {/* Police */}
-          <div className="flex-shrink-0">
-            <label className="block text-sm font-medium mb-2">Police</label>
-            <div className="w-[120px]">
-              <CustomSelect
-                value={customFont}
-                onChange={setCustomFont}
-                options={fontOptions}
-                className="
-          h-7 w-full
-          p-0 leading-none
-          text-[11px] text-gray-700
-          border border-gray-300 hover:border-gray-400
-          focus:border-violet-500 focus:ring-violet-500
-          rounded-md
-        "
-              />
-            </div>
-          </div>
-
-          {/* Mise en page */}
-          <div className="flex-shrink-0">
-            <label className="block text-sm font-medium mb-2">Mise en page</label>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  const newColumns = layoutColumns === 1 ? 2 : 1;
-                  setLayoutColumns?.(newColumns);
-
-                  if (contextSections && setSectionsOrder) {
-                    if (newColumns === 2) {
-                      const updatedSections = contextSections.map((section) =>
-                        section.id === "name" || section.id === "profile"
-                          ? { ...section, width: "full" as const }
-                          : { ...section, width: "half" as const }
-                      );
-                      setSectionsOrder(cleanupLayers(updatedSections));
-                    } else {
-                      const updatedSections = contextSections.map((section) => ({
-                        ...section,
-                        width: "full" as const,
-                      }));
-                      setSectionsOrder(cleanupLayers(updatedSections));
-                    }
-                  }
-                }}
-                className=" h-[28px] w-[28px]        /* hauteur + largeur forcées */
-                            flex items-center justify-center
-                            p-0 leading-none         /* supprime tout padding et line-height */
-                            rounded-md
-                            text-[11px] font-medium  /* taille texte réduite */
-                            bg-violet-400 text-white
-                            shadow-md hover:bg-violet-600 hover:shadow-lg
-                            transition-all"
-                title={layoutColumns === 1 ? "Passer à deux colonnes" : "Passer à une colonne"}
-              >
-                {layoutColumns === 1 ? (
-                  <Columns />
-                ) : (
-                  <RectangleVertical />
-                )}
-              </button>
-
-              {layoutColumns === 2 && (
-                <div className="w-[100px]">
-                  <CustomSelect
-                    value={columnRatio}
-                    onChange={(value) => {
-                      const newRatio = value as "1/2-1/2" | "1/3-2/3" | "2/3-1/3";
-                      setColumnRatio(newRatio);
-
-                      if (contextSections && setSectionsOrder) {
-                        const updatedSections = contextSections.map((section) =>
-                          section.id === "name" || section.id === "profile"
-                            ? { ...section, width: "full" as const }
-                            : newRatio === "1/3-2/3"
-                              ? { ...section, width: section.order === 0 ? "1/3" as const : "2/3" as const }
-                              : newRatio === "2/3-1/3"
-                                ? { ...section, width: section.order === 0 ? "2/3" as const : "1/3" as const }
-                                : { ...section, width: "half" as const }
-                        );
-                        setSectionsOrder(cleanupLayers(updatedSections));
-                      }
-                    }}
-                    options={[
-                      { value: "1/2-1/2", label: "1/2-1/2" },
-                      { value: "1/3-2/3", label: "1/3-2/3" },
-                      { value: "2/3-1/3", label: "2/3-1/3" },
-                    ]}
-                    className="
-              h-7 w-full
-              p-0 leading-none
-              text-[11px] text-gray-700
-              border border-gray-300 hover:border-gray-400
-              focus:border-violet-500 focus:ring-violet-500
-              rounded-md
-            "
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
 
         {showNameAlignment && (
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
               <label className="block text-sm font-medium mb-2">Alignement nom</label>
               <div className="flex gap-1">
-                <button
+                <div
                   onClick={() => setNameAlignment?.('left')}
                   className={`p-1 rounded transition-all duration-200 ${nameAlignment === 'left'
                     ? 'bg-violet-500 text-white shadow-md'
@@ -910,8 +944,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                   title="Aligner à gauche"
                 >
                   <AlignLeft className="w-4 h-4" />
-                </button>
-                <button
+                </div>
+                <div
                   onClick={() => setNameAlignment?.('center')}
                   className={`p-1 rounded transition-all duration-200 ${nameAlignment === 'center'
                     ? 'bg-violet-500 text-white shadow-md'
@@ -920,8 +954,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                   title="Centrer"
                 >
                   <AlignCenter className="w-4 h-4" />
-                </button>
-                <button
+                </div>
+                <div
                   onClick={() => setNameAlignment?.('right')}
                   className={`p-1 rounded transition-all duration-200 ${nameAlignment === 'right'
                     ? 'bg-violet-500 text-white shadow-md'
@@ -930,7 +964,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                   title="Aligner à droite"
                 >
                   <AlignRight className="w-4 h-4" />
-                </button>
+                </div>
               </div>
             </div>
 
@@ -938,23 +972,23 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
               <div className="flex-shrink-0">
                 <label className="block text-sm font-medium mb-2">Taille police nom</label>
                 <div className="flex gap-1">
-                  <button
+                  <div
                     onClick={() => setNameFontSize?.(Math.max((nameFontSize || 18) - 2, 12))}
                     className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                     title="Diminuer la taille"
                   >
                     <Minus className="w-4 h-4" />
-                  </button>
+                  </div>
                   <span className="px-2 py-1 text-xs bg-white rounded border text-gray-700 min-w-[32px] text-center">
                     {nameFontSize || 18}
                   </span>
-                  <button
+                  <div
                     onClick={() => setNameFontSize?.(Math.min((nameFontSize || 18) + 2, 36))}
                     className="p-1 rounded transition-all duration-200 bg-white text-gray-600 hover:bg-violet-100 hover:text-violet-700"
                     title="Augmenter la taille"
                   >
                     <Plus className="w-4 h-4" />
-                  </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -967,7 +1001,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
             <div className="flex-shrink-0">
               <label className="block text-sm font-medium mb-2">Alignement section</label>
               <div className="flex gap-1">
-                <button
+                <div
                   onClick={() => {
                     // Mettre à jour l'alignement de la section dans la configuration
                     if (contextSections && setSectionsOrder) {
@@ -976,7 +1010,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                           ? { ...section, alignment: 'left' as const }
                           : section
                       );
-                      setSectionsOrder(updatedSections);
+                      setSectionsOrder?.(updatedSections);
                     }
                   }}
                   className={`p-1 rounded transition-all duration-200 ${contextSections?.find(s => s.id === selectedSection)?.alignment === 'left'
@@ -986,8 +1020,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                   title="Aligner à gauche"
                 >
                   <AlignLeft className="w-4 h-4" />
-                </button>
-                <button
+                </div>
+                <div
                   onClick={() => {
                     if (contextSections && setSectionsOrder) {
                       const updatedSections = contextSections.map(section =>
@@ -995,7 +1029,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                           ? { ...section, alignment: 'center' as const }
                           : section
                       );
-                      setSectionsOrder(updatedSections);
+                      setSectionsOrder?.(updatedSections);
                     }
                   }}
                   className={`p-1 rounded transition-all duration-200 ${contextSections?.find(s => s.id === selectedSection)?.alignment === 'center' || !contextSections?.find(s => s.id === selectedSection)?.alignment
@@ -1005,8 +1039,8 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                   title="Centrer"
                 >
                   <AlignCenter className="w-4 h-4" />
-                </button>
-                <button
+                </div>
+                <div
                   onClick={() => {
                     if (contextSections && setSectionsOrder) {
                       const updatedSections = contextSections.map(section =>
@@ -1014,7 +1048,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                           ? { ...section, alignment: 'right' as const }
                           : section
                       );
-                      setSectionsOrder(updatedSections);
+                      setSectionsOrder?.(updatedSections);
                     }
                   }}
                   className={`p-1 rounded transition-all duration-200 ${contextSections?.find(s => s.id === selectedSection)?.alignment === 'right'
@@ -1024,7 +1058,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                   title="Aligner à droite"
                 >
                   <AlignRight className="w-4 h-4" />
-                </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1040,7 +1074,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                 }
                 return acc;
               }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
-                <button
+                <div
                   key={color.category}
                   onClick={() => setTitleColor(color.value)}
                   className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${titleColor === color.value
@@ -1064,7 +1098,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                   }
                   return acc;
                 }, [] as Array<{ name: string; value: string; category: string }>).map((color) => (
-                  <button
+                  <div
                     key={color.category}
                     onClick={() => setCustomColor(color.value)}
                     className={`w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110 ${customColor === color.value
@@ -1112,7 +1146,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                     ].map((color) => {
                       const currentColors = sectionColors[selectedSection] || { background: '' };
                       return (
-                        <button
+                        <div
                           key={`bg-${color.value}`}
                           onClick={() => updateSectionElementColor(selectedSection, 'background', color.value)}
                           className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 relative ${currentColors.background === color.value ? 'border-violet-500 shadow-md ring-2 ring-violet-200' : 'border-gray-300'
@@ -1125,7 +1159,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                               <div className="w-4 h-0.5 bg-red-500 -rotate-45 absolute"></div>
                             </div>
                           )}
-                        </button>
+                        </div>
                       );
                     })}
 
@@ -1186,7 +1220,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                   <label className="block text-xs text-gray-600 mb-2">Titres</label>
                   <div className="flex gap-1 flex-wrap">
                     {/* Blanc comme option par défaut */}
-                    <button
+                    <div
                       key="title-white"
                       onClick={() => updateSectionElementColor(selectedSection, 'title', 'ffffff')}
                       className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${(sectionColors[selectedSection]?.title || '000000') === 'ffffff' ? 'border-violet-500 shadow-md' : 'border-gray-300'
@@ -1199,7 +1233,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                     {availableColors.slice(0, 3).map((color) => {
                       const currentColors = sectionColors[selectedSection] || { title: 'ffffff' };
                       return (
-                        <button
+                        <div
                           key={`title-${color.value}`}
                           onClick={() => updateSectionElementColor(selectedSection, 'title', color.value)}
                           className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${currentColors.title === color.value ? 'border-violet-500 shadow-md' : 'border-gray-300'
@@ -1255,7 +1289,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                   <label className="block text-xs text-gray-600 mb-2">Contenu</label>
                   <div className="flex gap-1 flex-wrap">
                     {/* Blanc comme option par défaut */}
-                    <button
+                    <div
                       key="content-white"
                       onClick={() => updateSectionElementColor(selectedSection, 'content', 'ffffff')}
                       className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${(sectionColors[selectedSection]?.content || '000000') === 'ffffff' ? 'border-violet-500 shadow-md' : 'border-gray-300'
@@ -1268,7 +1302,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                     {availableColors.slice(0, 3).map((color) => {
                       const currentColors = sectionColors[selectedSection] || { content: 'ffffff' };
                       return (
-                        <button
+                        <div
                           key={`content-${color.value}`}
                           onClick={() => updateSectionElementColor(selectedSection, 'content', color.value)}
                           className={`w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-110 ${currentColors.content === color.value ? 'border-violet-500 shadow-md' : 'border-gray-300'

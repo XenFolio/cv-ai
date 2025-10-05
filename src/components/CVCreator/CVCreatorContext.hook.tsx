@@ -1,7 +1,5 @@
-import { createContext, useContext } from 'react';
-import type { CVCreatorContextType } from './CVCreatorContext.types';
-
-export const CVCreatorContext = createContext<CVCreatorContextType | undefined>(undefined);
+import { useContext } from 'react';
+import { CVCreatorContext } from './CVCreatorContext.provider';
 
 export const useCVCreator = () => {
   const context = useContext(CVCreatorContext);

@@ -4,9 +4,6 @@ import {
   TrendingUp,
   Target,
   Award,
-  Clock,
-  Star,
-  Zap,
   Filter,
   RefreshCw,
   ChevronRight,
@@ -19,9 +16,10 @@ import {
   BarChart3,
   GraduationCap,
   Network,
-  MessageSquare
+  MessageSquare,
+  Code
 } from 'lucide-react';
-import { personalizedAIService, PersonalizedSuggestion, UserProfile, Resource } from '../../services/PersonalizedAIService';
+import { personalizedAIService, PersonalizedSuggestion, UserProfile } from '../../services/PersonalizedAIService';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
 import { useSupabase } from '../../hooks/useSupabase';
@@ -32,8 +30,17 @@ interface PersonalizedSuggestionsProps {
   compact?: boolean;
 }
 
+// Initial categories data
+const initialCategories = [
+  { id: 'all', label: 'Toutes', icon: Brain, count: 0 },
+  { id: 'technical', label: 'Technique', icon: Code, count: 0 },
+  { id: 'soft_skill', label: 'Soft Skills', icon: Users, count: 0 },
+  { id: 'career_growth', label: 'Carrière', icon: TrendingUp, count: 0 },
+  { id: 'industry_specific', label: 'Industrie', icon: Briefcase, count: 0 },
+  { id: 'compensation', label: 'Salaire', icon: BarChart3, count: 0 }
+];
+
 const PersonalizedSuggestions: React.FC<PersonalizedSuggestionsProps> = ({
-  userId,
   onSuggestionAction,
   compact = false
 }) => {
@@ -45,15 +52,7 @@ const PersonalizedSuggestions: React.FC<PersonalizedSuggestionsProps> = ({
   const [selectedType, setSelectedType] = useState<string>('all');
   const [completedSuggestions, setCompletedSuggestions] = useState<Set<string>>(new Set());
   const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(null);
-
-  const categories = [
-    { id: 'all', label: 'Toutes', icon: Brain, count: 0 },
-    { id: 'technical', label: 'Technique', icon: Code, count: 0 },
-    { id: 'soft_skill', label: 'Soft Skills', icon: Users, count: 0 },
-    { id: 'career_growth', label: 'Carrière', icon: TrendingUp, count: 0 },
-    { id: 'industry_specific', label: 'Industrie', icon: Briefcase, count: 0 },
-    { id: 'compensation', label: 'Salaire', icon: BarChart3, count: 0 }
-  ];
+  const [categories, setCategories] = useState(initialCategories);
 
   const types = [
     { id: 'all', label: 'Tous types' },
@@ -67,16 +66,6 @@ const PersonalizedSuggestions: React.FC<PersonalizedSuggestionsProps> = ({
     { id: 'resume', label: 'CV' }
   ];
 
-  useEffect(() => {
-    initializeUserProfile();
-  }, [profile]);
-
-  useEffect(() => {
-    if (userProfile) {
-      loadSuggestions();
-    }
-  }, [userProfile]);
-
   const initializeUserProfile = useCallback(async () => {
     if (!profile) return;
 
@@ -85,16 +74,16 @@ const PersonalizedSuggestions: React.FC<PersonalizedSuggestionsProps> = ({
 
       // Initialize user profile with Supabase data
       const userProfileData: Partial<UserProfile> = {
-        name: profile.full_name || '',
-        currentRole: profile.current_role || '',
-        currentCompany: profile.current_company || '',
-        experience: profile.experience_years || 0,
-        skills: profile.skills || [],
-        industry: profile.industry || '',
-        targetRole: profile.target_role || '',
-        location: profile.location || '',
-        careerGoals: profile.career_goals || [],
-        preferredIndustries: profile.preferred_industries || []
+        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || '',
+        currentRole: profile.profession || '',
+        currentCompany: profile.company || '',
+        experience: 0, // Default since not available in Supabase profile
+        skills: [], // Default since not available in Supabase profile
+        industry: '', // Default since not available in Supabase profile
+        targetRole: '', // Default since not available in Supabase profile
+        location: `${profile.city || ''} ${profile.country || ''}`.trim() || '',
+        careerGoals: [], // Default since not available in Supabase profile
+        preferredIndustries: [] // Default since not available in Supabase profile
       };
 
       const initializedProfile = await personalizedAIService.initializeUserProfile(userProfileData);
@@ -112,21 +101,31 @@ const PersonalizedSuggestions: React.FC<PersonalizedSuggestionsProps> = ({
     try {
       const personalizedSuggestions = await personalizedAIService.getPersonalizedSuggestions();
       setSuggestions(personalizedSuggestions);
-
-      // Update category counts
-      const updatedCategories = categories.map(category => ({
-        ...category,
-        count: category.id === 'all'
-          ? personalizedSuggestions.length
-          : personalizedSuggestions.filter(s => s.category === category.id).length
-      }));
-
-      // Update state (this would normally be done with proper state management)
-      categories.splice(0, categories.length, ...updatedCategories);
     } catch (error) {
       console.error('Error loading suggestions:', error);
     }
   }, [userProfile]);
+
+  useEffect(() => {
+    initializeUserProfile();
+  }, [profile, initializeUserProfile]);
+
+  useEffect(() => {
+    if (userProfile) {
+      loadSuggestions();
+    }
+  }, [userProfile, loadSuggestions]);
+
+  // Update category counts when suggestions change
+  useEffect(() => {
+    const updatedCategories = initialCategories.map(category => ({
+      ...category,
+      count: category.id === 'all'
+        ? suggestions.length
+        : suggestions.filter(s => s.category === category.id).length
+    }));
+    setCategories(updatedCategories);
+  }, [suggestions]);
 
   const filteredSuggestions = suggestions.filter(suggestion => {
     const categoryMatch = selectedCategory === 'all' || suggestion.category === selectedCategory;

@@ -5,6 +5,7 @@ import { useProfile } from '../../hooks/useProfile';
 import { MetricCard } from './MetricCard';
 import { RecentActivity } from './RecentActivity';
 import { ActivityModal } from './ActivityModal';
+import { MetricsSkeleton } from './MetricsSkeleton';
 
 interface DashboardProps {
   onNavigate?: (tab: string) => void;
@@ -246,11 +247,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ">
-        {metricCards.map((metric, index) => (
-          <MetricCard key={index} {...metric} />
-        ))}
-      </div>
+      {loading ? (
+        <MetricsSkeleton />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ">
+          {metricCards.map((metric, index) => (
+            <MetricCard key={index} {...metric} />
+          ))}
+        </div>
+      )}
 
       {/* Charts and Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">

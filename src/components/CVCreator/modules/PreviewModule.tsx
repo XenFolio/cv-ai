@@ -46,9 +46,9 @@ export const PreviewModule: React.FC<PreviewModuleProps> = ({ setSectionsOrder, 
 
   // Gestionnaire de clic pour désélectionner les sections
   const handlePreviewClick = (e: React.MouseEvent) => {
-    // Vérifier si le clic n'est pas sur une section ou un bouton
+    // Vérifier si le clic n'est pas sur une section, un bouton, un input ou des contrôles de style
     const target = e.target as HTMLElement;
-    if (!target.closest('[data-section]') && !target.closest('button') && !target.closest('input')) {
+    if (!target.closest('[data-section]') && !target.closest('button') && !target.closest('input') && !target.closest('[data-controls]')) {
       setSelectedSection?.(null);
     }
   };

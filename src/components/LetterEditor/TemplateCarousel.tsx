@@ -1,5 +1,4 @@
 import React, { useCallback } from 'react';
-import { FileText } from 'lucide-react';
 import { createTemplates, type TemplateData } from '../../data/letterTemplates';
 
 interface TemplateCarouselProps {

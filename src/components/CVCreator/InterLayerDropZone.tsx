@@ -15,7 +15,7 @@ export const InterLayerDropZone: React.FC<InterLayerDropZoneProps> = ({
   isDragging,
   aboveLayerLeftColor,
   aboveLayerRightColor,
-  belowLayerLeftColor,
+  
   columnRatio = '1/2-1/2',
 }) => {
   const { setNodeRef: setLeftRef, isOver: isLeftOver } = useDroppable({ id: `inter-layer-${index}-left` });

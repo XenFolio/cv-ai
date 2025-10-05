@@ -1,8 +1,9 @@
 import React from 'react';
-import { Sun, Moon, Monitor, Contrast, Zap, Eye, EyeOff } from 'lucide-react';
-import { useAdvancedTheme } from '../../contexts/AdvancedThemeContext';
-import { ProfessionalIcon, ThemeIcons } from './ProfessionalIcons';
+import { Contrast, Zap, Eye, EyeOff } from 'lucide-react';
+import { useAdvancedTheme } from '../../hooks/useAdvancedTheme';
+import { ProfessionalIcon,  } from './ProfessionalIcons';
 import { InteractiveButton } from './AdvancedLoadingStates';
+import { ThemeIcons } from './iconsData';
 
 interface AdvancedThemeSettingsProps {
   className?: string;
@@ -15,8 +16,6 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
 }) => {
   const {
     themeMode,
-    contrastMode,
-    motionMode,
     setThemeMode,
     setContrastMode,
     setMotionMode,

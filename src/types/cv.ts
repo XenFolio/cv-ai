@@ -4,6 +4,7 @@ export interface PersonalSection {
   email?: string;
   phone?: string;
   location?: string;
+  linkedin?: string;
   summary?: string;
 }
 

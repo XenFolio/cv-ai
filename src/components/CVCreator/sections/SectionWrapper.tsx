@@ -10,6 +10,7 @@ interface SectionWrapperProps {
   children: React.ReactNode;
   className?: string;
   position?: 'left' | 'right';
+  alignment?: 'left' | 'center' | 'right';
   onSectionClick?: (sectionId: string) => void;
   hasAdjacentSection?: boolean;
   adjacentSectionColor?: string;
@@ -24,6 +25,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
   children,
   className = "",
   position,
+  alignment = 'center',
   onSectionClick,
   hasAdjacentSection = false,
   adjacentSectionColor,

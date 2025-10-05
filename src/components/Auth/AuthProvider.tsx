@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 
 interface User {
   id: string;
@@ -16,15 +16,7 @@ interface AuthContextType {
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -54,7 +46,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<void> => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const login = async (email: string, _password: string): Promise<void> => {
     setIsLoading(true);
     
     try {
@@ -72,14 +65,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       setUser(userData);
       localStorage.setItem('cvAssistantUser', JSON.stringify(userData));
-    } catch (error) {
+    } catch {
       throw new Error('Erreur de connexion. Vérifiez vos identifiants.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (email: string, password: string, name: string): Promise<void> => {
+  const register = async (email: string, _password: string, name: string): Promise<void> => {
     setIsLoading(true);
     
     try {

@@ -1,30 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-
-export type ThemeMode = 'light' | 'dark' | 'system';
-export type ContrastMode = 'normal' | 'high';
-export type MotionMode = 'normal' | 'reduced';
-
-interface AdvancedThemeContextType {
-  themeMode: ThemeMode;
-  contrastMode: ContrastMode;
-  motionMode: MotionMode;
-  setThemeMode: (mode: ThemeMode) => void;
-  setContrastMode: (mode: ContrastMode) => void;
-  setMotionMode: (mode: MotionMode) => void;
-  isHighContrast: boolean;
-  isReducedMotion: boolean;
-  effectiveTheme: 'light' | 'dark';
-}
-
-const AdvancedThemeContext = createContext<AdvancedThemeContextType | undefined>(undefined);
-
-export const useAdvancedTheme = () => {
-  const context = useContext(AdvancedThemeContext);
-  if (!context) {
-    throw new Error('useAdvancedTheme must be used within an AdvancedThemeProvider');
-  }
-  return context;
-};
+import React, { useEffect, useState } from 'react';
+import { ThemeMode, ContrastMode, MotionMode, AdvancedThemeContext, AdvancedThemeContextType } from '../hooks/useAdvancedTheme';
 
 interface AdvancedThemeProviderProps {
   children: React.ReactNode;
@@ -89,6 +64,12 @@ export const AdvancedThemeProvider: React.FC<AdvancedThemeProviderProps> = ({
 
   // Update effective theme when theme mode changes
   useEffect(() => {
+    const getEffectiveTheme = () => {
+      if (themeMode === 'system') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      return themeMode;
+    };
     setEffectiveTheme(getEffectiveTheme());
   }, [themeMode]);
 

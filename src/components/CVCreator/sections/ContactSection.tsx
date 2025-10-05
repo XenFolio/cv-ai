@@ -12,6 +12,7 @@ interface ContactSectionProps {
   generateWithAI: (field: string, content?: string) => Promise<void>;
   isLoading: boolean;
   sectionId?: string;
+  alignment?: 'left' | 'center' | 'right';
 }
 
 export const ContactSection: React.FC<ContactSectionProps> = ({
@@ -22,7 +23,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   titleColor,
   generateWithAI,
   isLoading,
-  sectionId
+  sectionId,
+  alignment = 'center'
 }) => {
   const { sectionColors } = useCVCreator();
 

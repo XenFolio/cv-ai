@@ -9,6 +9,7 @@ interface CVModel {
   downloads: string;
   preview: string;
   tags: string[];
+  description: string;
   atsScore: number;
   aiOptimized: boolean;
 }
@@ -25,6 +26,7 @@ export const Models: React.FC = () => {
       downloads: '2.3k',
       preview: 'bg-gradient-to-br from-blue-100 to-indigo-100',
       tags: ['Senior', 'Full Stack', 'ATS Optimisé'],
+      description: 'Modèle professionnel pour développeurs expérimentés avec compétences techniques avancées.',
       atsScore: 96,
       aiOptimized: true
     },
@@ -36,6 +38,7 @@ export const Models: React.FC = () => {
       downloads: '1.8k',
       preview: 'bg-gradient-to-br from-pink-100 to-rose-100',
       tags: ['Marketing', 'Digital', 'Créatif'],
+      description: 'Template créatif et moderne pour les professionnels du marketing digital et des réseaux sociaux.',
       atsScore: 92,
       aiOptimized: true
     },
@@ -47,6 +50,7 @@ export const Models: React.FC = () => {
       downloads: '1.2k',
       preview: 'bg-gradient-to-br from-gray-100 to-slate-100',
       tags: ['Executive', 'Leadership', 'Premium'],
+      description: 'Modèle haut de gamme pour cadres dirigeants avec mise en valeur des compétences en leadership.',
       atsScore: 94,
       aiOptimized: true
     },
@@ -58,6 +62,7 @@ export const Models: React.FC = () => {
       downloads: '3.1k',
       preview: 'bg-gradient-to-br from-violet-100 to-purple-100',
       tags: ['UX/UI', 'Portfolio', 'Créatif'],
+      description: 'Design moderne et visuellement attrayant pour concepteurs UX/UI avec mise en avant du portfolio.',
       atsScore: 89,
       aiOptimized: true
     },
@@ -69,6 +74,7 @@ export const Models: React.FC = () => {
       downloads: '987',
       preview: 'bg-gradient-to-br from-emerald-100 to-teal-100',
       tags: ['Data Science', 'Analytics', 'Python'],
+      description: 'Modèle technique idéal pour data scientists avec emphasis sur les compétences analytiques et outils modernes.',
       atsScore: 95,
       aiOptimized: true
     },
@@ -80,6 +86,7 @@ export const Models: React.FC = () => {
       downloads: '765',
       preview: 'bg-gradient-to-br from-amber-100 to-orange-100',
       tags: ['Finance', 'Corporate', 'Analytique'],
+      description: 'Modèle traditionnel et rigoureux pour professionnels de la finance avec accent sur l\'analyse et la précision.',
       atsScore: 91,
       aiOptimized: false
     }
@@ -122,7 +129,7 @@ export const Models: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {topModels.map((model, index) => (
+            {topModels.map((model) => (
               <div key={model.id} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center">
                 <div className="w-16 h-20 bg-white/20 rounded-lg mx-auto mb-3 relative">
                   <div className="absolute inset-2 bg-white/30 rounded-sm" />
