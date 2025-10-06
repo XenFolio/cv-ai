@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Award, Users, TrendingUp, Sparkles, FileText } from 'lucide-react';
+import { Sparkles, FileText } from 'lucide-react';
 
 export const TemplatesSkeleton: React.FC = () => {
   return (

@@ -15,7 +15,7 @@ export function SubscriptionPlans() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [plansLoading, setPlansLoading] = useState<boolean>(true);
+  const [skeletonLoading, setSkeletonLoading] = useState<boolean>(true);
 
   // Auto-hide messages after 3 seconds
   useEffect(() => {
@@ -32,7 +32,7 @@ export function SubscriptionPlans() {
   // Simuler le chargement des plans
   useEffect(() => {
     const timer = setTimeout(() => {
-      setPlansLoading(false);
+      setSkeletonLoading(false);
     }, 2000); // 2 secondes de chargement
 
     return () => clearTimeout(timer);
@@ -55,7 +55,7 @@ export function SubscriptionPlans() {
     enabled: !!user && isSupabaseConfigured,
   });
 
-  const { data: plans, isLoading: plansLoading, error: plansError } = useQuery({
+  const { data: plans, error: plansError } = useQuery({
     queryKey: ['subscription-plans'],
     queryFn: getSubscriptionPlans,
     retry: 1,
@@ -229,7 +229,7 @@ export function SubscriptionPlans() {
     }
   };
 
-  if (plansLoading) {
+  if (skeletonLoading) {
     return <SubscriptionPlansSkeleton />;
   }
 

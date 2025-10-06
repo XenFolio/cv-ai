@@ -48,9 +48,11 @@ interface ToolbarGroupsProps {
   onExportPDF: () => void;
   onExportWord?: () => void;
   onExportText?: () => void;
+  onExportATSOptimizedPDF?: () => void;
   onAnalyzeTone?: () => void;
   onCheckGrammar?: () => void;
   onStyleSuggestions?: () => void;
+  onATSAnalysis?: () => void;
 
   // Options
   showSidebar: boolean;
@@ -77,7 +79,9 @@ export const getToolbarGroups = (props: ToolbarGroupsProps) => {
           onExportPDF={props.onExportPDF}
           onExportWord={props.onExportWord}
           onExportText={props.onExportText}
+          onExportATSOptimizedPDF={props.onExportATSOptimizedPDF}
           onAnalyzeTone={props.onAnalyzeTone}
+          onATSAnalysis={props.onATSAnalysis}
         />
       )
     },

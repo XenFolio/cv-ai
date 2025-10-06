@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
 import { NavigationIcons } from '../UI/iconsData';
 import { TemplateCarousel } from './TemplateCarousel';
@@ -9,12 +9,14 @@ import { MarginModal } from './MarginModal';
 import { NewToolbar } from './NewToolbar';
 import { EditorContent } from './EditorContent';
 import { NotificationToast } from './NotificationToast';
-import { FileText } from 'lucide-react';
 import { useLetterEditor } from '../../hooks/useLetterEditor';
 import { useMarginManager } from '../../hooks/useMarginManager';
 import { LetterExportService } from '../../services/LetterExportService';
 import { useOpenAI, GrammarError, StyleSuggestion } from '../../hooks/useOpenAI';
-import { X, CheckCircle, AlertCircle } from 'lucide-react';
+import { useProfile } from '../../hooks/useProfile';
+import { X, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import ATSReportExport from '../CVAnalysis/ATSReportExport';
+import type { Template } from '../CVCreator/templates';
 
 // Étendre l'interface Window pour les propriétés personnalisées
 declare global {
@@ -58,6 +60,7 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
   // Hooks principaux
   const letterEditor = useLetterEditor({ initialContent, formData });
   const openAI = useOpenAI();
+  const { profile, getFullName } = useProfile();
   const marginManager = useMarginManager({
     onMarginsChange: () => {
       // Synchroniser les marges avec le reste de l'application
@@ -173,6 +176,190 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
       letterEditor.showNotification('Erreur lors de l\'export texte. Veuillez réessayer.', 'error');
     }
   };
+
+  // Export PDF optimisé pour ATS
+  const exportToATSOptimizedPDF = async () => {
+    if (!letterEditor.editorRef.current) return;
+
+    try {
+      const content = letterEditor.editorRef.current.innerHTML;
+      console.log('Contenu à exporter en PDF ATS optimisé:', content);
+
+      const currentTemplateData = letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates];
+
+      await LetterExportService.exportToATSOPtimizedPDF(content, {
+        format: 'pdf',
+        filename: 'lettre-motivation-ats-optimisee.pdf',
+        margins: marginManager.customMargins,
+        template: currentTemplateData.style
+      });
+
+      if (onExport) {
+        onExport(content, 'pdf');
+      }
+
+      letterEditor.showNotification('PDF ATS optimisé exporté avec succès !', 'success');
+    } catch (error) {
+      console.error('Erreur lors de l\'export PDF ATS optimisé:', error);
+      letterEditor.showNotification('Erreur lors de l\'export PDF ATS optimisé. Veuillez réessayer.', 'error');
+    }
+  };
+
+  // Analyse ATS de la lettre
+  const handleATSAnalysis = useCallback(async () => {
+    if (!letterEditor.editorRef.current) return;
+
+    try {
+      // Importer dynamiquement les modules nécessaires
+      const [{ generateQuickLetterATSAnalysis }] = await Promise.all([
+        import('../CVCreator/modules/ExportModule').then(m => ({
+          generateQuickLetterATSAnalysis: m.generateQuickLetterATSAnalysis
+        }))
+      ]);
+
+    
+      // Récupérer le contenu de la lettre
+      const letterContent = letterEditor.content;
+      const currentTemplateData = letterEditor.templates[letterEditor.currentTemplate as keyof typeof letterEditor.templates];
+
+      // Créer un objet Template compatible pour l'analyse ATS des lettres
+      const templateForATS: Template = {
+        id: letterEditor.currentTemplate,
+        name: currentTemplateData.name,
+        description: `${currentTemplateData.name} - Template de lettre de motivation`,
+        preview: currentTemplateData.preview,
+        image: '',
+        category: 'Lettre', // Catégorie par défaut pour les lettres
+        atsScore: 85, // Score de base pour les lettres
+        theme: { primaryColor: '#000000', font: currentTemplateData.style.fontFamily },
+        layoutColumns: 1,
+        sectionTitles: {
+          profileTitle: '',
+          experienceTitle: '',
+          educationTitle: '',
+          skillsTitle: '',
+          languagesTitle: '',
+          contactTitle: ''
+        },
+        sectionsOrder: []
+      };
+
+      // Générer l'analyse ATS spécifique pour les lettres
+      const analysis = generateQuickLetterATSAnalysis(templateForATS, letterContent, formData || {});
+
+      // Créer le modal pour afficher le rapport ATS
+      const modalRoot = document.createElement('div');
+      modalRoot.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      `;
+
+      const { createElement } = await import('react');
+      const { createRoot } = await import('react-dom/client');
+
+      const modal = createElement('div', {
+        style: {
+          background: 'white',
+          borderRadius: '12px',
+          padding: '0',
+          maxWidth: '90vw',
+          maxHeight: '90vh',
+          overflow: 'auto',
+          position: 'relative',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+        }
+      }, [
+        // Bouton de fermeture
+        createElement('button', {
+          key: 'close',
+          onClick: () => {
+            document.body.removeChild(modalRoot);
+          },
+          style: {
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            padding: '8px',
+            cursor: 'pointer',
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px'
+          }
+        }, '✕'),
+
+        // En-tête
+        createElement('div', {
+          key: 'header',
+          style: {
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            padding: '24px',
+            borderRadius: '12px 12px 0 0'
+          }
+        }, [
+          createElement('h2', {
+            key: 'title',
+            style: { margin: 0, fontSize: '24px', fontWeight: 'bold' }
+          }, 'Analyse ATS et Export PDF'),
+          createElement('p', {
+            key: 'subtitle',
+            style: { margin: '8px 0 0 0', opacity: 0.9 }
+          }, 'Rapport d\'optimisation pour les systèmes de suivi des candidatures')
+        ]),
+
+        // Contenu du rapport ATS
+        createElement(ATSReportExport, {
+          key: 'ats-report',
+          analysis,
+          candidateInfo: {
+            name: getFullName() || (profile?.first_name && profile?.last_name)
+              ? `${profile!.first_name} ${profile!.last_name}`
+              : profile?.email || 'Utilisateur',
+            email: profile?.email || '',
+            position: profile?.profession || profile?.company || 'Professionnel'
+          },
+          jobInfo: {
+            title: formData?.poste || 'Poste visé',
+            company: formData?.entreprise || 'Entreprise',
+            description: `Lettre de motivation pour le secteur ${formData?.secteur || 'Non spécifié'}`
+          }
+        })
+      ]);
+
+      const root = createRoot(modalRoot);
+      root.render(modal);
+
+      // Ajouter au DOM
+      document.body.appendChild(modalRoot);
+
+      // Fermer le modal quand on clique en dehors
+      const handleClickOutside = (event: MouseEvent) => {
+        if (event.target === modalRoot) {
+          document.body.removeChild(modalRoot);
+        }
+      };
+
+      modalRoot.addEventListener('click', handleClickOutside);
+
+    } catch (error) {
+      console.error('Erreur lors de l\'analyse ATS:', error);
+      letterEditor.showNotification('Erreur lors de l\'analyse ATS. Veuillez réessayer.', 'error');
+    }
+  }, [letterEditor, formData, profile, getFullName]);
 
   // Gestionnaire d'action IA
   const handleAIAction = async () => {
@@ -847,6 +1034,8 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
             onSave={handleSave}
             onExportPDF={exportToPDF}
             onExportText={exportToText}
+            onExportATSOptimizedPDF={exportToATSOptimizedPDF}
+            onATSAnalysis={handleATSAnalysis}
             
             // Options
             showSidebar={letterEditor.showSidebar}

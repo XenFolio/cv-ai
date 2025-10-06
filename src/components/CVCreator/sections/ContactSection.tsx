@@ -33,7 +33,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   const textColor = sectionColorSettings?.title || titleColor;
   const contentColor = sectionColorSettings?.content || '000000';
   return (
-    <div className="mt-0">
+    <div className="mt-0" style={{ textAlign: alignment }}>
       <div className="group flex items-center gap-2">
         <input
           type="text"

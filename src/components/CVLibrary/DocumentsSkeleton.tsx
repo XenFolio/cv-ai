@@ -1,14 +1,4 @@
 import React from 'react';
-import {
-  Search,
-  Eye,
-  Star,
-  Calendar,
-  Trash2,
-  Download,
-  BarChart3,
-  FileText
-} from "lucide-react";
 
 export const DocumentsSkeleton: React.FC = () => {
   return (

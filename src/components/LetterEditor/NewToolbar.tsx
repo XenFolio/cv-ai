@@ -37,9 +37,11 @@ interface NewToolbarProps {
   onExportPDF: () => void;
   onExportWord?: () => void;
   onExportText?: () => void;
+  onExportATSOptimizedPDF?: () => void;
   onAnalyzeTone?: () => void;
   onCheckGrammar?: () => void;
   onStyleSuggestions?: () => void;
+  onATSAnalysis?: () => void;
   isAILoading?: boolean;
 
   // Options

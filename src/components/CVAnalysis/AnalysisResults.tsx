@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { CheckCircle, AlertTriangle, XCircle, Brain, Target, Award, Download, RefreshCw, Loader2, ChevronDown, Briefcase, Activity } from 'lucide-react';
 import { CVAnalysisResponse } from '../../hooks/useOpenAI';
 import { DocumentType } from '../../hooks/useCVLibrary';
+import { useProfile } from '../../hooks/useProfile';
 import html2pdf from 'html2pdf.js';
 import AdvancedATSScoring from './AdvancedATSScoring';
 import { TrendingUp, BarChart3, Globe } from 'lucide-react';
@@ -36,6 +37,40 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 }) => {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  // Récupérer les informations du profil utilisateur
+  const { profile, getFullName, profileLoading } = useProfile();
+
+  // Debug: Afficher l'état de chargement
+  console.log('Profile loading:', profileLoading);
+
+  // Récupérer l'email depuis l'authentification si pas dans le profil
+  const getAuthEmail = () => {
+    try {
+      const savedUser = localStorage.getItem('cvAssistantUser');
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        return userData.email || '';
+      }
+    } catch {
+      // Erreur silencieuse
+    }
+    return '';
+  };
+
+  // Préparer les informations du candidat pour le rapport ATS
+  const candidateInfo = {
+    name: getFullName() || (profile?.first_name && profile?.last_name)
+      ? `${profile.first_name} ${profile.last_name}`
+      : profile?.email || getAuthEmail() || 'Utilisateur',
+    email: profile?.email || getAuthEmail() || '',
+    position: profile?.profession || profile?.company || 'Professionnel'
+  };
+
+  // Debug: Afficher les infos du profil dans la console
+  console.log('Profile:', profile);
+  console.log('CandidateInfo:', candidateInfo);
+  console.log('GetFullName:', getFullName());
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1235,6 +1270,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             industry={industry}
             experienceLevel={experienceLevel}
             jobTitle={jobTitle}
+            candidateInfo={candidateInfo}
           />
         </div>
       )}

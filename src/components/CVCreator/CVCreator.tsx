@@ -662,6 +662,139 @@ export const CVCreator: React.FC = () => {
     }
   }, [selectedTemplate, editableContent, experiences, languages, educations, addCreatedCV]);
 
+  // Fonction d'analyse ATS et export PDF
+  const handleATSAnalysis = useCallback(async () => {
+    const template = templates.find(t => t.id === selectedTemplate);
+    if (!template) return;
+
+    try {
+      // Importer les fonctions nécessaires
+      const { generateQuickATSAnalysis } = await import('./ExportModule');
+      const ATSReportExportModule = await import('../CVAnalysis/ATSReportExport');
+
+      // Préparer les données CV pour l'analyse
+      const getSkillsByCategory = (category: string): string[] => {
+        switch (category) {
+          case 'Développement': return ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Python', 'SQL', 'Git', 'Docker'];
+          case 'Marketing': return ['Google Analytics', 'SEO/SEM', 'Social Media', 'Content Marketing', 'Email Marketing', 'CRM'];
+          case 'Finance': return ['Excel', 'Modélisation financière', 'Analyse de risque', 'Bloomberg', 'SAP'];
+          default: return ['Communication', 'Travail d\'équipe', 'Résolution de problèmes', 'Adaptabilité'];
+        }
+      };
+
+      const skills = getSkillsByCategory(template.category);
+      const cvData = {
+        name: editableContent.name,
+        contact: editableContent.contact,
+        profileContent: editableContent.profileContent,
+        experiences,
+        skills: skills.map((skill, index) => ({ id: index + 1, content: skill })),
+        languages,
+        educations,
+        industry: template.category,
+        customFont: 'Calibri',
+        customColor: '000000',
+        templateName: template.name
+      };
+
+      // Générer l'analyse ATS
+      const analysis = generateQuickATSAnalysis(template, cvData);
+
+      // Préparer les informations candidat
+      const candidateInfo = {
+        name: editableContent.name,
+        email: editableContent.contact.includes('@') ? editableContent.contact.split(' ').find(s => s.includes('@')) : '',
+        position: editableContent.profileTitle
+      };
+
+      // Créer une modal pour afficher l'export ATS
+      const modalRoot = document.createElement('div');
+      modalRoot.id = 'ats-export-modal';
+      document.body.appendChild(modalRoot);
+
+      // Importer React et ReactDOM dynamiquement
+      const { createElement } = await import('react');
+      const { createRoot } = await import('react-dom/client');
+
+      // Créer le composant d'export ATS
+      const ATSExportComponent = ATSReportExportModule.default;
+      const exportComponent = createElement(ATSExportComponent, {
+        analysis,
+        candidateInfo,
+        jobInfo: {
+          title: editableContent.profileTitle,
+          company: 'Entreprise Cible'
+        }
+      });
+
+      // Créer la modal avec le composant
+      const modal = createElement('div', {
+        style: {
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        },
+        onClick: (e: React.MouseEvent) => {
+          if (e.target === e.currentTarget) {
+            document.body.removeChild(modalRoot);
+          }
+        }
+      },
+        createElement('div', {
+          style: {
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '800px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            position: 'relative',
+            width: '90%'
+          }
+        }, [
+          createElement('button', {
+            key: 'close',
+            onClick: () => document.body.removeChild(modalRoot),
+            style: {
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
+              background: 'none',
+              border: 'none',
+              fontSize: '24px',
+              cursor: 'pointer',
+              color: '#666'
+            }
+          }, '✕'),
+          createElement('h2', {
+            key: 'title',
+            style: {
+              margin: '0 0 20px 0',
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#333'
+            }
+          }, 'Analyse ATS et Export PDF'),
+          exportComponent
+        ])
+      );
+
+      const root = createRoot(modalRoot);
+      root.render(modal);
+
+    } catch (error) {
+      console.error('Erreur lors de l\'analyse ATS:', error);
+      alert('Une erreur est survenue lors de l\'analyse ATS. Veuillez réessayer.');
+    }
+  }, [selectedTemplate, editableContent, experiences, languages, educations]);
+
   const handleDownloadTemplate = useCallback(async (template: Template) => {
     try {
       const { generateCVDocument } = await import('./ExportModule');
@@ -824,15 +957,27 @@ export const CVCreator: React.FC = () => {
             </div>
 
             {/* Actions rapides */}
-            <button
-              onClick={handleDownload}
-              className="w-9 h-9 bg-transparent text-violet-600 border rounded border-violet-600 hover:bg-violet-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center self-start"
-              aria-label="Télécharger le CV"
-            >
-              <svg className="w-4 h-4 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2  0 01-2 2z" />
-              </svg>
-            </button>
+            <div className="flex items-center space-x-2 self-start">
+              <button
+                onClick={handleATSAnalysis}
+                className="w-9 h-9 bg-transparent text-green-600 border rounded border-green-600 hover:bg-green-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center"
+                aria-label="Analyse ATS et Export PDF"
+                title="Analyse ATS et Export PDF"
+              >
+                <svg className="w-4 h-4 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </button>
+              <button
+                onClick={handleDownload}
+                className="w-9 h-9 bg-transparent text-violet-600 border rounded border-violet-600 hover:bg-violet-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center"
+                aria-label="Télécharger le CV"
+              >
+                <svg className="w-4 h-4 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2  0 01-2 2z" />
+                </svg>
+              </button>
+            </div>
           </div>
         </header>
 

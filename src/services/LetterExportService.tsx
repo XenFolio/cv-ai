@@ -1,5 +1,5 @@
 import html2pdf from 'html2pdf.js';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, UnderlineType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
 
 export interface Margins {
   top: number;
@@ -16,15 +16,7 @@ export interface TemplateStyle {
   padding?: string;
 }
 
-export interface TextRunOptions {
-  text: string;
-  size?: number;
-  font?: string;
-  color?: string;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: { type: UnderlineType };
-}
+
 
 export interface ExportOptions {
   format: 'pdf' | 'html' | 'docx' | 'text';
@@ -76,7 +68,8 @@ export class LetterExportService {
 
       const pdfOptions = this.getPDFOptions({
         filename,
-        allowMultiplePages
+        allowMultiplePages,
+        margins
       });
 
       console.log('PDF options:', pdfOptions);
@@ -97,6 +90,95 @@ export class LetterExportService {
           }
         });
       }
+    }
+  }
+
+  /**
+   * Exporter une lettre en PDF optimisé pour les systèmes ATS
+   */
+  static async exportToATSOPtimizedPDF(
+    content: string,
+    options: ExportOptions
+  ): Promise<void> {
+    const {
+      filename = 'lettre-motivation-ats-optimisee.pdf',
+      margins = { top: 20, right: 20, bottom: 20, left: 20 },
+      template
+    } = options;
+
+    try {
+      // Convertir le contenu en texte optimisé pour ATS
+      const atsOptimizedContent = this.convertHTMLToATSOptimizedText(content);
+
+      // Créer un container spécifique pour l'export ATS
+      const container = document.createElement('div');
+      container.style.width = '210mm';
+      container.style.minHeight = '297mm';
+      container.style.margin = '0 auto';
+      container.style.padding = `${margins.top}mm ${margins.right}mm ${margins.bottom}mm ${margins.left}mm`;
+      container.style.background = 'white';
+      container.style.fontFamily = template?.fontFamily || 'Arial, sans-serif';
+      container.style.fontSize = template?.fontSize || '12pt';
+      container.style.lineHeight = '1.6';
+      container.style.color = '#000000';
+      container.style.whiteSpace = 'pre-wrap';
+      container.style.overflowWrap = 'break-word';
+      container.style.boxSizing = 'border-box';
+      container.style.position = 'relative';
+
+      // Appliquer le contenu optimisé
+      container.innerHTML = `
+        <div style="page-break-inside: avoid;">
+          <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
+            <h1 style="color: #333; font-size: 18pt; margin: 0; font-weight: bold;">LETTRE DE MOTIVATION - OPTIMISÉE ATS</h1>
+            <p style="color: #666; font-size: 10pt; margin: 5px 0 0 0;">Format texte brut compatible avec les systèmes de suivi des candidatures</p>
+          </div>
+        </div>
+        <div style="font-family: monospace; font-size: 11pt; line-height: 1.5; color: #000;">
+          ${atsOptimizedContent.replace(/\n/g, '<br>').replace(/\s{2,}/g, ' ')}
+        </div>
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 8pt; color: #666; text-align: center;">
+          Généré le ${new Date().toLocaleDateString('fr-FR')} par CV ATS Assistant v4.2<br>
+          Ce document est optimisé pour les systèmes de suivi des candidatures (ATS)
+        </div>
+      `;
+
+      // Options PDF optimisées pour l'export ATS
+      const pdfOptions = {
+        margin: [0, 0, 0, 0],
+        filename,
+        image: {
+          type: 'jpeg',
+          quality: 0.98
+        },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#ffffff',
+          logging: false,
+          letterRendering: true
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait'
+        },
+        pagebreak: {
+          mode: ['avoid-all', 'css', 'legacy'],
+          before: '.force-new-page',
+          avoid: '.no-break'
+        }
+      };
+
+      // Générer le PDF
+      await html2pdf().set(pdfOptions).from(container).save();
+
+      console.log('PDF ATS optimisé généré avec succès');
+
+    } catch (error) {
+      console.error('Erreur lors de l\'export PDF ATS optimisé:', error);
+      throw new Error('Erreur lors de l\'export PDF ATS optimisé. Veuillez réessayer.');
     }
   }
 
@@ -255,7 +337,7 @@ export class LetterExportService {
     container.style.minHeight = '297mm';
     container.style.margin = '0 auto';
     // Appliquer les marges comme padding pour correspondre à l'éditeur
-    container.style.padding = `${margins.top * 2.8}px ${margins.right * 2.8}px ${margins.bottom * 2.8}px ${margins.left * 2.8}px`;
+    container.style.padding = `0px`;
     container.style.background = 'white';
     container.style.boxSizing = 'border-box';
     container.style.position = 'relative';
@@ -300,11 +382,12 @@ export class LetterExportService {
   private static getPDFOptions(options: {
     filename: string;
     allowMultiplePages: boolean;
+    margins: Margins;
   }) {
-    const { filename, allowMultiplePages } = options;
+    const { filename, allowMultiplePages, margins } = options;
 
     return {
-      margin: [0, 0, 0, 0],
+      margin: [margins.top, margins.right, margins.bottom, margins.left],
       filename,
       image: {
         type: 'jpeg',
@@ -349,20 +432,15 @@ export class LetterExportService {
         const alignment = this.parseAlignment(childElement);
 
         if (textContent.trim()) {
-          const textRunOptions: TextRunOptions = {
+          const textRun = new TextRun({
             text: textContent,
             size: fontSize,
             font: fontFamily,
             color: template?.color || '000000',
             bold: this.isBold(childElement),
-            italic: this.isItalic(childElement),
-          };
-
-          if (this.isUnderline(childElement)) {
-            textRunOptions.underline = { type: UnderlineType.SINGLE };
-          }
-
-          const textRun = new TextRun(textRunOptions);
+            italics: this.isItalic(childElement),
+            underline: this.isUnderline(childElement) ? { type: 'single' } : undefined,
+          });
 
           paragraphs.push(new Paragraph({
             children: [textRun],
@@ -527,16 +605,16 @@ export class LetterExportService {
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = htmlContent;
 
-      // Extraire le texte brut
-      let textContent = tempDiv.textContent || tempDiv.innerText || '';
+      // Amélioration : Extraire et préserver la structure sémantique
+      let structuredContent = this.extractStructuredContent(tempDiv);
 
       // Nettoyer et formater le texte
-      textContent = this.cleanTextForATS(textContent);
+      structuredContent = this.cleanTextForATS(structuredContent);
 
       // Réorganiser pour optimisation ATS
-      textContent = this.optimizeTextForATS(textContent);
+      structuredContent = this.optimizeTextForATS(structuredContent);
 
-      return textContent;
+      return structuredContent;
     } catch (error) {
       console.error('Erreur lors de la conversion HTML vers texte:', error);
       // En cas d'erreur, retourner une version nettoyée du contenu
@@ -548,18 +626,55 @@ export class LetterExportService {
    * Nettoyer le texte pour le format ATS
    */
   private static cleanTextForATS(text: string): string {
-    // Supprimer les espaces multiples et les sauts de ligne excessive
+    // Supprimer les caractères non imprimables et les espaces excessifs
+    text = text.replace(/\p{Cc}/gu, '');
     text = text.replace(/\s+/g, ' ').trim();
 
-    // Reconstruire les paragraphes avec des sauts de ligne doubles
-    // Identifier les paragraphes en cherchant des mots qui commencent par une majuscule après un point
-    text = text.replace(/\. ([A-Z])/g, '.\n\n$1');
+    // Normaliser les sauts de ligne
+    text = text.replace(/\r\n/g, '\n');
+    text = text.replace(/\r/g, '\n');
 
-    // Ajouter des sauts de ligne pour améliorer la lisibilité
-    text = text.replace(/([.!?])\s+([A-Z])/g, '$1\n\n$2');
+    // Améliorer la structure des paragraphes pour les lettres de motivation
+    // Reconnaître les fins de phrases et ajouter des sauts de ligne appropriés
+    text = text.replace(/([.!?])\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÇ])/g, '$1\n\n$2');
 
-    // Corriger les abreviations communes
-    text = text.replace(/\b(Mr|Mrs|Dr|Prof|etc|vs|i\.e|e\.g)\./gi, '$1');
+    // Préserver les salutations et formules de politesse
+    const salutations = [
+      /madame,? monsieur,?/gi,
+      /monsieur,? madame,?/gi,
+      /à l'attention de/gi,
+      /cher monsieur,?/gi,
+      /chère madame,?/gi
+    ];
+
+    salutations.forEach(salutation => {
+      text = text.replace(salutation, (match) => match.toUpperCase() + '\n');
+    });
+
+    // Préserver les formules de politesse
+    const closings = [
+      /cordialement,?/gi,
+      /sincères salutations,?/gi,
+      /bien à vous,?/gi,
+      /dans l'attende de votre réponse,?/gi,
+      /restant à votre disposition,?/gi
+    ];
+
+    closings.forEach(closing => {
+      text = text.replace(closing, (match) => '\n' + match.charAt(0).toUpperCase() + match.slice(1));
+    });
+
+    // Corriger les abréviations courantes dans les lettres
+    text = text.replace(/\b(Mr|Mme|Dr|Prof|etc|vs|i\.e|e\.g|N\.B|c\.à\.d)\./gi, '$1');
+
+    // Nettoyer les espaces multiples après les sauts de ligne
+    text = text.replace(/\n\s+/g, '\n');
+
+    // S'assurer qu'il n'y a pas plus de 2 sauts de ligne consécutifs
+    text = text.replace(/\n{3,}/g, '\n\n');
+
+    // Nettoyer les espaces au début et fin des lignes
+    text = text.split('\n').map(line => line.trim()).join('\n');
 
     return text.trim();
   }
@@ -579,24 +694,152 @@ export class LetterExportService {
 
     let optimizedContent = '';
 
-    if (isCoverLetter) {
-      // Rechercher des mots-clés seulement pour les lettres de motivation
-      const keywords = this.extractATSKeywords(text);
+    // Ajouter un en-tête standardisé pour les ATS
+    optimizedContent += `LETTRE DE MOTIVATION - OPTIMISÉE POUR LES SYSTÈMES ATS\n`;
+    optimizedContent += `${'='.repeat(60)}\n\n`;
 
+    if (isCoverLetter) {
+      // Extraire et structurer les informations clés pour les lettres
+      const structuredInfo = this.extractLetterStructure(lines);
+
+      if (structuredInfo.contactInfo) {
+        optimizedContent += `INFORMATIONS DE CONTACT:\n${structuredInfo.contactInfo}\n\n`;
+      }
+
+      if (structuredInfo.recipient) {
+        optimizedContent += `DESTINATAIRE:\n${structuredInfo.recipient}\n\n`;
+      }
+
+      if (structuredInfo.subject) {
+        optimizedContent += `OBJET: ${structuredInfo.subject}\n\n`;
+      }
+
+      // Rechercher des mots-clés spécifiques aux lettres de motivation
+      const keywords = this.extractATSKeywords(text);
       if (keywords.length > 0) {
-        optimizedContent += `COMPÉTENCES ET EXPÉRIENCE CLÉS: ${keywords.join(', ')}\n\n`;
+        optimizedContent += `MOTS-CLÉS PERTINENTS: ${keywords.join(', ')}\n\n`;
+      }
+
+      // Ajouter le contenu structuré
+      optimizedContent += `CONTENU DE LA LETTRE:\n${structuredInfo.mainContent}\n\n`;
+
+      if (structuredInfo.closing) {
+        optimizedContent += `FORMULE DE POLITESSE:\n${structuredInfo.closing}\n\n`;
+      }
+    } else {
+      // Pour les autres documents, ajouter les mots-clés si présents
+      const keywords = this.extractATSKeywords(text);
+      if (keywords.length > 0) {
+        optimizedContent += `MOTS-CLÉS PRINCIPAUX: ${keywords.join(', ')}\n\n`;
       }
     }
 
-    // Ajouter le contenu original
+    // Ajouter le contenu original formaté
     optimizedContent += lines.join('\n\n');
 
-    // S'assurer que le contenu n'est pas trop long
-    if (optimizedContent.length > 5000) {
-      optimizedContent = optimizedContent.substring(0, 5000) + '\n\n[Contenu tronqué pour optimisation]';
+    // Ajouter une section de métadonnées pour les ATS
+    optimizedContent += `\n\n${'='.repeat(60)}\n`;
+    optimizedContent += `MÉTADONNÉES D'OPTIMISATION ATS:\n`;
+    optimizedContent += `- Format: Texte brut optimisé\n`;
+    optimizedContent += `- Encodage: UTF-8\n`;
+    optimizedContent += `- Date de génération: ${new Date().toLocaleDateString('fr-FR')}\n`;
+    optimizedContent += `- Type: Lettre de motivation\n`;
+
+    // S'assurer que le contenu n'est pas trop long pour les ATS
+    if (optimizedContent.length > 8000) {
+      optimizedContent = optimizedContent.substring(0, 8000) + '\n\n[Contenu optimisé pour la lisibilité ATS]';
     }
 
     return optimizedContent;
+  }
+
+  /**
+   * Extraire la structure d'une lettre de motivation pour l'optimisation ATS
+   */
+  private static extractLetterStructure(lines: string[]): {
+    contactInfo?: string;
+    recipient?: string;
+    subject?: string;
+    mainContent: string;
+    closing?: string;
+  } {
+    const result = {
+      contactInfo: '',
+      recipient: '',
+      subject: '',
+      mainContent: '',
+      closing: ''
+    };
+
+    let currentSection = 'header';
+    const mainContentLines: string[] = [];
+    let hasFoundRecipient = false;
+    let hasFoundContent = false;
+    let hasFoundClosing = false;
+
+    lines.forEach((line) => {
+      const trimmedLine = line.trim();
+
+      // Vérifier si c'est une information de contact (email, téléphone, etc.)
+      if (currentSection === 'header' &&
+          (trimmedLine.includes('@') ||
+           /\d{10,}/.test(trimmedLine.replace(/\s/g, '')) ||
+           trimmedLine.toLowerCase().includes('téléphone') ||
+           trimmedLine.toLowerCase().includes('email'))) {
+        result.contactInfo += trimmedLine + '\n';
+        return;
+      }
+
+      // Vérifier si c'est un destinataire (salutation)
+      if (!hasFoundRecipient && this.isSalutation(trimmedLine)) {
+        result.recipient = trimmedLine;
+        hasFoundRecipient = true;
+        currentSection = 'content';
+        return;
+      }
+
+      // Vérifier si c'est un objet ou référence
+      if (hasFoundRecipient && !hasFoundContent &&
+          (trimmedLine.toLowerCase().includes('objet:') ||
+           trimmedLine.toLowerCase().includes('réf:') ||
+           trimmedLine.toLowerCase().includes('poste:'))) {
+        result.subject = trimmedLine;
+        return;
+      }
+
+      // Vérifier si c'est une formule de politesse
+      if (!hasFoundClosing && this.isClosing(trimmedLine)) {
+        result.closing = trimmedLine;
+        hasFoundClosing = true;
+        currentSection = 'closing';
+        return;
+      }
+
+      // Ajouter au contenu principal
+      if (hasFoundRecipient && !hasFoundClosing && trimmedLine.length > 0) {
+        if (!hasFoundContent) {
+          hasFoundContent = true;
+        }
+        mainContentLines.push(trimmedLine);
+      }
+
+      // Ajouter les lignes après la formule de politesse (signature)
+      if (hasFoundClosing && trimmedLine.length > 0) {
+        result.closing += '\n' + trimmedLine;
+      }
+    });
+
+    // Assembler le contenu principal
+    result.mainContent = mainContentLines.join('\n\n');
+
+    // Nettoyer les résultats
+    Object.keys(result).forEach(key => {
+      if (result[key as keyof typeof result]) {
+        result[key as keyof typeof result] = result[key as keyof typeof result].trim();
+      }
+    });
+
+    return result;
   }
 
   /**
@@ -635,6 +878,89 @@ export class LetterExportService {
 
     // Limiter à 10 mots-clés pour éviter la surcharge
     return foundKeywords.slice(0, 10);
+  }
+
+  /**
+   * Extraire le contenu structuré pour l'optimisation ATS
+   */
+  private static extractStructuredContent(element: HTMLElement): string {
+    let content = '';
+
+    // Parcourir les éléments enfants de manière structurée
+    Array.from(element.children).forEach(child => {
+      const childElement = child as HTMLElement;
+      const tagName = childElement.tagName.toLowerCase();
+      const text = childElement.textContent?.trim() || '';
+
+      if (!text) return;
+
+      switch (tagName) {
+        case 'h1':
+        case 'h2':
+        case 'h3':
+          content += `\n${text.toUpperCase()}\n${'='.repeat(text.length)}\n`;
+          break;
+        case 'p':
+        case 'div':
+          // Vérifier si c'est une salutation ou formule de politesse
+          if (this.isSalutation(text)) {
+            content += `\n${text}\n`;
+          } else if (this.isClosing(text)) {
+            content += `\n\n${text}\n`;
+          } else {
+            content += `${text}\n\n`;
+          }
+          break;
+        case 'br':
+          content += '\n';
+          break;
+        case 'ul':
+        case 'ol': {
+          const listItems = childElement.querySelectorAll('li');
+          listItems.forEach(li => {
+            const itemText = li.textContent?.trim();
+            if (itemText) {
+              content += `• ${itemText}\n`;
+            }
+          });
+          content += '\n';
+          break;
+        }
+        default:
+          // Pour les autres éléments, extraire le texte
+          content += `${text} `;
+      }
+    });
+
+    return content.trim();
+  }
+
+  /**
+   * Vérifier si le texte est une salutation
+   */
+  private static isSalutation(text: string): boolean {
+    const salutations = [
+      'madame, monsieur,', 'monsieur, madame,', 'à l\'attention de',
+      'cher monsieur,', 'chère madame,', 'madame,', 'monsieur,',
+      'bonjour,', 'bonsoir,'
+    ];
+    return salutations.some(salutation =>
+      text.toLowerCase().includes(salutation.toLowerCase())
+    );
+  }
+
+  /**
+   * Vérifier si le texte est une formule de politesse
+   */
+  private static isClosing(text: string): boolean {
+    const closings = [
+      'cordialement,', 'sincères salutations,', 'bien à vous,',
+      'dans l\'attente de votre réponse,', 'restant à votre disposition,',
+      'avec mes salutations,', 'respectueusement,'
+    ];
+    return closings.some(closing =>
+      text.toLowerCase().includes(closing.toLowerCase())
+    );
   }
 
   /**

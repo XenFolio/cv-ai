@@ -150,7 +150,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
       </div>
 
       {/* Contenu de la section */}
-      <div className="pt-1 flex-1 w-full min-w-0">
+      <div className="pt-1 flex-1 w-full min-w-0" style={{ textAlign: alignment }}>
         <div className="w-full overflow-hidden">
           <div className="max-w-full break-words">
             {children}

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Crown } from 'lucide-react';
 
 export const SubscriptionPlansSkeleton: React.FC = () => {
   return (
