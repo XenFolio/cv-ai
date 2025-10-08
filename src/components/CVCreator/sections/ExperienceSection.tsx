@@ -1,50 +1,8 @@
 import React from 'react';
-import { Sparkles, Plus, Minus } from 'lucide-react';
-import type { CVContent, CVExperience } from '../types';
+import { Plus, Minus } from 'lucide-react';
+import { AIButton } from '../../UI';
+import type { ExperienceSectionProps } from '../types';
 import { useCVCreator } from '../CVCreatorContext.hook';
-
-interface ExperienceSectionProps {
-  editableContent: CVContent;
-  setEditableContent: React.Dispatch<React.SetStateAction<CVContent>>;
-  experiences: CVExperience[];
-  setExperiences: React.Dispatch<React.SetStateAction<CVExperience[]>>;
-  editingField: string | null;
-  setEditingField: React.Dispatch<React.SetStateAction<string | null>>;
-  titleColor: string;
-  addExperience: () => void;
-  removeExperience: (id: number) => void;
-  generateWithAI: (field: string, currentContent?: string) => Promise<void>;
-  isLoading: boolean;
-  sectionId?: string;
-}
-
-const AIButton: React.FC<{
-  isLoading: boolean;
-  onClick: () => void;
-  title: string;
-  className?: string;
-}> = ({ isLoading, onClick, title, className = "" }) => (
-  <button
-    onClick={onClick}
-    disabled={isLoading}
-    className={`p-1 text-violet-600 hover:text-violet-800 disabled:opacity-50 ${className}`}
-    title={title}
-  >
-    {isLoading ? (
-      <div className="flex space-x-1">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="w-2 h-2 bg-violet-600 rounded-full animate-bounce"
-            style={{ animationDelay: `${i * 0.2}s` }}
-          />
-        ))}
-      </div>
-    ) : (
-      <Sparkles className="w-4 h-4" />
-    )}
-  </button>
-);
 
 export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
   editableContent,

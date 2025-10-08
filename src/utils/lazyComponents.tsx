@@ -16,8 +16,7 @@ export const lazyComponentsMap = {
   Models: lazy(() => import('../components/Models/Models').then(module => ({ default: module.Models }))),
   AIChat: lazy(() => import('../components/Chat/AIChat').then(module => ({ default: module.AIChat }))),
   LetterEditor: lazy(() => import('../components/LetterEditor/LetterEditorV2').then(module => ({ default: module.LetterEditorV2 }))),
-  CVCreatorDemo: lazy(() => import('../components/CVCreator/CVCreatorDemo').then(module => ({ default: module.CVCreatorDemo }))),
-  JobSearch: lazy(() => import('../components/JobSearch/JobSearch').then(module => ({ default: module.JobSearch }))),
+    JobSearch: lazy(() => import('../components/JobSearch/JobSearch').then(module => ({ default: module.JobSearch }))),
 };
 
 // Type pour les clés des composants
@@ -48,8 +47,7 @@ export const preloadComponent = (componentKey: LazyComponentKey): void => {
     Models: () => import('../components/Models/Models'),
     AIChat: () => import('../components/Chat/AIChat'),
     LetterEditor: () => import('../components/LetterEditor/LetterEditorV2'),
-    CVCreatorDemo: () => import('../components/CVCreator/CVCreatorDemo'),
-    JobSearch: () => import('../components/JobSearch/JobSearch'),
+        JobSearch: () => import('../components/JobSearch/JobSearch'),
   };
 
   // Précharger le module directement

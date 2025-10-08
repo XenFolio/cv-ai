@@ -9,6 +9,7 @@ import { MarginModal } from './MarginModal';
 import { NewToolbar } from './NewToolbar';
 import { EditorContent } from './EditorContent';
 import { NotificationToast } from './NotificationToast';
+import { SearchReplaceModal } from './SearchReplaceModal';
 import { useLetterEditor } from '../../hooks/useLetterEditor';
 import { useMarginManager } from '../../hooks/useMarginManager';
 import { LetterExportService } from '../../services/LetterExportService';
@@ -57,6 +58,9 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
   const [activeGrammarTab, setActiveGrammarTab] = React.useState<'correction' | 'suggestions'>('correction');
   const [styleSuggestions, setStyleSuggestions] = React.useState<StyleSuggestion[]>([]);
 
+  // État pour la modal de recherche et remplacement
+  const [showSearchModal, setShowSearchModal] = React.useState(false);
+
   // Hooks principaux
   const letterEditor = useLetterEditor({ initialContent, formData });
   const openAI = useOpenAI();
@@ -86,7 +90,7 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
     toggleBorder();
   }, [letterEditor.showBorders]);
 
-  // Effet pour fermer les menus quand on clique ailleurs
+  // Effet pour fermer les menus quand on clique ailleurs et gérer les raccourcis clavier
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -107,11 +111,48 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
       }
     };
 
+    // Gestionnaire des raccourcis clavier
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // F3 pour ouvrir la recherche ou naviguer au suivant
+      if (event.key === 'F3' && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        if (!showSearchModal) {
+          setShowSearchModal(true);
+        }
+        // Si la modal est déjà ouverte, le composant SearchReplaceModal gérera la navigation
+      }
+
+      // Shift+F3 pour naviguer au précédent (si la modal est ouverte)
+      if (event.key === 'F3' && event.shiftKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        // La navigation est gérée par le composant SearchReplaceModal
+      }
+
+      // Ctrl+F pour ouvrir la recherche (alternative)
+      if (event.key === 'f' && event.ctrlKey && !event.altKey && !event.shiftKey) {
+        event.preventDefault();
+        setShowSearchModal(true);
+      }
+
+      // Échap pour fermer les modales
+      if (event.key === 'Escape') {
+        if (showSearchModal) {
+          setShowSearchModal(false);
+        }
+        if (showGrammarModal) {
+          setShowGrammarModal(false);
+        }
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [letterEditor]);
+  }, [letterEditor, showSearchModal, showGrammarModal]);
 
   // Simuler le chargement des templates
   useEffect(() => {
@@ -382,13 +423,31 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
           return;
         }
 
+        console.log('🔍 LetterEditorV2 - Début génération lettre');
+        console.log('🔍 LetterEditorV2 - Profile:', profile);
+        console.log('🔍 LetterEditorV2 - getFullName():', getFullName());
+
         letterEditor.showNotification('✍️ Génération de votre lettre avec IA...', 'info');
 
         const { generateLetterContent } = await import('../../services/LetterAIService');
 
+        const profileData = {
+          fullName: getFullName() || undefined,
+          email: profile?.email,
+          phone: profile?.phone,
+          address: profile?.address,
+          city: profile?.city,
+          postalCode: profile?.postal_code,
+          country: profile?.country,
+          profession: profile?.profession
+        };
+
+        console.log('🔍 LetterEditorV2 - ProfileData envoyé à generateLetterContent:', profileData);
+
         const generatedContent = await generateLetterContent(
           formData,
-          openAI.editCVField
+          openAI.editCVField,
+          profileData
         );
 
         if (generatedContent) {
@@ -409,6 +468,10 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
         }
       } else {
         // Mode amélioration : contenu existant
+        console.log('🔍 LetterEditorV2 - Début amélioration lettre');
+        console.log('🔍 LetterEditorV2 - Profile:', profile);
+        console.log('🔍 LetterEditorV2 - getFullName():', getFullName());
+
         letterEditor.showNotification('✍️ Amélioration de votre lettre avec IA...', 'info');
 
         const { improveTextWithAI, detectTone, detectLanguage, analyzeStructure, extractKeywords } =
@@ -427,7 +490,17 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
           currentContent,
           documentAnalysis,
           '', // pas d'analyse stockée
-          openAI.editCVField
+          openAI.editCVField,
+          {
+            fullName: getFullName() || undefined,
+            email: profile?.email,
+            phone: profile?.phone,
+            address: profile?.address,
+            city: profile?.city,
+            postalCode: profile?.postal_code,
+            country: profile?.country,
+            profession: profile?.profession
+          }
         );
 
         if (improvedContent) {
@@ -1026,6 +1099,7 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
             onInsertLink={letterEditor.insertLink}
             onInsertImage={letterEditor.insertImage}
             onAIAction={handleAIAction}
+            onSearch={() => setShowSearchModal(true)}
             onCheckGrammar={handleGrammarCheck}
             onStyleSuggestions={handleStyleSuggestions}
             isAILoading={openAI.isLoading}
@@ -1036,7 +1110,7 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
             onExportText={exportToText}
             onExportATSOptimizedPDF={exportToATSOptimizedPDF}
             onATSAnalysis={handleATSAnalysis}
-            
+
             // Options
             showSidebar={letterEditor.showSidebar}
             onToggleSidebar={letterEditor.toggleSidebar}
@@ -1066,6 +1140,14 @@ export const LetterEditorV2: React.FC<LetterEditorV2Props> = ({
             margins={marginManager.customMargins}
             onSave={marginManager.saveMargins}
             onCancel={marginManager.closeMarginModal}
+          />
+
+          {/* Search Replace Modal */}
+          <SearchReplaceModal
+            isVisible={showSearchModal}
+            onClose={() => setShowSearchModal(false)}
+            editorRef={letterEditor.editorRef}
+            onContentChange={handleContentInput}
           />
 
           {/* Editor Content */}

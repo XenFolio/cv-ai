@@ -171,4 +171,144 @@ export const useCVExport = () => {
   return { exportToDocx };
 };
 
+// Fonction pour générer une analyse ATS rapide
+export const generateQuickATSAnalysis = (template: Template, cvData: CVData) => {
+  const score = calculateATSScore(template, cvData);
+  
+  const analysis = {
+    overallScore: score,
+    sections: {
+      atsOptimization: score,
+      keywordMatch: Math.min(score + 5, 100),
+      structure: Math.min(score + 10, 100),
+      content: Math.min(score + 3, 100)
+    },
+    recommendations: [] as string[],
+    strengths: [] as string[],
+    weaknesses: [] as string[],
+    keywords: {
+      found: [] as string[],
+      missing: [] as string[],
+      suggestions: [] as string[]
+    },
+    improvements: [] as Array<{
+      title: string;
+      description: string;
+      priority: 'high' | 'medium' | 'low';
+    }>
+  };
+
+  // Analyser les points forts
+  if (cvData.name && cvData.name !== '[VOTRE NOM]') {
+    analysis.strengths.push('Nom complet renseigné');
+  }
+  if (cvData.contact && !cvData.contact.includes('[')) {
+    analysis.strengths.push('Coordonnées complètes');
+  }
+  if (cvData.profileContent && !cvData.profileContent.includes('Résumé de votre profil')) {
+    analysis.strengths.push('Profil professionnel détaillé');
+  }
+  if (cvData.experiences.length > 0 && !cvData.experiences[0].content.includes('[Poste]')) {
+    analysis.strengths.push('Expériences professionnelles renseignées');
+  }
+  if (cvData.skills.length >= 3) {
+    analysis.strengths.push('Bon nombre de compétences techniques');
+  }
+
+  // Analyser les points faibles
+  if (!cvData.name || cvData.name === '[VOTRE NOM]') {
+    analysis.weaknesses.push('Nom manquant ou générique');
+  }
+  if (!cvData.contact || cvData.contact.includes('[')) {
+    analysis.weaknesses.push('Coordonnées incomplètes');
+  }
+  if (!cvData.profileContent || cvData.profileContent.includes('Résumé de votre profil')) {
+    analysis.weaknesses.push('Profil professionnel non personnalisé');
+  }
+  if (cvData.experiences.length === 0 || cvData.experiences[0].content.includes('[Poste]')) {
+    analysis.weaknesses.push('Absence d\'expériences professionnelles');
+  }
+  if (cvData.skills.length < 3) {
+    analysis.weaknesses.push('Nombre insuffisant de compétences');
+  }
+
+  // Analyser les améliorations prioritaires
+  if (!cvData.name || cvData.name === '[VOTRE NOM]') {
+    analysis.improvements.push({
+      title: 'Ajouter votre nom complet',
+      description: 'Personnalisez votre nom pour une identification claire par les recruteurs',
+      priority: 'high'
+    });
+  }
+  if (!cvData.contact || cvData.contact.includes('[')) {
+    analysis.improvements.push({
+      title: 'Compléter vos coordonnées',
+      description: 'Ajoutez email, téléphone et LinkedIn pour être facilement contactable',
+      priority: 'high'
+    });
+  }
+  if (!cvData.profileContent || cvData.profileContent.includes('Résumé de votre profil')) {
+    analysis.improvements.push({
+      title: 'Rédiger un profil professionnel personnalisé',
+      description: 'Décrivez votre expertise et vos objectifs professionnels en quelques lignes',
+      priority: 'medium'
+    });
+  }
+  if (cvData.experiences.length === 0 || cvData.experiences[0].content.includes('[Poste]')) {
+    analysis.improvements.push({
+      title: 'Ajouter vos expériences professionnelles',
+      description: 'Détaillez vos postes précédents avec réalisations quantifiables',
+      priority: 'high'
+    });
+  }
+  if (cvData.skills.length < 3) {
+    analysis.improvements.push({
+      title: 'Ajouter plus de compétences techniques',
+      description: 'Listez les technologies et outils que vous maîtrisez',
+      priority: 'medium'
+    });
+  }
+
+  // Générer des recommandations
+  if (score < 80) {
+    analysis.recommendations.push('Améliorez le contenu de votre CV pour un meilleur score ATS');
+  }
+  if (cvData.profileContent.length < 100) {
+    analysis.recommendations.push('Développez votre profil professionnel (minimum 100 caractères)');
+  }
+  if (cvData.experiences.length < 2) {
+    analysis.recommendations.push('Ajoutez plus d\'expériences professionnelles');
+  }
+
+  // Analyser les mots-clés
+  const commonKeywords = getCommonKeywords(template.category);
+  const cvText = `${cvData.profileContent} ${cvData.experiences.map(e => e.content).join(' ')} ${cvData.skills.map(s => s.content).join(' ')}`.toLowerCase();
+  
+  analysis.keywords.found = commonKeywords.filter(keyword => 
+    cvText.includes(keyword.toLowerCase())
+  );
+  
+  analysis.keywords.missing = commonKeywords.filter(keyword => 
+    !cvText.includes(keyword.toLowerCase())
+  );
+  
+  analysis.keywords.suggestions = analysis.keywords.missing.slice(0, 5);
+
+  return analysis;
+};
+
+// Fonction utilitaire pour obtenir les mots-clés courants par catégorie
+const getCommonKeywords = (category: string): string[] => {
+  switch (category) {
+    case 'Développement':
+      return ['javascript', 'react', 'node.js', 'typescript', 'python', 'sql', 'git', 'docker', 'api', 'fullstack'];
+    case 'Marketing':
+      return ['seo', 'sem', 'social media', 'content marketing', 'analytics', 'crm', 'branding', 'campaign', 'conversion'];
+    case 'Finance':
+      return ['excel', 'financial analysis', 'risk management', 'budgeting', 'forecasting', 'reporting', 'compliance', 'audit'];
+    default:
+      return ['communication', 'project management', 'teamwork', 'problem solving', 'leadership', 'organization'];
+  }
+};
+
 export default useCVExport;

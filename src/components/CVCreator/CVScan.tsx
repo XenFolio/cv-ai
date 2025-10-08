@@ -8,7 +8,7 @@ import { OCRClassificationService, OCRClassificationResult } from '../../service
 import { OCRDataExtractor } from '../../services/OCRDataExtractor';
 import { OCRValidationModal, OCRValidationResult } from './OCRValidationModal';
 
-interface CVScanDemoProps {
+interface CVScanProps {
   onBack: () => void;
   onImportCV?: (data: import('../../services/OCRClassificationService').StructuredCVData) => void;
 }
@@ -21,7 +21,7 @@ interface ScanResult {
   structuredData?: import('../../services/OCRClassificationService').StructuredCVData;
 }
 
-export const CVScanDemo: React.FC<CVScanDemoProps> = ({ onBack, onImportCV }) => {
+export const CVScan: React.FC<CVScanProps> = ({ onBack, onImportCV }) => {
   const [cameraActive, setCameraActive] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);

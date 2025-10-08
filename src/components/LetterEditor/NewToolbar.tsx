@@ -31,6 +31,7 @@ interface NewToolbarProps {
   onInsertLink: () => void;
   onInsertImage: () => void;
   onAIAction: () => void;
+  onSearch?: () => void;
 
   // Export
   onSave: () => void;
@@ -54,7 +55,6 @@ interface NewToolbarProps {
   onOpenRulesModal: () => void;
   allowMultiplePages: boolean;
   onToggleMultiplePages: () => void;
-  isAILoading?: boolean;
 }
 
 export const NewToolbar: React.FC<NewToolbarProps> = (props) => {

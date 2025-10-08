@@ -1,26 +1,7 @@
 "use client";
 import React from "react";
-import { Plus, Minus, Sparkles, Loader2 } from "lucide-react";
-
-/*************************
- *  Bouton IA minimal
- *************************/
-interface AIButtonProps {
-  isLoading: boolean;
-  onClick: (e: React.MouseEvent) => void;
-  title?: string;
-}
-const AIButton: React.FC<AIButtonProps> = ({ isLoading, onClick, title }) => (
-  <button
-    type="button"
-    className="bg-violet-50 border border-violet-200 text-violet-700 rounded-lg px-2 py-1 inline-flex items-center gap-1 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-400 z-20"
-    onClick={onClick}
-    title={title}
-    disabled={isLoading}
-  >
-    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-  </button>
-);
+import { Plus, Minus, Loader2 } from "lucide-react";
+import { AIButton } from "../UI";
 
 /*************************
  *  Types et composants éditables

@@ -8,11 +8,10 @@ import { AuthProvider } from './AuthProvider';
 
 interface UniversalLoginPageProps {
   onDemoMode?: () => void;
-  onCVScanDemo?: () => void;
 }
 
 // Composant pour Supabase
-const SupabaseLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCVScanDemo }) => {
+const SupabaseLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode }) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { signIn, signUp } = useSupabaseAuth();
 
@@ -51,7 +50,6 @@ const SupabaseLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCV
 
   return <LoginPageContent
     onDemoMode={onDemoMode}
-    onCVScanDemo={onCVScanDemo}
     showAuthModal={showAuthModal}
     setShowAuthModal={setShowAuthModal}
     handleLogin={handleLogin}
@@ -61,7 +59,7 @@ const SupabaseLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCV
 };
 
 // Composant pour Mock
-const MockLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCVScanDemo }) => {
+const MockLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode }) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { login, register } = useMockAuth();
 
@@ -87,7 +85,6 @@ const MockLoginPage: React.FC<UniversalLoginPageProps> = ({ onDemoMode, onCVScan
 
   return <LoginPageContent
     onDemoMode={onDemoMode}
-    onCVScanDemo={onCVScanDemo}
     showAuthModal={showAuthModal}
     setShowAuthModal={setShowAuthModal}
     handleLogin={handleLogin}
@@ -116,6 +113,46 @@ const LoginPageContent: React.FC<LoginPageContentProps> = ({
   handleRegister,
   isSupabaseMode
 }) => {
+  // Skeleton loading state
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    // Simulation d'un chargement visible
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000); // 3 secondes pour être sûr de voir le skeleton
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show skeleton loader
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50 relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-violet-300/20 to-pink-300/20 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-gradient-to-br from-pink-300/20 to-violet-300/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-gradient-to-br from-violet-300/20 to-pink-300/20 rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative z-10 min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="relative mx-auto mb-8">
+              <div className="w-16 h-16 bg-gradient-to-br from-violet-500 via-pink-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto animate-pulse">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-ping"></div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">CV ATS Assistant</h3>
+            <p className="text-gray-600">Préparation de votre expérience...</p>
+            <div className="mt-4 flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const features = [
     {

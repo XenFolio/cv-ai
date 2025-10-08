@@ -11,7 +11,8 @@ import {
   Ruler,
   Sparkles,
   CheckCircle,
-  Lightbulb
+  Lightbulb,
+  Search
 } from 'lucide-react';
 import { FontSelector } from './FontSelector';
 import { FontSizeSelector } from './FontSizeSelector';
@@ -42,6 +43,7 @@ interface ToolbarGroupsProps {
   onInsertLink: () => void;
   onInsertImage: () => void;
   onAIAction: () => void;
+  onSearch?: () => void;
 
   // Export
   onSave: () => void;
@@ -177,6 +179,15 @@ export const getToolbarGroups = (props: ToolbarGroupsProps) => {
           >
             <Image className="w-4 h-4" />
           </button>
+          {props.onSearch && (
+            <button
+              onClick={props.onSearch}
+              className="p-1.5 text-gray-700 hover:bg-purple-100 hover:text-indigo-600 rounded transition-all duration-200"
+              title="Rechercher et remplacer"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          )}
         </div>
       )
     },

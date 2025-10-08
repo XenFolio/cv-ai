@@ -8,6 +8,14 @@ export interface CVAnalysisRequest {
   enableATSPro?: boolean; // Enable enhanced ATS Pro features
 }
 
+export interface LetterAnalysisRequest {
+  content: string;
+  jobDescription?: string;
+  targetRole?: string;
+  cvContent?: string; // CV content for better context
+  enableATSPro?: boolean;
+}
+
 export interface CVAnalysisResponse {
   overallScore: number;
   sections: {
@@ -64,6 +72,45 @@ export interface CVAnalysisResponse {
   markdownAnalysis?: string; // Nouveau champ pour le contenu Markdown de l'analyse
 }
 
+export interface LetterAnalysisResponse {
+  overallScore: number;
+  sections: {
+    atsOptimization: number;
+    keywordMatch: number;
+    structure: number;
+    content: number;
+    persuasion: number; // Spécifique aux lettres
+    personalization: number; // Spécifique aux lettres
+  };
+  recommendations: string[];
+  strengths: string[];
+  weaknesses: string[];
+  keywords: {
+    found: string[];
+    missing: string[];
+    suggestions: string[];
+  };
+  improvements: {
+    title: string;
+    description: string;
+    priority: 'high' | 'medium' | 'low';
+  }[];
+  // Spécifique aux lettres
+  storytelling: {
+    effectiveness: number;
+    hooks: string[];
+    flow: string[];
+    impact: string[];
+  };
+  personalizationAnalysis?: {
+    companyName: boolean;
+    recruiterName: boolean;
+    specificProjects: boolean;
+    culturalFit: boolean;
+  };
+  markdownAnalysis?: string;
+}
+
 export interface UserInfo {
   name?: string;
   currentRole?: string;
@@ -97,6 +144,22 @@ export interface CoverLetterResponse {
   conclusion: string;
   skillsHighlight: string[];
   markdownContent?: string; // Nouveau champ pour le contenu Markdown
+}
+
+export interface CoverLetterRequest {
+  cvContent: string;
+  jobDescription: string;
+  companyInfo?: string;
+  tone?: string;
+  // Nouveau : informations du profil pour personnalisation
+  profileInfo?: {
+    name?: string;
+    title?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    linkedin?: string;
+  };
 }
 
 export type CorrectionMode = "strict" | "premium";
@@ -136,8 +199,8 @@ const extractKeywords = (text: string, patterns: RegExp[]): string[] => {
   return Array.from(keywords);
 };
 
-// Enhanced function to call OpenAI API for ATS Pro analysis
-const callOpenAIAPI = async (content: string, targetRole?: string, jobDescription?: string, profile?: { openai_api_key?: string } | null): Promise<CVAnalysisResponse> => {
+// Enhanced function to call OpenAI API for CV ATS Pro analysis
+const callOpenAIAPI_CV = async (content: string, targetRole?: string, jobDescription?: string, profile?: { openai_api_key?: string } | null): Promise<CVAnalysisResponse> => {
   const apiKey = getApiKey(profile);
 
   // Only try OpenAI API - no mock data fallback
@@ -266,51 +329,11 @@ IMPORTANT : Utilise le format Markdown avec des balises HTML quand utile pour la
     const aiResponse = data.choices[0].message.content;
 
     try {
-      // La réponse est maintenant en Markdown, on la retourne avec une structure de base
+      // Parser la réponse Markdown pour extraire les vraies données d'analyse
+      const parsedAnalysis = parseMarkdownAnalysis(aiResponse);
       return {
-        overallScore: 85, // Score par défaut si non analysable
-        sections: {
-          atsOptimization: 80,
-          keywordMatch: 75,
-          structure: 90,
-          content: 85
-        },
-        recommendations: ["Utilisez l'analyse Markdown pour des détails complets"],
-        strengths: ["Force à déterminer depuis le Markdown"],
-        weaknesses: ["Faiblesse à déterminer depuis le Markdown"],
-        keywords: {
-          found: ["mot-clé 1"],
-          missing: ["mot-clé manquant"],
-          suggestions: ["suggestion"]
-        },
-        improvements: [],
-        keywordAnalysis: {
-          jobDescriptionKeywords: [],
-          semanticMatches: [],
-          densityOptimization: {
-            current: 2.0,
-            optimal: 4.0,
-            suggestions: []
-          },
-          contextualSuggestions: {
-            skills: [],
-            technologies: [],
-            certifications: []
-          }
-        },
-        marketBenchmarking: {
-          industry: "Technology",
-          role: "Professional",
-          averageScore: 75,
-          percentile: 70,
-          competitiveness: "medium",
-          marketDemand: {
-            highDemand: [],
-            emerging: [],
-            declining: []
-          }
-        },
-        markdownAnalysis: aiResponse // Contenu Markdown complet
+        ...parsedAnalysis,
+        markdownAnalysis: aiResponse // Garder le contenu Markdown complet pour l'affichage
       };
     } catch (parseError) {
       console.error('Error processing OpenAI response:', parseError);
@@ -358,6 +381,186 @@ IMPORTANT : Utilise le format Markdown avec des balises HTML quand utile pour la
             emerging: [],
             declining: []
           }
+        },
+        markdownAnalysis: aiResponse // Contenu Markdown même en cas d'erreur
+      };
+    }
+  } catch (error) {
+    console.error('OpenAI API Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'analyse';
+    throw new Error(errorMessage);
+  }
+};
+
+// Enhanced function to call OpenAI API for Letter ATS analysis
+const callOpenAIAPI_Letter = async (content: string, targetRole?: string, jobDescription?: string, cvContent?: string, profile?: { openai_api_key?: string } | null): Promise<LetterAnalysisResponse> => {
+  const apiKey = getApiKey(profile);
+
+  if (!apiKey) {
+    throw new Error('Clé API OpenAI non configurée. Veuillez l\'ajouter dans les paramètres.');
+  }
+
+  const prompt = `ANALYSE LETTRE DE MOTIVATION ATS PRO - FORMAT MARKDOWN/HTML
+
+Tu es un expert en recrutement et analyse de lettres de motivation. Analyse cette lettre et réponds en format MARKDOWN avec du HTML quand c'est utile pour la mise en forme.
+
+${targetRole ? `POSTE VISÉ : ${targetRole}` : 'ANALYSE GÉNÉRALE'}
+${jobDescription ? `\nDESCRIPTION DE POSTE :\n${jobDescription}` : ''}
+${cvContent ? `\nCV ASSOCIÉ (pour contexte) :\n${cvContent}` : ''}
+
+LETTRE À ANALYSER :
+${content}
+
+STRUCTURE DE RÉPONSE SOUHAITÉE :
+
+# Analyse Lettre de Motivation ATS Pro - ${targetRole || 'Analyse Générale'}
+
+## 📊 Score Global : 85/100
+
+### Scores par Section
+- **Optimisation ATS** : 80/100
+- **Correspondance Mots-clés** : 75/100
+- **Structure** : 90/100
+- **Contenu** : 85/100
+- **Persuasion** : 80/100 (spécifique aux lettres)
+- **Personnalisation** : 70/100 (spécifique aux lettres)
+
+## 🎯 Points Forts de la Lettre
+- Point fort 1 (persuasion, storytelling, etc.)
+- Point fort 2
+- Point fort 3
+- Point fort 4
+
+## 🔬 Points à Améliorer
+- Faiblesse 1
+- Faiblesse 2
+- Faiblesse 3
+- Faiblesse 4
+
+## 💡 Recommandations pour la Lettre
+1. **Recommandation 1** - Description détaillée
+2. **Recommandation 2** - Description détaillée
+3. **Recommandation 3** - Description détaillée
+
+## 🎭 Analyse du Storytelling
+
+### Accroches Efficaces
+- Accroche 1
+- Accroche 2
+
+### Flux Narratif
+- Point fort 1
+- Point fort 2
+
+### Impact Émotionnel
+- Élément 1
+- Élément 2
+
+## 🔍 Analyse des Mots-clés Spécifiques
+
+### Mots-clés Présents
+- "mot1", "mot2", "mot3"
+
+### Mots-clés Manquants
+- "mot4", "mot5", "mot6"
+
+### Suggestions pour la Lettre
+- Ajouter : "mot7", "mot8", "mot9"
+
+## 🎯 Analyse de Personnalisation
+- **Nom de l'entreprise** : ✅/❌
+- **Nom du recruteur** : ✅/❌
+- **Projets spécifiques** : ✅/❌
+- **Adéquation culturelle** : ✅/❌
+
+## 🚀 Améliorations Prioritaires
+<details>
+<summary>🎯 Amélioration 1 (Priorité haute)</summary>
+Description détaillée de l'amélioration suggérée
+</details>
+
+IMPORTANT : Utilise le format Markdown avec des balises HTML quand utile pour la mise en forme. Concentre-toi sur les aspects spécifiques aux lettres de motivation : persuasion, personnalisation, storytelling.`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: 'Tu es un expert en analyse de lettres de motivation. Tu réponds en format Markdown avec HTML quand utile pour la mise en forme. Sois clair, structuré et facile à lire.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 3000
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        throw new Error('Clé API OpenAI invalide. Vérifiez votre clé dans les paramètres.');
+      } else if (response.status === 429) {
+        throw new Error('Quota d\'API OpenAI dépassé. Veuillez réessayer plus tard.');
+      } else {
+        throw new Error(`Erreur API OpenAI: ${errorData.error?.message || 'Erreur inconnue'}`);
+      }
+    }
+
+    const data = await response.json();
+    const aiResponse = data.choices[0].message.content;
+
+    try {
+      // Parser la réponse Markdown pour extraire les vraies données d'analyse
+      const parsedAnalysis = parseMarkdownAnalysisLetter(aiResponse);
+      return {
+        ...parsedAnalysis,
+        markdownAnalysis: aiResponse // Garder le contenu Markdown complet pour l'affichage
+      };
+    } catch (parseError) {
+      console.error('Error processing OpenAI response:', parseError);
+      console.error('Raw response:', aiResponse);
+      // Return default structure with markdown content
+      return {
+        overallScore: 75,
+        sections: {
+          atsOptimization: 75,
+          keywordMatch: 70,
+          structure: 80,
+          content: 75,
+          persuasion: 75,
+          personalization: 70
+        },
+        recommendations: ["Vérifier le format de la réponse"],
+        strengths: ["Contenu Markdown généré"],
+        weaknesses: ["Analyse automatisée limitée"],
+        keywords: {
+          found: [],
+          missing: [],
+          suggestions: []
+        },
+        improvements: [],
+        storytelling: {
+          effectiveness: 75,
+          hooks: ["Accroche à améliorer"],
+          flow: ["Flux narratif"],
+          impact: ["Impact à renforcer"]
+        },
+        personalizationAnalysis: {
+          companyName: false,
+          recruiterName: false,
+          specificProjects: false,
+          culturalFit: false
         },
         markdownAnalysis: aiResponse // Contenu Markdown même en cas d'erreur
       };
@@ -541,6 +744,439 @@ const escapeRegExp = (string: string) => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
 
+// Function to parse Markdown analysis response and extract structured data for CVs
+const parseMarkdownAnalysis = (markdownResponse: string): CVAnalysisResponse => {
+  try {
+    const analysis: CVAnalysisResponse = {
+      overallScore: 75,
+      sections: {
+        atsOptimization: 75,
+        keywordMatch: 75,
+        structure: 75,
+        content: 75
+      },
+      recommendations: [],
+      strengths: [],
+      weaknesses: [],
+      keywords: {
+        found: [],
+        missing: [],
+        suggestions: []
+      },
+      improvements: [],
+      keywordAnalysis: {
+        jobDescriptionKeywords: [],
+        semanticMatches: [],
+        densityOptimization: {
+          current: 2.0,
+          optimal: 4.0,
+          suggestions: []
+        },
+        contextualSuggestions: {
+          skills: [],
+          technologies: [],
+          certifications: []
+        }
+      },
+      marketBenchmarking: {
+        industry: "Technology",
+        role: "Professional",
+        averageScore: 75,
+        percentile: 70,
+        competitiveness: "medium",
+        marketDemand: {
+          highDemand: [],
+          emerging: [],
+          declining: []
+        }
+      }
+    };
+
+    // Extraire le score global
+    const scoreMatch = markdownResponse.match(/Score Global[:\s]*(\d+)\/?(\d+)?/i);
+    if (scoreMatch) {
+      const score = parseInt(scoreMatch[1]);
+      const maxScore = scoreMatch[2] ? parseInt(scoreMatch[2]) : 100;
+      analysis.overallScore = Math.round((score / maxScore) * 100);
+    }
+
+    // Extraire les scores par section
+    const sectionScores = [
+      { key: 'atsOptimization', patterns: [/Optimisation ATS[:\s]*(\d+)/i, /ATS Optimization[:\s]*(\d+)/i] },
+      { key: 'keywordMatch', patterns: [/Correspondance Mots-clés[:\s]*(\d+)/i, /Keyword Match[:\s]*(\d+)/i] },
+      { key: 'structure', patterns: [/Structure[:\s]*(\d+)/i] },
+      { key: 'content', patterns: [/Contenu[:\s]*(\d+)/i, /Content[:\s]*(\d+)/i] }
+    ];
+
+    sectionScores.forEach(section => {
+      for (const pattern of section.patterns) {
+        const match = markdownResponse.match(pattern);
+        if (match) {
+          analysis.sections[section.key as keyof typeof analysis.sections] = parseInt(match[1]);
+          break;
+        }
+      }
+    });
+
+    // Extraire les forces (points forts)
+    const strengthsMatch = markdownResponse.match(/##?[🎯\s]*Forces?[🎯\s]*\n([\s\S]*?)(?=\n##|$)/iu);
+    if (strengthsMatch) {
+      const strengthsText = strengthsMatch[1];
+      const strengthLines = strengthsText.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+      analysis.strengths = strengthLines.map(line => line.replace(/^[-•]\s*/, '').trim()).filter(s => s.length > 0);
+    }
+
+    // Extraire les faiblesses (points à améliorer)
+    const weaknessesMatch = markdownResponse.match(/##?[🔬\s]*Points?[🔬\s]*\n([\s\S]*?)(?=\n##|$)/iu);
+    if (weaknessesMatch) {
+      const weaknessesText = weaknessesMatch[1];
+      const weaknessLines = weaknessesText.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+      analysis.weaknesses = weaknessLines.map(line => line.replace(/^[-•]\s*/, '').trim()).filter(w => w.length > 0);
+    }
+
+    // Extraire les recommandations
+    const recommendationsMatch = markdownResponse.match(/##?[💡\s]*Recommandations?[💡\s]*\n([\s\S]*?)(?=\n##|$)/iu);
+    if (recommendationsMatch) {
+      const recommendationsText = recommendationsMatch[1];
+      const recommendationLines = recommendationsText.split('\n').filter(line =>
+        line.trim().match(/^\d+\./) || line.trim().startsWith('-') || line.trim().startsWith('•')
+      );
+      analysis.recommendations = recommendationLines.map(line =>
+        line.replace(/^\d+\.\s*/, '').replace(/^[-•]\s*/, '').trim()
+      ).filter(r => r.length > 0);
+    }
+
+    // Extraire les mots-clés
+    const keywordsFoundMatch = markdownResponse.match(/Mots-clés[:\s]*(Identifiés|Présents|Trouvés)?[:\s]*\n([\s\S]*?)(?=\n##|\n\n|$)/i);
+    if (keywordsFoundMatch) {
+      const keywordsText = keywordsFoundMatch[2];
+      const keywords = keywordsText.match(/"([^"]+)"/g);
+      if (keywords) {
+        analysis.keywords.found = keywords.map(k => k.replace(/"/g, '')).filter(k => k.length > 0);
+      }
+    }
+
+    const keywordsMissingMatch = markdownResponse.match(/Mots-clés[:\s]*Manquants?[:\s]*\n([\s\S]*?)(?=\n##|\n\n|$)/i);
+    if (keywordsMissingMatch) {
+      const keywordsText = keywordsMissingMatch[1];
+      const keywords = keywordsText.match(/"([^"]+)"/g);
+      if (keywords) {
+        analysis.keywords.missing = keywords.map(k => k.replace(/"/g, '')).filter(k => k.length > 0);
+      }
+    }
+
+    const suggestionsMatch = markdownResponse.match(/Suggestions[:\s]*\n([\s\S]*?)(?=\n##|\n\n|$)/i);
+    if (suggestionsMatch) {
+      const suggestionsText = suggestionsMatch[1];
+      const suggestions = suggestionsText.match(/"([^"]+)"/g);
+      if (suggestions) {
+        analysis.keywords.suggestions = suggestions.map(k => k.replace(/"/g, '')).filter(k => k.length > 0);
+      }
+    }
+
+    // Extraire les améliorations prioritaires
+    const improvementsMatch = markdownResponse.match(/##?[🚀\s]*Amélioration?[🚀\s]*\n([\s\S]*?)(?=\n##|$)/iu);
+    if (improvementsMatch) {
+      const improvementsText = improvementsMatch[1];
+      const detailMatches = improvementsText.match(/<details>[\s\S]*?<\/details>/g) || [];
+
+      analysis.improvements = detailMatches.map((detail, index) => {
+        const summaryMatch = detail.match(/<summary>(.*?)<\/summary>/);
+        const descriptionMatch = detail.match(/<summary>.*?<\/summary>\s*(.*)/);
+
+        return {
+          title: summaryMatch ? summaryMatch[1].replace(/\(Priorité ([a-z]+)\)/i, '').trim() : `Amélioration ${index + 1}`,
+          description: descriptionMatch ? descriptionMatch[1].trim() : '',
+          priority: (summaryMatch && summaryMatch[1].toLowerCase().includes('haute')) ? 'high' :
+                    (summaryMatch && summaryMatch[1].toLowerCase().includes('moyenne')) ? 'medium' : 'low'
+        } as const;
+      });
+    }
+
+    // Extraire le benchmarking marché
+    const benchmarkMatch = markdownResponse.match(/##?[🏢\s]*Benchmarking?[🏢\s]*\n([\s\S]*?)(?=\n##|$)/iu);
+    if (benchmarkMatch) {
+      const benchmarkText = benchmarkMatch[1];
+
+      // Extraire l'industrie et le rôle
+      const industryMatch = benchmarkText.match(/\*\*Industrie\*\*[:\s]*([^\n]+)/i);
+      const roleMatch = benchmarkText.match(/\*\*Poste\*\*[:\s]*([^\n]+)/i);
+      const positionMatch = benchmarkText.match(/\*\*Positionnement\*\*[:\s]*([^\n]+)/i);
+
+      if (industryMatch) analysis.marketBenchmarking!.industry = industryMatch[1].trim();
+      if (roleMatch) analysis.marketBenchmarking!.role = roleMatch[1].trim();
+
+      if (positionMatch) {
+        const percentileMatch = positionMatch[1].match(/(\d+)e? percentile/i);
+        if (percentileMatch) {
+          analysis.marketBenchmarking!.percentile = parseInt(percentileMatch[1]);
+        }
+        const competitivenessMatch = positionMatch[1].match(/compétitivité\s+([a-z]+)/i);
+        if (competitivenessMatch) {
+          const comp = competitivenessMatch[1].toLowerCase();
+          analysis.marketBenchmarking!.competitiveness =
+            comp.includes('haut') ? 'high' : comp.includes('moy') ? 'medium' : 'low';
+        }
+      }
+    }
+
+    return analysis;
+  } catch (error) {
+    console.error('Error parsing markdown analysis:', error);
+    // Retourner une analyse par défaut en cas d'erreur
+    return {
+      overallScore: 75,
+      sections: {
+        atsOptimization: 75,
+        keywordMatch: 75,
+        structure: 75,
+        content: 75
+      },
+      recommendations: ["Erreur lors de l'analyse de la réponse IA"],
+      strengths: ["Analyse IA générée"],
+      weaknesses: ["Parsing limité"],
+      keywords: {
+        found: [],
+        missing: [],
+        suggestions: []
+      },
+      improvements: [],
+      keywordAnalysis: {
+        jobDescriptionKeywords: [],
+        semanticMatches: [],
+        densityOptimization: {
+          current: 2.0,
+          optimal: 4.0,
+          suggestions: []
+        },
+        contextualSuggestions: {
+          skills: [],
+          technologies: [],
+          certifications: []
+        }
+      },
+      marketBenchmarking: {
+        industry: "Technology",
+        role: "Professional",
+        averageScore: 75,
+        percentile: 70,
+        competitiveness: "medium",
+        marketDemand: {
+          highDemand: [],
+          emerging: [],
+          declining: []
+        }
+      }
+    };
+  }
+};
+
+// Function to parse Markdown analysis response and extract structured data for Letters
+const parseMarkdownAnalysisLetter = (markdownResponse: string): LetterAnalysisResponse => {
+  try {
+    const analysis: LetterAnalysisResponse = {
+      overallScore: 75,
+      sections: {
+        atsOptimization: 75,
+        keywordMatch: 75,
+        structure: 75,
+        content: 75,
+        persuasion: 75,
+        personalization: 70
+      },
+      recommendations: [],
+      strengths: [],
+      weaknesses: [],
+      keywords: {
+        found: [],
+        missing: [],
+        suggestions: []
+      },
+      improvements: [],
+      storytelling: {
+        effectiveness: 75,
+        hooks: [],
+        flow: [],
+        impact: []
+      },
+      personalizationAnalysis: {
+        companyName: false,
+        recruiterName: false,
+        specificProjects: false,
+        culturalFit: false
+      }
+    };
+
+    // Extraire le score global
+    const scoreMatch = markdownResponse.match(/Score Global[:\s]*(\d+)\/?(\d+)?/i);
+    if (scoreMatch) {
+      const score = parseInt(scoreMatch[1]);
+      const maxScore = scoreMatch[2] ? parseInt(scoreMatch[2]) : 100;
+      analysis.overallScore = Math.round((score / maxScore) * 100);
+    }
+
+    // Extraire les scores par section (incluant persuasion et personalisation)
+    const sectionScores = [
+      { key: 'atsOptimization', patterns: [/Optimisation ATS[:\s]*(\d+)/i, /ATS Optimization[:\s]*(\d+)/i] },
+      { key: 'keywordMatch', patterns: [/Correspondance Mots-clés[:\s]*(\d+)/i, /Keyword Match[:\s]*(\d+)/i] },
+      { key: 'structure', patterns: [/Structure[:\s]*(\d+)/i] },
+      { key: 'content', patterns: [/Contenu[:\s]*(\d+)/i, /Content[:\s]*(\d+)/i] },
+      { key: 'persuasion', patterns: [/Persuasion[:\s]*(\d+)/i] },
+      { key: 'personalization', patterns: [/Personnalisation[:\s]*(\d+)/i, /Personalization[:\s]*(\d+)/i] }
+    ];
+
+    sectionScores.forEach(section => {
+      for (const pattern of section.patterns) {
+        const match = markdownResponse.match(pattern);
+        if (match) {
+          analysis.sections[section.key as keyof typeof analysis.sections] = parseInt(match[1]);
+          break;
+        }
+      }
+    });
+
+    // Extraire les forces (points forts de la lettre)
+    const strengthsMatch = markdownResponse.match(/##?[🎯\s]*Points?[🎯\s]*Forts?[\s\w]*\n([\s\S]*?)(?=\n##|$)/iu);
+    if (strengthsMatch) {
+      const strengthsText = strengthsMatch[1];
+      const strengthLines = strengthsText.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+      analysis.strengths = strengthLines.map(line => line.replace(/^[-•]\s*/, '').trim()).filter(s => s.length > 0);
+    }
+
+    // Extraire les faiblesses (points à améliorer)
+    const weaknessesMatch = markdownResponse.match(/##?[🔬\s]*Points?[🔬\s]*\n([\s\S]*?)(?=\n##|$)/iu);
+    if (weaknessesMatch) {
+      const weaknessesText = weaknessesMatch[1];
+      const weaknessLines = weaknessesText.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+      analysis.weaknesses = weaknessLines.map(line => line.replace(/^[-•]\s*/, '').trim()).filter(w => w.length > 0);
+    }
+
+    // Extraire les recommandations
+    const recommendationsMatch = markdownResponse.match(/##?[💡\s]*Recommandations?[\s\w]*\n([\s\S]*?)(?=\n##|$)/iu);
+    if (recommendationsMatch) {
+      const recommendationsText = recommendationsMatch[1];
+      const recommendationLines = recommendationsText.split('\n').filter(line =>
+        line.trim().match(/^\d+\./) || line.trim().startsWith('-') || line.trim().startsWith('•')
+      );
+      analysis.recommendations = recommendationLines.map(line =>
+        line.replace(/^\d+\.\s*/, '').replace(/^[-•]\s*/, '').trim()
+      ).filter(r => r.length > 0);
+    }
+
+    // Extraire les mots-clés
+    const keywordsFoundMatch = markdownResponse.match(/Mots-clés[:\s]*(Présents|Identifiés|Trouvés)?[:\s]*\n([\s\S]*?)(?=\n##|\n\n|$)/iu);
+    if (keywordsFoundMatch) {
+      const keywordsText = keywordsFoundMatch[2];
+      const keywords = keywordsText.match(/"([^"]+)"/g);
+      if (keywords) {
+        analysis.keywords.found = keywords.map(k => k.replace(/"/g, '')).filter(k => k.length > 0);
+      }
+    }
+
+    const keywordsMissingMatch = markdownResponse.match(/Mots-clés[:\s]*Manquants?[:\s]*\n([\s\S]*?)(?=\n##|\n\n|$)/iu);
+    if (keywordsMissingMatch) {
+      const keywordsText = keywordsMissingMatch[1];
+      const keywords = keywordsText.match(/"([^"]+)"/g);
+      if (keywords) {
+        analysis.keywords.missing = keywords.map(k => k.replace(/"/g, '')).filter(k => k.length > 0);
+      }
+    }
+
+    const suggestionsMatch = markdownResponse.match(/Suggestions?[:\s]*\n([\s\S]*?)(?=\n##|\n\n|$)/iu);
+    if (suggestionsMatch) {
+      const suggestionsText = suggestionsMatch[1];
+      const suggestions = suggestionsText.match(/"([^"]+)"/g);
+      if (suggestions) {
+        analysis.keywords.suggestions = suggestions.map(k => k.replace(/"/g, '')).filter(k => k.length > 0);
+      }
+    }
+
+    // Extraire l'analyse du storytelling
+    const storytellingMatch = markdownResponse.match(/##?[🎭\s]*Storytelling?[\s\w]*\n([\s\S]*?)(?=\n##|$)/iu);
+    if (storytellingMatch) {
+      const storytellingText = storytellingMatch[1];
+
+      // Extraire les accroches
+      const hooksMatch = storytellingText.match(/Accroches?[\s\w]*\n([\s\S]*?)(?=\n###|$)/iu);
+      if (hooksMatch) {
+        const hooksText = hooksMatch[1];
+        const hooks = hooksText.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+        analysis.storytelling.hooks = hooks.map(line => line.replace(/^[-•]\s*/, '').trim()).filter(h => h.length > 0);
+      }
+
+      // Extraire le flux narratif
+      const flowMatch = storytellingText.match(/Flux?[\s\w]*\n([\s\S]*?)(?=\n###|$)/iu);
+      if (flowMatch) {
+        const flowText = flowMatch[1];
+        const flow = flowText.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+        analysis.storytelling.flow = flow.map(line => line.replace(/^[-•]\s*/, '').trim()).filter(f => f.length > 0);
+      }
+
+      // Extraire l'impact
+      const impactMatch = storytellingText.match(/Impact?[\s\w]*\n([\s\S]*?)(?=\n###|$)/iu);
+      if (impactMatch) {
+        const impactText = impactMatch[1];
+        const impact = impactText.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'));
+        analysis.storytelling.impact = impact.map(line => line.replace(/^[-•]\s*/, '').trim()).filter(i => i.length > 0);
+      }
+
+      // Extraire l'effectivité
+      const effectivenessMatch = storytellingText.match(/effectivité[:\s]*(\d+)/i);
+      if (effectivenessMatch) {
+        analysis.storytelling.effectiveness = parseInt(effectivenessMatch[1]);
+      }
+    }
+
+    // Extraire l'analyse de personnalisation
+    const personalizationMatch = markdownResponse.match(/##?[🎯\s]*Personnalisation?[\s\w]*\n([\s\S]*?)(?=\n##|$)/iu);
+    if (personalizationMatch && analysis.personalizationAnalysis) {
+      const personalizationText = personalizationMatch[1];
+
+      analysis.personalizationAnalysis.companyName = personalizationText.includes('entreprise') && personalizationText.includes('✅');
+      analysis.personalizationAnalysis.recruiterName = personalizationText.includes('recruteur') && personalizationText.includes('✅');
+      analysis.personalizationAnalysis.specificProjects = personalizationText.includes('projets') && personalizationText.includes('✅');
+      analysis.personalizationAnalysis.culturalFit = personalizationText.includes('culture') && personalizationText.includes('✅');
+    }
+
+    return analysis;
+  } catch (error) {
+    console.error('Error parsing markdown letter analysis:', error);
+    // Retourner une analyse par défaut en cas d'erreur
+    return {
+      overallScore: 75,
+      sections: {
+        atsOptimization: 75,
+        keywordMatch: 75,
+        structure: 75,
+        content: 75,
+        persuasion: 75,
+        personalization: 70
+      },
+      recommendations: ["Erreur lors de l'analyse de la réponse IA"],
+      strengths: ["Analyse IA générée"],
+      weaknesses: ["Parsing limité"],
+      keywords: {
+        found: [],
+        missing: [],
+        suggestions: []
+      },
+      improvements: [],
+      storytelling: {
+        effectiveness: 75,
+        hooks: ["Erreur de parsing"],
+        flow: ["Erreur de parsing"],
+        impact: ["Erreur de parsing"]
+      },
+      personalizationAnalysis: {
+        companyName: false,
+        recruiterName: false,
+        specificProjects: false,
+        culturalFit: false
+      }
+    };
+  }
+};
+
 // Get API key from profile or settings
 const getApiKey = (profile?: { openai_api_key?: string } | null): string | null => {
   // Try to get from profile first
@@ -602,7 +1238,7 @@ export const useOpenAI = () => {
     setError(null);
 
     try {
-      const result = await callOpenAIAPI(
+      const result = await callOpenAIAPI_CV(
         request.content,
         request.targetRole,
         request.jobDescription,
@@ -613,6 +1249,36 @@ export const useOpenAI = () => {
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'analyse du CV';
+      setError(errorMessage);
+      setIsLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Analyze a cover letter content using OpenAI API.
+   *
+   * @param {LetterAnalysisRequest} request - Request object containing the letter content, target role, job description, and optional CV content.
+   * @returns {Promise<LetterAnalysisResponse>} - Promise resolving with the analyzed letter content.
+   * @throws {Error} - Error thrown if the request fails.
+   */
+  const analyzeLetter = async (request: LetterAnalysisRequest): Promise<LetterAnalysisResponse> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await callOpenAIAPI_Letter(
+        request.content,
+        request.targetRole,
+        request.jobDescription,
+        request.cvContent,
+        profile
+      );
+
+      setIsLoading(false);
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'analyse de la lettre de motivation';
       setError(errorMessage);
       setIsLoading(false);
       throw err;
@@ -668,12 +1334,7 @@ export const useOpenAI = () => {
     }
   };
 
-  const generateCoverLetter = async (request: {
-    cvContent: string;
-    jobDescription: string;
-    companyInfo?: string;
-    tone?: string;
-  }): Promise<CoverLetterResponse> => {
+  const generateCoverLetter = async (request: CoverLetterRequest): Promise<CoverLetterResponse> => {
     setIsLoading(true);
     setError(null);
 
@@ -683,12 +1344,29 @@ export const useOpenAI = () => {
         throw new Error('Clé API OpenAI non configurée. Veuillez l\'ajouter dans les paramètres.');
       }
 
+      // Utiliser les infos du profil pour personnaliser la lettre
+      const candidateName = request.profileInfo?.name || 'Candidat';
+      const candidateTitle = request.profileInfo?.title || 'Professionnel';
+
       const prompt = `Rédige une lettre de motivation professionnelle en te basant sur:
 
-CV: ${request.cvContent}
-Description du poste: ${request.jobDescription}
-${request.companyInfo ? `Entreprise: ${request.companyInfo}` : ''}
-${request.tone ? `Ton: ${request.tone}` : ''}
+INFORMATIONS DU CANDIDAT:
+- Nom: ${candidateName}
+- Titre: ${candidateTitle}
+${request.profileInfo?.email ? `- Email: ${request.profileInfo.email}` : ''}
+${request.profileInfo?.location ? `- Localisation: ${request.profileInfo.location}` : ''}
+
+CV DÉTAILLÉ: ${request.cvContent}
+DESCRIPTION DU POSTE: ${request.jobDescription}
+${request.companyInfo ? `ENTREPRISE: ${request.companyInfo}` : ''}
+${request.tone ? `TON REQUIS: ${request.tone}` : ''}
+
+CONSIGNES IMPORTANTES:
+1. Personnalise la lettre avec le nom du candidat: ${candidateName}
+2. Adapte le ton au profil de ${candidateTitle}
+3. Si le nom n'est pas spécifié, utilise une formule professionnelle
+4. Inclus une salutation appropriée avec le nom de l'entreprise si disponible
+5. Structure la lettre avec introduction, corps et conclusion clairs
 
 IMPORTANT: Réponds en format Markdown avec une structure claire et professionnelle.`;
 
@@ -1014,6 +1692,7 @@ IMPORTANT :
 
   return {
     analyzeCV,
+    analyzeLetter,
     editCVField,
     generateCoverLetter,
     analyzeGrammarErrors,

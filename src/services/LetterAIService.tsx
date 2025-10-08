@@ -135,7 +135,17 @@ export const generateLetterContent = async (
     motivation: string;
     competences: string;
   },
-  editCVField: (prompt: { prompt: string }) => Promise<string | null>
+  editCVField: (prompt: { prompt: string }) => Promise<string | null>,
+  profileInfo?: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+    profession?: string;
+  }
 ): Promise<string> => {
   // Générer des informations par défaut si les champs sont vides
   const defaultExperience = formData.experience.trim() || `Professionnel expérimenté avec de solides compétences dans le domaine du ${formData.secteur || 'numérique'}. Capable de m'adapter rapidement aux nouveaux défis et technologies.`;
@@ -143,25 +153,71 @@ export const generateLetterContent = async (
   const defaultCompetences = formData.competences.trim() || `Compétences professionnelles, autonomie, rigueur, excellent esprit d'équipe, capacité d'adaptation, résolution de problèmes, communication efficace.`;
   const defaultSecteur = formData.secteur.trim() || `secteur du numérique et de la communication`;
 
+  // Utiliser les informations du profil si disponibles
+  const candidateName = profileInfo?.fullName || (formData.poste ? 'Candidat pour poste de ' + formData.poste : 'Professionnel qualifié');
+  const candidateProfession = profileInfo?.profession || formData.poste || 'Professionnel';
+  const candidateContact = profileInfo ? [
+    profileInfo.email && `Email: ${profileInfo.email}`,
+    profileInfo.phone && `Téléphone: ${profileInfo.phone}`,
+    profileInfo.address && `Adresse: ${profileInfo.address}`,
+    profileInfo.city && profileInfo.postalCode && `Ville: ${profileInfo.city} ${profileInfo.postalCode}`,
+    profileInfo.country && `Pays: ${profileInfo.country}`
+  ].filter(Boolean).join('\n') : '';
+
+  // Informations de l'entreprise si disponibles
+  const companyInfo = formData.entreprise ? `
+- Nom de l'entreprise : ${formData.entreprise}
+${formData.secteur ? `- Secteur d'activité : ${formData.secteur}` : ''}` : '';
+
+  // Créer les coordonnées complètes du candidat
+  const candidateFullContact = candidateContact ?
+    candidateContact.replace(/Email: /g, '').replace(/Téléphone: /g, '').replace(/Adresse: /g, '').replace(/Ville: /g, '').replace(/Pays: /g, '').split('\n').filter(line => line.trim()).join('<br>') :
+    `${candidateName}<br>${candidateProfession}<br>Email: [email@example.com]<br>Téléphone: [numéro]<br>[Ville], [Code Postal]`;
+
   const prompt = `Créez une lettre de motivation professionnelle en HTML avec ces éléments :
 
 Coordonnées du candidat :
-- Nom : ${formData.poste ? 'Candidat pour poste de ' + formData.poste : 'Professionnel qualifié'}
-- Entreprise : ${formData.entreprise || 'Entreprise cible'}
-- Secteur : ${defaultSecteur}
-- Expérience : ${defaultExperience}
+- Nom complet : ${candidateName}
+- Profession : ${candidateProfession}
+${candidateContact ? `- Informations de contact :\n${candidateContact}` : ''}
+
+${companyInfo ? `INFORMATIONS DE L'ENTREPRISE :${companyInfo}` : '- Entreprise cible : Non spécifiée'}
+- Secteur d'activité : ${defaultSecteur}
+- Expérience professionnelle : ${defaultExperience}
 - Motivation : ${defaultMotivation}
-- Compétences : ${defaultCompetences}
+- Compétences clés : ${defaultCompetences}
 
 Structure requise :
-1. En-tête avec informations de contact
-2. Date et objet
-3. Formule d'appel
-4. Corps de lettre (3 paragraphes)
-5. Formule de politesse
-6. Signature
+1. **TRÈS IMPORTANT : En-tête en HAUT de la lettre avec coordonnées complètes**
+
+   <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+     <!-- Coordonnées du candidat (gauche) -->
+     <div style="text-align: left; line-height: 1.4;">
+       <strong>${candidateName}</strong><br>
+       ${candidateProfession}<br>
+       ${candidateFullContact}
+     </div>
+
+     <!-- Coordonnées de l'entreprise (droite) -->
+     <div style="text-align: right; line-height: 1.4;">
+       <strong>${formData.entreprise || '[NOM DE L\'ENTREPRISE]'}</strong><br>
+       ${formData.secteur ? `${formData.secteur}<br>` : ''}
+       Service des Ressources Humaines<br>
+       [Adresse de l'entreprise]<br>
+       [Ville], [Code Postal]
+     </div>
+   </div>
+
+2. **Saut de ligne**
+3. Date et objet
+4. Formule d'appel
+5. Corps de lettre (3 paragraphes)
+6. Formule de politesse
+7. **Signature SEULEMENT avec le nom** : ${candidateName}
 
 Format HTML : utilisez <p> pour les paragraphes, <strong> pour emphasis, <br><br> pour sauts de ligne.
+
+⚠️ CRUCIAL : L'en-tête avec les coordonnées doit être la PREMIÈRE chose visible, bien structurée avec le candidat à gauche et l'entreprise à droite. Les coordonnées n'apparaîtront nulle part ailleurs.
 
 Générez uniquement le code HTML complet.`;
 
@@ -210,13 +266,34 @@ export const improveTextWithAI = async (
   selectedText: string,
   documentAnalysis: DocumentAnalysis,
   storedAnalysis: string,
-  editCVField: (prompt: { prompt: string }) => Promise<string | null>
+  editCVField: (prompt: { prompt: string }) => Promise<string | null>,
+  profileInfo?: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+    profession?: string;
+  }
 ): Promise<string> => {
   // Créer le prompt pour l'IA avec contexte
+  // Utiliser les informations du profil si disponibles
+  const candidateInfo = profileInfo ? `
+- Nom du candidat : ${profileInfo.fullName || 'Non spécifié'}
+- Profession : ${profileInfo.profession || 'Non spécifiée'}
+- Email : ${profileInfo.email || 'Non spécifié'}
+- Téléphone : ${profileInfo.phone || 'Non spécifié'}
+${profileInfo.address ? `- Adresse : ${profileInfo.address}` : ''}
+${profileInfo.city && profileInfo.postalCode ? `- Ville : ${profileInfo.city} ${profileInfo.postalCode}` : ''}
+${profileInfo.country ? `- Pays : ${profileInfo.country}` : ''}` : '';
+
   const contextPrompt = `Tu es un expert en rédaction professionnelle et amélioration de textes. Rédige comme un humain passionné et authentique, pas comme une IA robotique.
 
 CONTEXTE DU DOCUMENT :
-- Type de document : Lettre de motivation professionnelle
+- Type de document : Lettre de motivation professionnelle${candidateInfo ? `
+INFORMATIONS DU CANDIDAT :${candidateInfo}` : ''}
 - Ton détecté : ${documentAnalysis.tone === 'formal' ? 'Formel' : documentAnalysis.tone === 'informal' ? 'Informel' : 'Professionnel'}${storedAnalysis ? `
 - Analyse précédente du document :
 ${storedAnalysis}` : ''}
@@ -341,15 +418,42 @@ export const regenerateLetterFromContent = async (
     motivation: string;
     competences: string;
   } | null,
-  editCVField: (prompt: { prompt: string }) => Promise<string | null>
+  editCVField: (prompt: { prompt: string }) => Promise<string | null>,
+  profileInfo?: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+    profession?: string;
+  }
 ): Promise<string> => {
   let prompt = `Tu es un expert en rédaction de lettres de motivation professionnelles et persuasives.`;
 
+  // Utiliser les informations du profil si disponibles (définies ici pour tous les cas)
+  const candidateName = profileInfo?.fullName || 'Candidat';
+  const candidateContact = profileInfo ? [
+    profileInfo.email && `Email: ${profileInfo.email}`,
+    profileInfo.phone && `Téléphone: ${profileInfo.phone}`,
+    profileInfo.address && `Adresse: ${profileInfo.address}`,
+    profileInfo.city && profileInfo.postalCode && `Ville: ${profileInfo.city} ${profileInfo.postalCode}`
+  ].filter(Boolean).join('\n') : '';
+
+  // Déclarer candidateProfession avec une valeur par défaut pour qu'elle soit accessible dans toute la fonction
+  let candidateProfession = profileInfo?.profession || 'Professionnel';
+
   if (formData && formData.poste.trim() && formData.entreprise.trim()) {
     // Utiliser les données du formulaire si disponibles
+    candidateProfession = profileInfo?.profession || formData.poste;
+
     prompt += `
 
 DONNÉES DISPONIBLES :
+- Nom du candidat : ${candidateName}
+- Profession : ${candidateProfession}
+${candidateContact ? `- Coordonnées :\n${candidateContact}` : ''}
 - Poste visé : ${formData.poste}
 - Entreprise : ${formData.entreprise}
 - Secteur d'activité : ${formData.secteur}
@@ -393,16 +497,42 @@ RÉÉCRIS complètement cette lettre en analysant automatiquement les informatio
 GÉNÈRE une lettre de motivation complète et professionnelle avec des informations génériques. L'utilisateur n'a pas fourni de données spécifiques, donc utilise des exemples appropriés.`;
   }
 
+  // Créer les coordonnées complètes du candidat
+  const candidateFullContact = candidateContact ?
+    candidateContact.replace(/Email: /g, '').replace(/Téléphone: /g, '').replace(/Adresse: /g, '').replace(/Ville: /g, '').replace(/Pays: /g, '').split('\n').filter(line => line.trim()).join('<br>') :
+    `${candidateName}<br>${candidateProfession}<br>Email: [email@example.com]<br>Téléphone: [numéro]<br>[Ville], [Code Postal]`;
+
   prompt += `
 
 STRUCTURE DE LA LETTRE :
-1. En-tête (coordonnées complètes)
-2. Destinataire (entreprise)
+1. **TRÈS IMPORTANT : En-tête en HAUT de la lettre avec coordonnées complètes**
+
+   <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+     <!-- Coordonnées du candidat (gauche) -->
+     <div style="text-align: left; line-height: 1.4;">
+       <strong>${candidateName}</strong><br>
+       ${candidateProfession}<br>
+       ${candidateFullContact}
+     </div>
+
+     <!-- Coordonnées de l'entreprise (droite) -->
+     <div style="text-align: right; line-height: 1.4;">
+       <strong>${formData && formData.entreprise ? formData.entreprise : '[NOM DE L\'ENTREPRISE]'}</strong><br>
+       ${formData && formData.secteur ? `${formData.secteur}<br>` : ''}
+       Service des Ressources Humaines<br>
+       [Adresse de l'entreprise]<br>
+       [Ville], [Code Postal]
+     </div>
+   </div>
+
+2. **Saut de ligne**
 3. Date et objet
 4. Formule d'appel
 5. Corps de la lettre (3-4 paragraphes)
 6. Formule de politesse
-7. Signature
+7. **Signature SEULEMENT avec le nom** : ${candidateName}
+
+⚠️ CRUCIAL : L'en-tête avec les coordonnées doit être la PREMIÈRE chose visible, bien structurée avec le candidat à gauche et l'entreprise à droite. Les coordonnées n'apparaîtront nulle part ailleurs.
 
 STYLE RECHERCHÉ :
 - Professionnel et moderne

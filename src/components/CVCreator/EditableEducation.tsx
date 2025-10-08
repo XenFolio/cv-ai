@@ -1,31 +1,6 @@
 import React from 'react';
-import { Sparkles, Minus, Loader2 } from 'lucide-react';
-
-// Composant de bouton IA
-interface AIButtonProps {
-  isLoading: boolean;
-  onClick: (e?: React.MouseEvent) => void;
-  disabled?: boolean;
-  title: string;
-  className?: string;
-}
-
-const AIButton: React.FC<AIButtonProps> = ({
-  isLoading,
-  onClick,
-  disabled = false,
-  title
-}) => (
-  <button
-    type="button"
-    className="bg-violet-50 border border-violet-200 text-violet-700 rounded-lg px-2 py-1 inline-flex items-center gap-1 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-violet-400"
-    onClick={onClick}
-    title={title}
-    disabled={disabled || isLoading}
-  >
-    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-  </button>
-);
+import { Minus } from 'lucide-react';
+import { AIButton } from '../UI';
 
 // Composant pour formation (diplôme, école, année) - Mode une colonne
 interface EditableEducationSingleColumnProps {
@@ -106,9 +81,7 @@ export const EditableEducationSingleColumn: React.FC<EditableEducationSingleColu
           {showAIDegree && isEditingDegree && (
             <AIButton
               isLoading={isLoading}
-              onClick={(e) => {
-                e?.preventDefault();
-                e?.stopPropagation();
+              onClick={() => {
                 generateWithAI('educationDegree', degree);
               }}
               title="Modifier avec IA"
@@ -117,9 +90,7 @@ export const EditableEducationSingleColumn: React.FC<EditableEducationSingleColu
           {showAISchool && isEditingSchool && (
             <AIButton
               isLoading={isLoading}
-              onClick={(e) => {
-                e?.preventDefault();
-                e?.stopPropagation();
+              onClick={() => {
                 generateWithAI('educationSchool', school);
               }}
               title="Modifier avec IA"
@@ -128,9 +99,7 @@ export const EditableEducationSingleColumn: React.FC<EditableEducationSingleColu
           {showAIYear && isEditingYear && (
             <AIButton
               isLoading={isLoading}
-              onClick={(e) => {
-                e?.preventDefault();
-                e?.stopPropagation();
+              onClick={() => {
                 generateWithAI('educationYear', year);
               }}
               title="Modifier avec IA"
@@ -302,9 +271,7 @@ export const EditableEducationTwoColumns: React.FC<EditableEducationTwoColumnsPr
           {showAIDegree && isEditingDegree && (
             <AIButton
               isLoading={isLoading}
-              onClick={(e) => {
-                e?.preventDefault();
-                e?.stopPropagation();
+              onClick={() => {
                 generateWithAI('educationDegree', degree);
               }}
               title="Modifier avec IA"
@@ -313,9 +280,7 @@ export const EditableEducationTwoColumns: React.FC<EditableEducationTwoColumnsPr
           {showAISchool && isEditingSchool && (
             <AIButton
               isLoading={isLoading}
-              onClick={(e) => {
-                e?.preventDefault();
-                e?.stopPropagation();
+              onClick={() => {
                 generateWithAI('educationSchool', school);
               }}
               title="Modifier avec IA"
@@ -324,9 +289,7 @@ export const EditableEducationTwoColumns: React.FC<EditableEducationTwoColumnsPr
           {showAIYear && isEditingYear && (
             <AIButton
               isLoading={isLoading}
-              onClick={(e) => {
-                e?.preventDefault();
-                e?.stopPropagation();
+              onClick={() => {
                 generateWithAI('educationYear', year);
               }}
               title="Modifier avec IA"

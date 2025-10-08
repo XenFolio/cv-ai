@@ -1,5 +1,5 @@
 import React from 'react';
-import { Save, FileDown, FileText, BarChart3, FileType, TrendingUp, Target } from 'lucide-react';
+import { Save, FileDown, FileText, BarChart3, FileType, TrendingUp } from 'lucide-react';
 
 interface ExportButtonsProps {
   onSave: () => void;
@@ -16,7 +16,7 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
   onExportPDF,
   onExportWord,
   onExportText,
-  onExportATSOptimizedPDF,
+  
   onAnalyzeTone,
   onATSAnalysis,
 }) => {
@@ -57,17 +57,7 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
           <FileType className="w-4 h-4" />
         </button>
       )}
-
-      {onExportATSOptimizedPDF && (
-        <button
-          onClick={onExportATSOptimizedPDF}
-          className="flex items-center gap-2 px-3 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded transition-colors ml-1"
-          title="Exporter en PDF optimisé ATS"
-        >
-          <Target className="w-4 h-4" />
-          <span className="text-xs font-medium">PDF ATS</span>
-        </button>
-      )}
+      
 
       {onAnalyzeTone && (
         <button

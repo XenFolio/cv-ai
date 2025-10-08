@@ -33,7 +33,7 @@ const {
   Templates,
   Settings,
   AIChat,
-  CVCreatorDemo,
+  
   LetterEditor,
   JobSearch,
 } = lazyComponentsMap;
@@ -41,7 +41,6 @@ const {
 // Import direct pour SubscriptionPlans (pas de lazy loading pour les tarifs)
 import { SubscriptionPlans } from './components/Subscription/SubscriptionPlans';
 import { Coaching } from './components/Coaching/Coaching';
-import { CVScanIntegration } from './components/CVCreator/CVScanIntegration';
 import { OCRTest } from './components/OCR/OCRTest';
 import { WebcamOCR } from './components/Webcam/WebcamOCR';
 import { UnifiedCVScan } from './components/CVScan/UnifiedCVScan';
@@ -52,32 +51,18 @@ const SupabaseAppContent: React.FC = () => {
   const user = useAuthStore(s => s.user);
   const profile = useAuthStore(s => s.profile);
   const isLoading = useAuthStore(s => s.loading);
-  const isAuthenticated = !!user;
+  /*  const isAuthenticated = !!user;*/
   const activeTab = useAppStore(s => s.activeTab);
   const setActiveTab = useAppStore(s => s.setActiveTab);
   const showSettings = useAppStore(s => s.showSettings);
   const setShowSettings = useAppStore(s => s.setShowSettings);
   const setShowChat = useAppStore(s => s.setShowChat);
   const voiceEnabled = useAppStore(s => s.voiceEnabled);
-  const showCVCreatorDemo = useAppStore(s => s.showCVCreatorDemo);
-  const setShowCVCreatorDemo = useAppStore(s => s.setShowCVCreatorDemo);
-  const apiKeyStatus = useAppStore(s => s.apiKeyStatus);
+    const apiKeyStatus = useAppStore(s => s.apiKeyStatus);
   const setApiKeyStatus = useAppStore(s => s.setApiKeyStatus);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
-  const [showCVScanDemo, setShowCVScanDemo] = useState(false);
-
-  // Vérifier les paramètres URL pour les démos
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const demo = params.get('demo');
-
-    if (demo === 'cvscan') {
-      setShowCVScanDemo(true);
-    } else if (demo === 'cvcreator') {
-      setShowCVCreatorDemo(true);
-    }
-  }, [setShowCVCreatorDemo]);
-
+    
+  
   // Fonction pour vérifier le statut de la clé API
   const checkApiKeyStatus = useCallback(() => {
     const savedSettings = localStorage.getItem('cvAssistantSettings');
@@ -139,19 +124,8 @@ const SupabaseAppContent: React.FC = () => {
     );
   }
 
-  // Si on est en mode démo CVCreator, afficher seulement le CVCreator
-  if (showCVCreatorDemo) {
-    return <CVCreatorDemo onBack={() => setShowCVCreatorDemo(false)} />;
-  }
-
-  // Si on est en mode démo CV Scan, afficher seulement le CV Scan
-  if (showCVScanDemo) {
-    return <CVScanIntegration onBack={() => setShowCVScanDemo(false)} />;
-  }
-
-  if (!isAuthenticated) {
-    return <UniversalLoginPage onCVScanDemo={() => setShowCVScanDemo(true)} />;
-  }
+  
+  
 
   const renderActiveTab = () => {
     const content = (() => {
@@ -302,12 +276,12 @@ const SupabaseAppContent: React.FC = () => {
   };
 
   // Créer un objet utilisateur compatible avec le Header
-  const headerUser = user ? {
-    id: user.id,
-    name: profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email?.split('@')[0] || 'Utilisateur' : user.email?.split('@')[0] || 'Utilisateur',
-    email: user.email || '',
-    createdAt: new Date(user.created_at || Date.now())
-  } : null;
+  const headerUser = {
+    id: user?.id || 'anonymous',
+    name: user ? (profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email?.split('@')[0] || 'Utilisateur' : user.email?.split('@')[0] || 'Utilisateur') : 'Invité',
+    email: user?.email || '',
+    createdAt: new Date(user?.created_at || Date.now())
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 relative overflow-hidden">
@@ -320,7 +294,7 @@ const SupabaseAppContent: React.FC = () => {
 
       <div className="relative z-10">
         <Header
-          user={headerUser!}
+          user={headerUser}
           onSettingsClick={handleSettingsClick}
           onLogout={handleLogout}
           apiKeyStatus={apiKeyStatus}
@@ -339,6 +313,20 @@ const SupabaseAppContent: React.FC = () => {
 };
 
 
+// Composant AppContent qui gère l'authentification
+const AppContent: React.FC = () => {
+  const user = useAuthStore(s => s.user);
+  const isAuthenticated = !!user;
+
+  // Si l'utilisateur n'est pas authentifié, afficher la page de login
+  if (!isAuthenticated) {
+    return <UniversalLoginPage />;
+  }
+
+  // Si l'utilisateur est authentifié, afficher l'application principale
+  return <SupabaseAppContent />;
+};
+
 // Composant qui détermine quel provider utiliser
 const App: React.FC = () => {
   // Vérifier la configuration Supabase directement
@@ -348,7 +336,7 @@ const App: React.FC = () => {
 
   const [showConfigModal, setShowConfigModal] = useState(!isConfigured);
 
-  // Si Supabase est configuré, utiliser directement Supabase
+  // Si Supabase est configuré, utiliser Supabase avec gestion d'auth
   if (isConfigured) {
     return (
       <HelmetProvider>
@@ -356,7 +344,7 @@ const App: React.FC = () => {
           <AdvancedThemeProvider>
             <SupabaseAuthProvider>
               <AuthBoundary>
-                <SupabaseAppContent />
+                <AppContent />
               </AuthBoundary>
             </SupabaseAuthProvider>
           </AdvancedThemeProvider>

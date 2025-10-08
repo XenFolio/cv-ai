@@ -11,6 +11,7 @@ import {
   Building,
 } from 'lucide-react';
 import { useOpenAI } from '../../hooks/useOpenAI';
+import { useProfile } from '../../hooks/useProfile';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
 
@@ -78,6 +79,14 @@ const CoverLetterBuilder: React.FC<CoverLetterBuilderProps> = ({
   const [selectedTemplate, setSelectedTemplate] = useState<string>('professional');
 
   const { generateCoverLetter } = useOpenAI();
+  const { profile, getFullName, profileLoading, loadProfile } = useProfile();
+
+  // Debug: Vérifier l'état de l'authentification au montage
+  useEffect(() => {
+    console.log('CoverLetterBuilder - Initialisation du composant');
+    console.log('CoverLetterBuilder - profileLoading initial:', profileLoading);
+    console.log('CoverLetterBuilder - profil initial:', profile);
+  }, [profile, profileLoading]);
 
   // Initialize with CV data if available
   useEffect(() => {
@@ -97,6 +106,57 @@ const CoverLetterBuilder: React.FC<CoverLetterBuilderProps> = ({
       }));
     }
   }, [cvData]);
+
+  // Compléter avec les infos du profil si elles sont manquantes
+  useEffect(() => {
+    console.log('CoverLetterBuilder - profileLoading:', profileLoading);
+    console.log('CoverLetterBuilder - Profil:', profile);
+    console.log('CoverLetterBuilder - getFullName():', getFullName());
+
+    // Wait until profile is loaded before using it
+    if (!profileLoading && profile) {
+      const profileName = getFullName() || '';
+      const profileEmail = profile.email || '';
+      const profilePhone = profile.phone || '';
+      const profileLocation = [profile.city, profile.postal_code, profile.country].filter(Boolean).join(', ') || '';
+      const profileTitle = profile.profession || '';
+      const profileLinkedin = profile.linkedin || '';
+
+      console.log('CoverLetterBuilder - Infos profil extraites:', {
+        profileName,
+        profileEmail,
+        profilePhone,
+        profileLocation,
+        profileTitle,
+        profileLinkedin
+      });
+
+      setCoverLetterData(prev => {
+        console.log('CoverLetterBuilder - Avant mise à jour:', prev.personalInfo);
+
+        const updatedData = {
+          ...prev,
+          personalInfo: {
+            ...prev.personalInfo,
+            // Utiliser les infos du profil comme fallback
+            name: prev.personalInfo.name || profileName,
+            email: prev.personalInfo.email || profileEmail,
+            title: prev.personalInfo.title || profileTitle,
+            location: prev.personalInfo.location || profileLocation,
+            phone: prev.personalInfo.phone || profilePhone,
+            linkedin: prev.personalInfo.linkedin || profileLinkedin
+          }
+        };
+
+        console.log('CoverLetterBuilder - Après mise à jour:', updatedData.personalInfo);
+        return updatedData;
+      });
+    } else if (profileLoading) {
+      console.log('CoverLetterBuilder - Profil en cours de chargement...');
+    } else {
+      console.log('CoverLetterBuilder - Aucun profil disponible (profile null)');
+    }
+  }, [profile, getFullName, profileLoading]);
 
   const templates = [
     {
@@ -159,7 +219,15 @@ const CoverLetterBuilder: React.FC<CoverLetterBuilderProps> = ({
         cvContent,
         jobDescription: jobDescription || '',
         companyInfo,
-        tone: selectedTemplate
+        tone: selectedTemplate,
+        profileInfo: {
+          name: coverLetterData.personalInfo.name,
+          title: coverLetterData.personalInfo.title,
+          email: coverLetterData.personalInfo.email,
+          phone: coverLetterData.personalInfo.phone,
+          location: coverLetterData.personalInfo.location,
+          linkedin: coverLetterData.personalInfo.linkedin
+        }
       });
 
       if (generatedContent) {
@@ -211,9 +279,39 @@ const CoverLetterBuilder: React.FC<CoverLetterBuilderProps> = ({
     onSave?.(finalData);
   };
 
+  const handleDebugProfileReload = async () => {
+    console.log('CoverLetterBuilder - Rechargement manuel du profil demandé');
+    try {
+      await loadProfile();
+      console.log('CoverLetterBuilder - Profil rechargé avec succès');
+    } catch (error) {
+      console.error('CoverLetterBuilder - Erreur lors du rechargement du profil:', error);
+    }
+  };
+
   const renderPersonalInfoForm = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Informations Personnelles</h3>
+
+      {/* Debug Section */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-yellow-800">Debug Profile</span>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleDebugProfileReload}
+              className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
+            >
+              Recharger Profil
+            </button>
+          </div>
+        </div>
+        <div className="text-xs text-yellow-700 space-y-1">
+          <div>Profile Loading: {profileLoading ? 'Oui' : 'Non'}</div>
+          <div>Profile Available: {profile ? 'Oui' : 'Non'}</div>
+          <div>Profile Name: {profile ? getFullName() : 'N/A'}</div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
@@ -414,13 +512,29 @@ const CoverLetterBuilder: React.FC<CoverLetterBuilderProps> = ({
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Aperçu</h3>
       <div className="bg-white border rounded-lg p-6 max-h-96 overflow-y-auto">
         <div className="space-y-4 text-sm">
-          {/* Header */}
+          {/* Header avec coordonnées complètes */}
           <div className="border-b pb-4">
-            <div className="text-right space-y-1">
-              <div className="font-semibold">{coverLetterData.personalInfo.name}</div>
-              <div>{coverLetterData.personalInfo.email}</div>
-              <div>{coverLetterData.personalInfo.phone}</div>
-              <div>{coverLetterData.personalInfo.location}</div>
+            <div className="flex justify-between items-start">
+              {/* Coordonnées du candidat (gauche) */}
+              <div className="text-left space-y-1">
+                <div className="font-semibold">{coverLetterData.personalInfo.name || 'Votre nom'}</div>
+                <div>{coverLetterData.personalInfo.title || 'Votre profession'}</div>
+                <div>{coverLetterData.personalInfo.email || 'email@example.com'}</div>
+                <div>{coverLetterData.personalInfo.phone || 'Votre téléphone'}</div>
+                <div>{coverLetterData.personalInfo.location || 'Votre ville'}</div>
+                {coverLetterData.personalInfo.linkedin && (
+                  <div>{coverLetterData.personalInfo.linkedin}</div>
+                )}
+              </div>
+
+              {/* Coordonnées de l'entreprise (droite) */}
+              <div className="text-right space-y-1">
+                <div className="font-semibold">{coverLetterData.companyInfo.companyName || 'Nom de l\'entreprise'}</div>
+                {coverLetterData.companyInfo.hiringManager && (
+                  <div>À l'attention de {coverLetterData.companyInfo.hiringManager}</div>
+                )}
+                <div>{coverLetterData.companyInfo.companyAddress || 'Adresse de l\'entreprise'}</div>
+              </div>
             </div>
           </div>
 
@@ -433,14 +547,16 @@ const CoverLetterBuilder: React.FC<CoverLetterBuilderProps> = ({
             })}
           </div>
 
-          {/* Company Info */}
-          <div>
-            <div className="font-semibold">
-              {coverLetterData.companyInfo.hiringManager || 'Responsable du recrutement'}
+          {/* Company Info (si pas déjà affiché dans l'en-tête) */}
+          {(!coverLetterData.personalInfo.name || !coverLetterData.companyInfo.companyName) && (
+            <div>
+              <div className="font-semibold">
+                {coverLetterData.companyInfo.hiringManager || 'Responsable du recrutement'}
+              </div>
+              <div>{coverLetterData.companyInfo.companyName}</div>
+              <div>{coverLetterData.companyInfo.companyAddress}</div>
             </div>
-            <div>{coverLetterData.companyInfo.companyName}</div>
-            <div>{coverLetterData.companyInfo.companyAddress}</div>
-          </div>
+          )}
 
           {/* Subject */}
           <div className="font-semibold">

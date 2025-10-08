@@ -129,6 +129,7 @@ export interface BaseSectionProps {
   titleColor: string;
   generateWithAI: (field: string, currentContent?: string) => Promise<void>;
   isLoading: boolean;
+  sectionId: string;
 }
 
 export interface ExperienceSectionProps extends BaseSectionProps {

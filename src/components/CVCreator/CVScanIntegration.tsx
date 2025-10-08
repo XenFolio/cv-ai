@@ -1,6 +1,6 @@
 import React from 'react';
-import { CVCreatorDemo } from './CVCreatorDemo';
-import { CVScanDemo } from './CVScanDemo';
+import { CVCreator } from './CVCreator';
+import { CVScan } from './CVScan';
 import Button from '../UI/Button';
 import { Camera, FileText, ArrowLeft } from 'lucide-react';
 
@@ -14,7 +14,7 @@ export const CVScanIntegration: React.FC<CVScanIntegrationProps> = ({ onBack, on
 
   if (currentView === 'scanner') {
     return (
-      <CVScanDemo
+      <CVScan
         onBack={() => setCurrentView('menu')}
         onImportCV={() => {
           if (onImportCV) onImportCV();
@@ -27,9 +27,7 @@ export const CVScanIntegration: React.FC<CVScanIntegrationProps> = ({ onBack, on
   if (currentView === 'creator') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-blue-50">
-        <CVCreatorDemo
-          onBack={() => setCurrentView('menu')}
-        />
+        <CVCreator />
       </div>
     );
   }
