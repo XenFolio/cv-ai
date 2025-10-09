@@ -1,4 +1,5 @@
 # 🔧 Guide de Résolution des Problèmes
+**Version 4.3 - Mise à jour Octobre 2025**
 
 ## 🚨 Erreur : "Utilisateur non connecté"
 

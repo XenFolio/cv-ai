@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Save, User, MapPin, Briefcase, Globe, AlertCircle, CheckCircle } from 'lucide-react';
+import { Save, User, MapPin, Briefcase, Globe, AlertCircle, CheckCircle, Mail, Building } from 'lucide-react';
 import { useProfile } from '../../hooks/useProfile';
 import { UserProfile } from '../../hooks/useSupabase';
+import { InputField } from '../UI/InputField';
+import { DateField } from '../UI/DateField';
+import { PhoneField } from '../UI/PhoneField';
+import { CountryField } from '../UI/CountryField';
+import { LocationField } from '../UI/LocationField';
+import { PostalCodeField } from '../UI/PostalCodeField';
+import { SocialField } from '../UI/SocialField';
 
 interface ProfileFormProps {
   onSave?: (profile: UserProfile) => void;
@@ -118,132 +125,90 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Informations personnelles */}
         <div className="bg-gradient-to-br from-violet-50 to-pink-50 rounded-2xl p-6 border border-violet-200/30">
-          <h4 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <h4 className="font-semibold text-gray-900 mb-8 flex items-center space-x-2 ">
             <User className="w-5 h-5 text-violet-600" />
             <span>Informations personnelles</span>
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Prénom *
-              </label>
-              <input
-                type="text"
-                value={formData.first_name || ''}
-                onChange={(e) => handleInputChange('first_name', e.target.value)}
-                placeholder="Jean"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200 ${
-                  validationErrors.first_name ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                }`}
-              />
-              {validationErrors.first_name && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>{validationErrors.first_name}</span>
-                </p>
-              )}
-            </div>
+            <InputField
+              label="Prénom"
+              value={formData.first_name || ''}
+              onChange={(value) => handleInputChange('first_name', value)}
+              placeholder="Jean"
+              required
+              icon={<User className="w-4 h-4" />}
+            />
+            {validationErrors.first_name && (
+              <p className="mt-1 text-sm text-red-600 flex items-center space-x-1 md:col-span-2">
+                <AlertCircle className="w-4 h-4" />
+                <span>{validationErrors.first_name}</span>
+              </p>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nom *
-              </label>
-              <input
-                type="text"
-                value={formData.last_name || ''}
-                onChange={(e) => handleInputChange('last_name', e.target.value)}
-                placeholder="Dupont"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200 ${
-                  validationErrors.last_name ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                }`}
-              />
-              {validationErrors.last_name && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>{validationErrors.last_name}</span>
-                </p>
-              )}
-            </div>
+            <InputField
+              label="Nom"
+              value={formData.last_name || ''}
+              onChange={(value) => handleInputChange('last_name', value)}
+              placeholder="Dupont"
+              required
+              icon={<User className="w-4 h-4" />}
+            />
+            {validationErrors.last_name && (
+              <p className="mt-1 text-sm text-red-600 flex items-center space-x-1 md:col-span-2">
+                <AlertCircle className="w-4 h-4" />
+                <span>{validationErrors.last_name}</span>
+              </p>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email *
-              </label>
-              <input
-                type="email"
-                value={formData.email || ''}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="jean.dupont@email.com"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200 ${
-                  validationErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                }`}
-              />
-              {validationErrors.email && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>{validationErrors.email}</span>
-                </p>
-              )}
-            </div>
+            <InputField
+              label="Email"
+              value={formData.email || ''}
+              onChange={(value) => handleInputChange('email', value)}
+              type="email"
+              placeholder="jean.dupont@email.com"
+              required
+              icon={<Mail className="w-4 h-4" />}
+            />
+            {validationErrors.email && (
+              <p className="mt-1 text-sm text-red-600 flex items-center space-x-1 md:col-span-2">
+                <AlertCircle className="w-4 h-4" />
+                <span>{validationErrors.email}</span>
+              </p>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Téléphone
-              </label>
-              <input
-                type="tel"
-                value={formData.phone || ''}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="06 12 34 56 78"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200 ${
-                  validationErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                }`}
-              />
-              {validationErrors.phone && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>{validationErrors.phone}</span>
-                </p>
-              )}
-            </div>
+            <PhoneField
+              label="Téléphone"
+              value={formData.phone || ''}
+              onChange={(value) => handleInputChange('phone', value)}
+              placeholder="06 12 34 56 78"
+            />
+            {validationErrors.phone && (
+              <p className="mt-1 text-sm text-red-600 flex items-center space-x-1 md:col-span-2">
+                <AlertCircle className="w-4 h-4" />
+                <span>{validationErrors.phone}</span>
+              </p>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date de naissance
-              </label>
-              <input
-                type="date"
-                value={formData.date_of_birth || ''}
-                onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200 ${
-                  validationErrors.date_of_birth ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                }`}
-              />
-              {validationErrors.date_of_birth && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>{validationErrors.date_of_birth}</span>
-                </p>
-              )}
-            </div>
+            <DateField
+              label="Date de naissance"
+              value={formData.date_of_birth || ''}
+              onChange={(value) => handleInputChange('date_of_birth', value)}
+              placeholder="JJ/MM/AAAA"
+            />
+            {validationErrors.date_of_birth && (
+              <p className="mt-1 text-sm text-red-600 flex items-center space-x-1 md:col-span-2">
+                <AlertCircle className="w-4 h-4" />
+                <span>{validationErrors.date_of_birth}</span>
+              </p>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nationalité
-              </label>
-              <select
-                value={formData.nationality || 'Française'}
-                onChange={(e) => handleInputChange('nationality', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200"
-              >
-                <option value="Française">Française</option>
-                <option value="Belge">Belge</option>
-                <option value="Suisse">Suisse</option>
-                <option value="Canadienne">Canadienne</option>
-                <option value="Autre">Autre</option>
-              </select>
-            </div>
+            <CountryField
+              label="Nationalité"
+              value={formData.nationality || 'Française'}
+              onChange={(value) => handleInputChange('nationality', value)}
+              placeholder="Sélectionner une nationalité"
+            />
           </div>
         </div>
 
@@ -255,159 +220,107 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           </h4>
           
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Adresse complète
-              </label>
-              <input
-                type="text"
-                value={formData.address || ''}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="123 Rue de la République"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200"
-              />
-            </div>
+            <LocationField
+              label="Adresse complète"
+              value={formData.address || ''}
+              onChange={(value) => handleInputChange('address', value)}
+              placeholder="123 Rue de la République"
+              showCoordinates={false}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Code postal
-                </label>
-                <input
-                  type="text"
-                  value={formData.postal_code || ''}
-                  onChange={(e) => handleInputChange('postal_code', e.target.value)}
-                  placeholder="75001"
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200 ${
-                    validationErrors.postal_code ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                  }`}
-                />
-                {validationErrors.postal_code && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{validationErrors.postal_code}</span>
-                  </p>
-                )}
-              </div>
+              <PostalCodeField
+                label="Code postal"
+                value={formData.postal_code || ''}
+                onChange={(value) => handleInputChange('postal_code', value)}
+                placeholder="75001"
+                country={formData.country || 'France'}
+              />
+              {validationErrors.postal_code && (
+                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1 md:col-span-3">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{validationErrors.postal_code}</span>
+                </p>
+              )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ville
-                </label>
-                <input
-                  type="text"
-                  value={formData.city || ''}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  placeholder="Paris"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200"
-                />
-              </div>
+              <LocationField
+                label="Ville"
+                value={formData.city || ''}
+                onChange={(value) => handleInputChange('city', value)}
+                placeholder="Paris"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pays
-                </label>
-                <select
-                  value={formData.country || 'France'}
-                  onChange={(e) => handleInputChange('country', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200"
-                >
-                  <option value="France">France</option>
-                  <option value="Belgique">Belgique</option>
-                  <option value="Suisse">Suisse</option>
-                  <option value="Canada">Canada</option>
-                  <option value="Luxembourg">Luxembourg</option>
-                </select>
-              </div>
+              <CountryField
+                label="Pays"
+                value={formData.country || 'France'}
+                onChange={(value) => handleInputChange('country', value)}
+                placeholder="Sélectionner un pays"
+              />
             </div>
           </div>
         </div>
 
         {/* Informations professionnelles */}
         <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-200/30">
-          <h4 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <h4 className="font-semibold text-gray-900 mb-8 flex items-center space-x-2">
             <Briefcase className="w-5 h-5 text-emerald-600" />
             <span>Informations professionnelles</span>
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Profession actuelle
-              </label>
-              <input
-                type="text"
-                value={formData.profession || ''}
-                onChange={(e) => handleInputChange('profession', e.target.value)}
-                placeholder="Développeur Full Stack"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200"
-              />
-            </div>
+            <InputField
+              label="Profession actuelle"
+              value={formData.profession || ''}
+              onChange={(value) => handleInputChange('profession', value)}
+              placeholder="Développeur Full Stack"
+              icon={<Briefcase className="w-4 h-4" />}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Entreprise actuelle
-              </label>
-              <input
-                type="text"
-                value={formData.company || ''}
-                onChange={(e) => handleInputChange('company', e.target.value)}
-                placeholder="Tech Solutions SARL"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200"
-              />
-            </div>
+            <InputField
+              label="Entreprise actuelle"
+              value={formData.company || ''}
+              onChange={(value) => handleInputChange('company', value)}
+              placeholder="Tech Solutions SARL"
+              icon={<Building className="w-4 h-4" />}
+            />
           </div>
         </div>
 
         {/* Liens et réseaux sociaux */}
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200/30">
-          <h4 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200/30 ">
+          <h4 className="font-semibold text-gray-900 mb-8 flex items-center space-x-2">
             <Globe className="w-5 h-5 text-purple-600" />
             <span>Liens et réseaux sociaux</span>
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Profil LinkedIn
-              </label>
-              <input
-                type="url"
-                value={formData.linkedin || ''}
-                onChange={(e) => handleInputChange('linkedin', e.target.value)}
-                placeholder="https://linkedin.com/in/jean-dupont"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200 ${
-                  validationErrors.linkedin ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                }`}
-              />
-              {validationErrors.linkedin && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>{validationErrors.linkedin}</span>
-                </p>
-              )}
-            </div>
+            <SocialField
+              label="Profil LinkedIn"
+              value={formData.linkedin || ''}
+              onChange={(value) => handleInputChange('linkedin', value)}
+              platform="linkedin"
+              placeholder="jean-dupont"
+            />
+            {validationErrors.linkedin && (
+              <p className="mt-1 text-sm text-red-600 flex items-center space-x-1 md:col-span-2">
+                <AlertCircle className="w-4 h-4" />
+                <span>{validationErrors.linkedin}</span>
+              </p>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Site web / Portfolio
-              </label>
-              <input
-                type="url"
-                value={formData.website || ''}
-                onChange={(e) => handleInputChange('website', e.target.value)}
-                placeholder="https://jean-dupont.dev"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition-all duration-200 ${
-                  validationErrors.website ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                }`}
-              />
-              {validationErrors.website && (
-                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>{validationErrors.website}</span>
-                </p>
-              )}
-            </div>
+            <SocialField
+              label="Site web / Portfolio"
+              value={formData.website || ''}
+              onChange={(value) => handleInputChange('website', value)}
+              platform="website"
+              placeholder="https://jean-dupont.dev"
+            />
+            {validationErrors.website && (
+              <p className="mt-1 text-sm text-red-600 flex items-center space-x-1 md:col-span-2">
+                <AlertCircle className="w-4 h-4" />
+                <span>{validationErrors.website}</span>
+              </p>
+            )}
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 # CV Creator AI
+**Version 4.3 - Octobre 2025**
 
 Un outil intelligent de création de CV avec intégration d'IA, personnalisation avancée des styles et gestion de contenu.
 
@@ -152,8 +153,10 @@ Chaque section peut avoir :
 - **Frontend** : React avec TypeScript
 - **Styling** : Tailwind CSS
 - **Drag & Drop** : DnD Kit
-- **Stockage** : LocalStorage
+- **Stockage** : LocalStorage + Supabase
 - **IA** : OpenAI GPT
+- **Authentification** : Supabase Auth
+- **Base de données** : PostgreSQL via Supabase
 
 ### **Compatibilité**
 
@@ -161,6 +164,29 @@ Chaque section peut avoir :
 - Responsive design
 - Performance optimisée
 
+## 📚 Documentation
+
+Pour une configuration complète et la résolution de problèmes :
+
+- **[Configuration Supabase](docs/SUPABASE_SETUP_GUIDE.md)** - Guide d'installation
+- **[Intégration Profils](docs/README_PROFILES.md)** - Gestion des profils utilisateur
+- **[Résolution de Problèmes](docs/TROUBLESHOOTING_GUIDE.md)** - Guide de dépannage
+- **[Documentation Technique](src/docs/PROFILES_INTEGRATION.md)** - Documentation pour développeurs
+
+## 🚀 Démarrage Rapide
+
+```bash
+# Installation
+npm install
+
+# Configuration
+cp .env.example .env
+# Configurez vos clés Supabase dans .env
+
+# Démarrage
+npm run dev
+```
+
 ---
 
-**CV Creator AI** : L'outil parfait pour créer des CV professionnels, modernes et percutants avec l'aide de l'intelligence artificielle.
+**CV Creator AI v4.3** : L'outil parfait pour créer des CV professionnels, modernes et percutants avec l'aide de l'intelligence artificielle.

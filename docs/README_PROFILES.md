@@ -2,7 +2,7 @@
 
 ## 🎯 Vue d'ensemble
 
-Cette intégration ajoute un système complet de gestion des profils utilisateur à l'application CV-ATS-AI, avec synchronisation automatique avec Supabase.
+Cette intégration ajoute un système complet de gestion des profils utilisateur à l'application CV-ATS-AI, avec synchronisation automatique avec Supabase. **Version 4.3** avec améliorations de la gestion d'erreur et optimisation des performances.
 
 ## ✨ Fonctionnalités
 

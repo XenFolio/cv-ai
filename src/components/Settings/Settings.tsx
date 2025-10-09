@@ -3,6 +3,7 @@ import { Bot, Shield, Bell, User, Palette, Key, RefreshCw, Database,  Settings a
 import { BackButton } from '../UI/BackButton';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useProfile } from '../../hooks/useProfile';
+import { useAdmin } from '../../hooks/useAdmin';
 import { ProfileForm } from '../Profile/ProfileForm';
 import { ProfileTest } from '../Profile/ProfileTest';
 import { SupabaseConfigModal } from '../Auth/SupabaseConfigModal';
@@ -104,6 +105,9 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
     isFreeUser,
     isProUser
   } = useProfile();
+
+  // Hook pour vérifier le statut admin
+  const { isAdmin } = useAdmin();
   
   // Charger les paramètres depuis localStorage ou utiliser les valeurs par défaut
   const getInitialSettings = () => {
@@ -836,15 +840,15 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
         </div>
       )}
 
-      {/* Informations d'abonnement */}
-      {currentProfile && (
+      {/* Informations d'abonnement - Masqué pour les admins */}
+      {currentProfile && !isAdmin && (
         <div className="bg-gradient-to-br from-violet-50 to-pink-50 rounded-2xl p-6 border border-violet-200/30">
           <h4 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
             <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-              hasActiveSubscription() 
-                ? 'bg-emerald-600' 
-                : isFreeUser() 
-                ? 'bg-blue-600' 
+              hasActiveSubscription()
+                ? 'bg-emerald-600'
+                : isFreeUser()
+                ? 'bg-blue-600'
                 : 'bg-gray-400'
             }`}>
               {hasActiveSubscription() ? (
@@ -855,22 +859,22 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
             </div>
             <span>Abonnement</span>
           </h4>
-          
+
           <div className="space-y-4">
             {/* Plan actuel */}
             <div className="flex items-center justify-between p-4 bg-white/50 rounded-xl border border-gray-200/30">
               <div>
                 <div className="font-medium text-gray-900">{getSubscriptionDisplayName()}</div>
                 <div className="text-sm text-gray-600">
-                  Statut: {getSubscriptionStatus() === 'free' ? 'Gratuit' : 
+                  Statut: {getSubscriptionStatus() === 'free' ? 'Gratuit' :
                           getSubscriptionStatus() === 'active' ? 'Actif' :
                           getSubscriptionStatus() === 'inactive' ? 'Inactif' :
                           'Annulé'}
                 </div>
               </div>
               <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                hasActiveSubscription() 
-                  ? 'bg-emerald-100 text-emerald-800' 
+                hasActiveSubscription()
+                  ? 'bg-emerald-100 text-emerald-800'
                   : isFreeUser()
                   ? 'bg-blue-100 text-blue-800'
                   : 'bg-gray-100 text-gray-800'
@@ -951,7 +955,7 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
             <div className="p-3 bg-blue-50/50 rounded-lg border border-blue-200/30">
               <div className="text-xs font-medium text-blue-900 mb-1">💡 Information</div>
               <div className="text-xs text-blue-800">
-                {isFreeUser() 
+                {isFreeUser()
                   ? 'Vous profitez actuellement de notre plan gratuit. Passez à Pro pour débloquer toutes les fonctionnalités avancées.'
                   : hasActiveSubscription()
                   ? 'Votre abonnement Pro vous donne accès à toutes les fonctionnalités premium de la plateforme.'
@@ -963,13 +967,49 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
         </div>
       )}
 
-      {/* Formulaire de profil */}
-      <ProfileForm
-        onSave={(savedProfile) => {
-          console.log('Profil sauvegardé:', savedProfile);
-        }}
-        showActions={true}
-      />
+      {/* Indicateur du statut admin - Visible uniquement pour les admins */}
+      {currentProfile && isAdmin && (
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-200/30">
+          <h4 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+            <div className="w-5 h-5 bg-gradient-to-r from-amber-600 to-orange-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs">👑</span>
+            </div>
+            <span>Mode Administrateur</span>
+          </h4>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-white/50 rounded-xl border border-amber-200/30">
+              <div>
+                <div className="font-medium text-gray-900">Accès étendu</div>
+                <div className="text-sm text-gray-600">
+                  Vous disposez des privilèges administrateur sur la plateforme
+                </div>
+              </div>
+              <div className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                ADMIN
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50/50 rounded-lg border border-amber-200/30">
+              <div className="text-xs font-medium text-amber-900 mb-1">🛡️ Informations</div>
+              <div className="text-xs text-amber-800">
+                En mode administrateur, vous avez accès à toutes les fonctionnalités de la plateforme sans restrictions d'abonnement.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      
+      {/* Formulaire de profil - Masqué pour les admins */}
+      {!isAdmin && (
+        <ProfileForm
+          onSave={(savedProfile) => {
+            console.log('Profil sauvegardé:', savedProfile);
+          }}
+          showActions={true}
+        />
+      )}
 
       {/* Configuration API Avancée */}
       <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl p-6 border border-gray-200/30">

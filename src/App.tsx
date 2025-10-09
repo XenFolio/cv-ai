@@ -44,6 +44,9 @@ import { Coaching } from './components/Coaching/Coaching';
 import { OCRTest } from './components/OCR/OCRTest';
 import { WebcamOCR } from './components/Webcam/WebcamOCR';
 import { UnifiedCVScan } from './components/CVScan/UnifiedCVScan';
+import { AdminDashboard } from './components/Admin/AdminDashboard';
+import { AdminRoute } from './components/Admin/AdminRoute';
+import { AdminThemeProvider } from './contexts/AdminThemeContext';
 
 // Composant pour l'authentification Supabase
 const SupabaseAppContent: React.FC = () => {
@@ -106,7 +109,7 @@ const SupabaseAppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 dark:from-slate-900 via-gray-50 dark:via-gray-900 to-blue-50 dark:to-blue-950 flex items-center justify-center">
         <div className="text-center">
           <div className="relative mx-auto mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto animate-pulse">
@@ -210,6 +213,14 @@ const SupabaseAppContent: React.FC = () => {
           return <WebcamOCR />;
         case 'cv-scan':
           return <UnifiedCVScan />;
+        case 'admin':
+          return (
+            <AdminRoute>
+              <AdminThemeProvider>
+                <AdminDashboard />
+              </AdminThemeProvider>
+            </AdminRoute>
+          );
         default:
           return <Dashboard onNavigate={handleTabChange} />;
       }
@@ -243,6 +254,7 @@ const SupabaseAppContent: React.FC = () => {
       ocr: 'de l\'OCR CV',
       webcam: 'de la webcam CV',
       'cv-scan': 'du scan CV',
+      admin: 'de l\'administration',
       'cv-designer-test': 'du CV Designer test'
     };
     return displayNames[tab] || 'du contenu';
@@ -284,7 +296,7 @@ const SupabaseAppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 dark:from-slate-900 via-gray-50 dark:via-gray-900 to-blue-50 dark:to-blue-950 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-violet-300/20 to-pink-300/20 rounded-full blur-3xl" />
@@ -342,11 +354,13 @@ const App: React.FC = () => {
       <HelmetProvider>
         <ThemeProvider>
           <AdvancedThemeProvider>
-            <SupabaseAuthProvider>
-              <AuthBoundary>
-                <AppContent />
-              </AuthBoundary>
-            </SupabaseAuthProvider>
+            <AdminThemeProvider>
+              <SupabaseAuthProvider>
+                <AuthBoundary>
+                  <AppContent />
+                </AuthBoundary>
+              </SupabaseAuthProvider>
+            </AdminThemeProvider>
           </AdvancedThemeProvider>
         </ThemeProvider>
       </HelmetProvider>
@@ -359,7 +373,7 @@ const App: React.FC = () => {
     <HelmetProvider>
       <ThemeProvider>
         <AdvancedThemeProvider>
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 flex items-center justify-center">
+          <div className="min-h-screen bg-gradient-to-br from-slate-50 dark:from-slate-900 via-gray-50 dark:via-gray-900 to-blue-50 dark:to-blue-950 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-8 h-8 text-white" />

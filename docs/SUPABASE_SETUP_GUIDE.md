@@ -1,4 +1,5 @@
 # 🚀 Guide de Configuration Supabase
+**Version 4.3 - Mise à jour Octobre 2025**
 
 ## Étape 1 : Créer un compte et un projet Supabase
 

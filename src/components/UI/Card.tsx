@@ -50,14 +50,14 @@ const Card: React.FC<CardProps> = ({
   };
 
   const hoverStyles = hover ? `
-    hover:shadow-xl hover:border-indigo-200
+    hover:border-indigo-200
     hover:transform hover:scale-[1.02]
     transition-all duration-300
   ` : '';
 
   const clickableStyles = clickable ? `
     cursor-pointer active:scale-[0.98]
-    hover:shadow-md hover:border-indigo-300
+    hover:border-indigo-300
   ` : '';
 
   const classes = `

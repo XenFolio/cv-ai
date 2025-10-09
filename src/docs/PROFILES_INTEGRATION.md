@@ -1,4 +1,5 @@
 # Intégration des Profils avec Supabase
+**Version 4.3 - Mise à jour Octobre 2025**
 
 ## Vue d'ensemble
 
