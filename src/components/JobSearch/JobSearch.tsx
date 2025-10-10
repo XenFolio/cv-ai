@@ -203,9 +203,7 @@ export const JobSearch: React.FC<JobSearchProps> = ({
               </div>
             </div>
             <div className="text-center sm:text-left">
-              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-violet-600 to-pink-400 bg-clip-text text-transparent mb-2">
-                Recherche d'Emploi
-              </h1>
+              
               <p className="text-sm sm:text-base text-gray-600 max-w-2xl sm:max-w-none mx-auto sm:mx-0">
                 Découvrez des opportunités professionnelles adaptées à votre profil
                 {initialKeywords.length > 0 && ' basées sur votre CV analysé'}

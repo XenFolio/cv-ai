@@ -13,13 +13,13 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivit
   const { activities, activitiesLoading, error } = useSupabase();
   const { themeClasses } = useAdminTheme();
 
-  // Classes pour les utilisateurs non-admin (garder l'apparence originale)
+  // Classes pour les utilisateurs non-admin (garder l'apparence originale avec mode dark)
   const userClasses = {
-    card: 'bg-white/70',
-    border: 'border-gray-200/30',
-    text: 'text-gray-900',
-    textSecondary: 'text-gray-600',
-    hoverBg: 'hover:bg-gray-100',
+    card: 'bg-white/70 dark:bg-gray-800/70',
+    border: 'border-gray-200/30 dark:border-gray-700/30',
+    text: 'text-gray-900 dark:text-gray-100',
+    textSecondary: 'text-gray-600 dark:text-gray-300',
+    hoverBg: 'hover:bg-gray-100 dark:hover:bg-gray-700',
     gradientHeader: 'bg-gradient-to-r from-violet-600 to-pink-500',
     gradientButton: 'bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-700 hover:to-pink-700'
   };
@@ -27,6 +27,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivit
   // Classes selon le mode
   const classes = isAdmin ? {
     ...themeClasses,
+    text: 'text-gray-500',
     hoverBg: 'hover:bg-slate-700/50',
     gradientHeader: 'bg-gradient-to-r from-blue-600 to-cyan-600',
     gradientButton: 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700'
@@ -79,9 +80,9 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivit
   return (
     <div className={`${classes.card} backdrop-blur-sm rounded-2xl p-4 ${classes.border} mx-auto w-full shadow-sm`}>
       <div className={`flex items-center justify-between mb-4 ${classes.gradientHeader} p-2 px-4 rounded-xl`}>
-        <h3 className={`w-full text-white text-lg font-semibold ${classes.text}`}>Activité Récente</h3>
+        <h3 className={`w-full text-white text-lg font-semibold text-shadow-md `}>Activité Récente</h3>
         <div className="flex items-center space-x-2">
-          <Clock className={`w-5 h-5 ${isAdmin ? 'text-gray-400' : 'text-gray-400'}`} />
+          <Clock className={`w-5 h-5 ${isAdmin ? 'text-gray-200' : 'text-gray-200 dark:text-gray-300'}`} />
           {activitiesLoading && <Loader2 className={`w-4 h-4 ${isAdmin ? 'text-blue-400' : 'text-violet-500'} animate-spin`} />}
         </div>
       </div>
@@ -95,7 +96,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivit
         </div>
       ) : activities.length === 0 ? (
         <div className="text-center py-8">
-          <Clock className={`w-16 h-16 ${isAdmin ? 'text-gray-600' : 'text-gray-300'} mx-auto mb-4`} />
+          <Clock className={`w-16 h-16 ${isAdmin ? 'text-gray-400' : 'text-gray-300 dark:text-gray-400'} mx-auto mb-4`} />
           <h4 className={`font-semibold ${classes.text} mb-2`}>Aucune activité pour le moment</h4>
           <p className={`text-sm ${classes.textSecondary} mb-4`}>
             Commencez par analyser un CV ou créer un nouveau document pour voir vos activités ici

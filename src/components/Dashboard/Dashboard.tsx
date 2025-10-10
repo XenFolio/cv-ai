@@ -173,7 +173,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         <div className="relative z-2 flex flex-wrap justify-between items-start">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold">Bienvenue {userName} ! 👋</h1>
+              <h1 className={`${isAdmin ? 'text-2xl' : 'text-3xl'} font-bold text-shadow-xl`}>Bienvenue {userName} ! 👋</h1>
               {isAdmin && !adminLoading && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-blue-600/80 backdrop-blur-sm border border-cyan-400/50 rounded-full">
                   <Shield className="h-4 w-4 text-white" />
@@ -182,12 +182,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               )}
             </div>
           </div>
-          <p className="text-white/90 text-md mb-8">
+          <p className="text-white/90 text-md mb-0 mt-2 ">
             Optimisez vos CV avec notre IA avancée et maximisez vos chances de succès.
           </p>
 
           {/* Actions Rapides intégrées */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6 mt-6">
             {/* Bouton Créer un CV */}
             <button
               onClick={() => onNavigate?.('creator')}

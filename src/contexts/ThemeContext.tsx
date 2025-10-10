@@ -8,11 +8,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem('theme') as Theme;
       if (saved) return saved;
 
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'system';
-      }
+      // Par défaut, utiliser le thème gradient (violet-rose)
+      return 'gradient';
     }
-    return 'light';
+    return 'gradient';
   });
 
   const [isDark, setIsDark] = useState(false);
@@ -21,6 +20,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const calculateTheme = () => {
       if (theme === 'system') {
         return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      if (theme === 'gradient') {
+        return false; // Le gradient est considéré comme un thème clair
       }
       return theme === 'dark';
     };
@@ -36,6 +38,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (dark) {
         root.classList.add('dark');
+        root.classList.remove('gradient');
         // Apply dark mode custom properties
         root.style.setProperty('--background', darkMode.background);
         root.style.setProperty('--surface', darkMode.surface);
@@ -46,6 +49,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         root.style.setProperty('--text-muted', darkMode.text.muted);
       } else {
         root.classList.remove('dark');
+        if (theme === 'gradient') {
+          root.classList.add('gradient');
+        } else {
+          root.classList.remove('gradient');
+        }
         // Reset to light mode defaults
         root.style.removeProperty('--background');
         root.style.removeProperty('--surface');
@@ -73,9 +81,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleTheme = () => {
     setTheme(current => {
+      if (current === 'gradient') return 'light';
       if (current === 'light') return 'dark';
       if (current === 'dark') return 'system';
-      return 'light';
+      return 'gradient';
     });
   };
 

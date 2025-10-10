@@ -66,11 +66,9 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
                 text-4xl font-bold text-center xl:text-left tracking-tight
                 bg-gradient-to-r from-cyan-300 via-blue-400 to-cyan-300
                 bg-clip-text text-transparent animate-gradient-x
-                drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]
+                drop-shadow-[0_0_12px_rgba(56,189,248,0.5)] text-shadow-md
               "
-              style={{
-                textShadow: '0 0 12px rgba(56,189,248,0.35), 0 0 24px rgba(37,99,235,0.25)'
-              }}
+              
             >
               {isAdmin ? "Bienvenue Administrateur CV-AI !" : `Bienvenue ${userName} !`} 👋
             </h1>
@@ -92,7 +90,7 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
             )}
           </div>
 
-          <p className="text-white/90 text-lg text-center xl:text-center max-w-2xl mx-auto">
+          <p className="text-white/90 text-lg text-center xl:text-center  max-w-2xl mx-auto mb-0">
             Optimisez vos CV avec notre IA avancée et maximisez vos chances de succès.
           </p>
         </div>
