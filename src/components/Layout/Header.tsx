@@ -176,21 +176,21 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
                       }
                     }}
                     className={`relative flex items-center space-x-1 px-2 py-1.5 text-xs font-medium rounded-md ${item.id === 'admin' && isActive
-                        ? 'text-purple-400 bg-purple-900/60 shadow-sm'
+                        ? 'text-purple-100 bg-purple-900/60 shadow-sm'
                         : item.id === 'admin'
-                          ? 'text-purple-300 hover:text-purple-400 hover:bg-purple-900/40'
+                          ? `${themeClasses.text} hover:text-violet-600 hover:bg-violet-50/80`
                           : isActive
-                            ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/60 shadow-sm'
+                            ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 shadow-sm'
                             : isAdmin
-                              ? `${themeClasses.text} hover:text-indigo-400 hover:bg-indigo-900/40`
-                              : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/40'
+                              ? `${themeClasses.text} hover:text-violet-600 hover:bg-violet-50/80 text-white`
+                              : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-violet-50/40 dark:hover:bg-indigo-900/40'
                       }`}
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <Icon className={`w-3 h-3 ${item.id === 'admin'
                         ? isActive
-                          ? 'text-purple-400'
-                          : 'text-purple-500'
+                          ? 'text-purple-100'
+                          : themeClasses.textSecondary
                         : isActive
                           ? 'text-indigo-600 dark:text-indigo-400'
                           : isAdmin
@@ -229,15 +229,15 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
                           <button
                             key={subItem.id}
                             onClick={() => handleItemClick(subItem.id)}
-                            className={`w-full flex items-center space-x-2 px-3 py-2 text-xs font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/50 ${isSubActive
+                            className={`w-full flex items-center space-x-2 px-3 py-2 text-xs font-medium ${isAdmin ? 'hover:bg-violet-50/80' : 'hover:bg-indigo-50 dark:hover:bg-indigo-900/50'} ${isSubActive
                               ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/60'
                               : isAdmin
-                                ? `${themeClasses.text} hover:text-indigo-400`
+                                ? `${themeClasses.text} hover:text-violet-600`
                                 : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
                               }`}
                           >
                             <SubIcon className={`w-3 h-3 ${isSubActive ? 'text-indigo-600 dark:text-indigo-400' : (
-                              isAdmin ? themeClasses.textSecondary : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                              isAdmin ? `${themeClasses.textSecondary} group-hover:text-violet-600` : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
                             )
                               }`} />
                             <span className="text-left font-medium">{subItem.label}</span>

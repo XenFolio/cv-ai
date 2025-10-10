@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, Shield, Bell, User, Palette, Key, RefreshCw, Database,  Settings as SettingsIcon } from 'lucide-react';
-import { BackButton } from '../UI/BackButton';
+import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useProfile } from '../../hooks/useProfile';
 import { useAdmin } from '../../hooks/useAdmin';
@@ -429,9 +429,9 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
               step="0.1"
               value={settings.ai.temperature}
               onChange={(e) => updateSetting('ai', 'temperature', parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              className="w-full accent-purple-600 h-2 bg-gray-50 rounded-lg  cursor-pointer slider border-gray-200  transition-all duration-200"
             />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-gray-500 -mt-4">
               <span>Conservateur</span>
               <span>Créatif</span>
             </div>
@@ -1240,7 +1240,7 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Notification d'erreur d'authentification */}
       {authError && (
         <div className="fixed top-4 right-4 z-50 max-w-md bg-gradient-to-r from-red-500 to-pink-500 text-white p-4 rounded-xl shadow-lg border border-red-200">
@@ -1265,35 +1265,39 @@ export const Settings: React.FC<SettingsProps> = ({ onBack, onApiKeyStatusChange
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <BackButton
-          onClick={onBack}
-          text="Retour"
-          className="flex items-center space-x-2 text-violet-600 hover:text-violet-700 font-medium transition-all duration-200 hover:bg-violet-50 hover:border-violet-200 border border-transparent rounded-lg px-3 py-2 hover:shadow-sm"
-        />
-        
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={handleReset}
-            className="bg-gray-200 text-gray-700 px-4 py-3 rounded-xl font-medium hover:bg-gray-300 transition-all duration-200 flex items-center space-x-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Réinitialiser</span>
-          </button>
-        </div>
-      </div>
+      
+      {/* Breadcrumbs */}
+      <BreadcrumbNavigation
+        items={[
+          {
+            label: 'Paramètres',
+            current: activeSection === 'ai'
+          },
+          ...(activeSection !== 'ai' ? [{
+            label: sections.find(s => s.id === activeSection)?.label || '',
+            current: true
+          }] : [])
+        ]}
+        onHomeClick={onBack}
+        className="m-0 p-0"
+        animated={true}
+      />
 
       {/* Title */}
-      <div className="text-center">
-        <h2 className="heading-gradient">
-          Paramètres
-        </h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Personnalisez votre expérience et configurez les options d'intelligence artificielle selon vos préférences.
-        </p>
-      </div>
+        <div className="flex items-center justify-between space-x-2">
+          <p className="text-gray-400">
+            Personnalisez votre expérience et configurez les options d'intelligence artificielle selon vos préférences.
+          </p>
+          <button
+            onClick={handleReset}
+            className="text-gray-500 hover:text-gray-300 p-1 rounded-lg hover:bg-gray-800/50 transition-all duration-200"
+            title="Réinitialiser tous les paramètres"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
         <div className="lg:col-span-1">
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/30 p-4 sticky top-8 h-full">
