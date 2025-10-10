@@ -142,7 +142,7 @@ export const CVTemplateCarousel: React.FC<CVTemplateCarouselProps> = ({
               {/* Bandeau en travers sur toute la largeur */}
               <div className="absolute top-6 left-0 right-0 z-20 transform -rotate-12 origin-left">
                 <div className={`py-2 px-6 shadow-lg ${
-                  template.name === "Minimaliste" ? "bg-gradient-to-r from-gray-600 to-gray-800" :
+                  template.name === "Minimaliste" ? "bg-white" :
                   template.name === "Créatif" ? "bg-gradient-to-r from-pink-500 to-rose-600" :
                   template.name === "Corporate" ? "bg-gradient-to-r from-violet-600 to-purple-700" :
                   template.name === "Moderne Coloré" ? "bg-gradient-to-r from-purple-500 to-indigo-600" :

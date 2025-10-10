@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Plus, Minus, Loader2 } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import { AIButton } from "../UI";
 
 /*************************

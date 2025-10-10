@@ -182,7 +182,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
                           : isActive
                             ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 shadow-sm'
                             : isAdmin
-                              ? `${themeClasses.text} hover:text-violet-600 hover:bg-violet-50/80 text-white`
+                              ? `${themeClasses.text} hover:text-violet-600 hover:bg-violet-50/80 `
                               : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-violet-50/40 dark:hover:bg-indigo-900/40'
                       }`}
                     aria-current={isActive ? 'page' : undefined}

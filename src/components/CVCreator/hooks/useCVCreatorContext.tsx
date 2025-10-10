@@ -1,5 +1,16 @@
 import { useMemo } from 'react';
-import type { CVContent, CVExperience, CVSkill, CVLanguage, CVEducation } from '../types';
+import type { CVContent, CVExperience, CVSkill, CVLanguage, CVEducation, SectionConfig } from '../types';
+
+type SectionColors = Record<string, {
+  background: string;
+  title: string;
+  content: string;
+  input: string;
+  button: string;
+  aiButton: string;
+  separator: string;
+  border: string;
+}>;
 
 interface UseCVCreatorContextProps {
   // Content state
@@ -61,14 +72,14 @@ interface UseCVCreatorContextProps {
   selectedTemplate: string | null;
 
   // Sections state
-  sections: any[];
+  sections: SectionConfig[];
   toggleSectionVisibility: (sectionId: string) => void;
-  setSectionsOrder: (sections: any[]) => void;
+  setSectionsOrder: (sections: SectionConfig[]) => void;
   cleanupLayers: () => void;
   expandSection: (sectionId: string) => void;
   contractSection: (sectionId: string) => void;
-  sectionColors: Record<string, any>;
-  setSectionColors: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+  sectionColors: SectionColors;
+  setSectionColors: React.Dispatch<React.SetStateAction<SectionColors>>;
   updateSectionColor: (sectionId: string, type: 'foreground' | 'background', color: string) => void;
   updateSectionElementColor: (sectionId: string, elementType: string, color: string) => void;
 

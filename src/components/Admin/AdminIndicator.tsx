@@ -3,9 +3,8 @@
 // =====================================================
 // Composant pour afficher un indicateur visuel admin
 
-import React from 'react';
 import { useIsAdmin } from '../../hooks/useAdmin';
-import { Shield, Crown, Sparkles } from 'lucide-react';
+import {  Crown } from 'lucide-react';
 
 interface AdminIndicatorProps {
   size?: 'sm' | 'md' | 'lg';

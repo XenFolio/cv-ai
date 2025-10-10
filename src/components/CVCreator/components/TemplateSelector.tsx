@@ -2,7 +2,7 @@ import React from 'react';
 import { CVTemplateCarousel } from '../CVTemplateCarousel';
 import { TemplateSkeleton } from '../TemplateSkeleton';
 import { templates, type Template } from '../templates';
-import type { SectionConfig } from '../types';
+import type { SectionConfig, CVContent } from '../types';
 
 interface TemplateSelectorProps {
   templatesLoading: boolean;
@@ -14,7 +14,7 @@ interface TemplateSelectorProps {
   setCustomFont: (font: string) => void;
   setNameAlignment: (alignment: 'left' | 'center' | 'right') => void;
   setLayoutColumns: (columns: number) => void;
-  setEditableContent: (content: any) => void;
+  setEditableContent: React.Dispatch<React.SetStateAction<CVContent>>;
   setSectionsOrder: (sections: SectionConfig[]) => void;
 }
 
@@ -52,7 +52,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       setLayoutColumns(template.layoutColumns);
 
       // Appliquer les titres de sections du template
-      setEditableContent((prev: any) => ({
+      setEditableContent((prev: CVContent) => ({
         ...prev,
         profileTitle: template.sectionTitles.profileTitle,
         experienceTitle: template.sectionTitles.experienceTitle,

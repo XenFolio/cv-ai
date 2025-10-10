@@ -6,14 +6,14 @@
 import React from 'react';
 import { AdminStats as AdminStatsType } from '../../hooks/useAdmin';
 import { useAdminTheme } from '../../contexts/useAdminTheme';
-import { Users, UserCheck, TrendingUp, Calendar, FileText, Shield, Activity } from 'lucide-react';
+import { Users, UserCheck, TrendingUp,  Shield, Activity } from 'lucide-react';
 
 interface AdminStatsProps {
   stats: AdminStatsType;
 }
 
 export function AdminStats({ stats }: AdminStatsProps) {
-  const { themeClasses, adminTheme } = useAdminTheme();
+  const { themeClasses } = useAdminTheme();
 
   // Calcul des pourcentages et ratios
   const activePercentage = stats.total_users > 0

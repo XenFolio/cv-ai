@@ -148,7 +148,7 @@ export const CVCreator: React.FC = () => {
     name: '[VOTRE NOM]',
     contact: '[Votre Email] • [Votre Téléphone] • [LinkedIn]',
     contactTitle: 'CONTACT',
-    profileTitle: 'PROFIL PROFESSIONNEL',
+    profileTitle: 'PROFIL',
     profileContent: 'Résumé de votre profil et de vos objectifs.',
     experienceTitle: 'EXPÉRIENCE PROFESSIONNELLE',
     educationTitle: 'FORMATION',
@@ -1017,7 +1017,7 @@ export const CVCreator: React.FC = () => {
                   setCustomFont(template.theme.font);
                   // Définir l'alignement du nom selon le template
                   if (template.name === "Minimaliste") {
-                    setNameAlignment('left');
+                    setNameAlignment('center');
                   } else {
                     setNameAlignment('center');
                   }

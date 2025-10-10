@@ -8,14 +8,14 @@ import { useAdmin } from '../../hooks/useAdmin';
 import { AdminUser } from '../../hooks/useAdmin';
 import { useAdminTheme } from '../../contexts/useAdminTheme';
 import {
-  Search,
+  
   Filter,
-  MoreVertical,
+  
   Eye,
-  Edit,
+  
   Trash2,
   Shield,
-  ShieldOff,
+  
   UserCheck,
   UserX,
   Calendar,
@@ -51,6 +51,7 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
         old_role: user.role,
         new_role: newRole
       });
+      onRefresh();
     }
   };
 
@@ -62,6 +63,7 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
         old_status: user.is_active,
         new_status: !user.is_active
       });
+      onRefresh();
     }
   };
 
@@ -74,6 +76,7 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
         name: `${user.first_name} ${user.last_name}`
       });
       setConfirmDelete(null);
+      onRefresh();
     }
   };
 

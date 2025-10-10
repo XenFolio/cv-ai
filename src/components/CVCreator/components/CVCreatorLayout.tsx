@@ -2,7 +2,8 @@ import React from 'react';
 import { PreviewModule } from '../modules/PreviewModule';
 import { StyleControlsModule } from '../modules/StyleControlsModule';
 import { TemplateSelector } from './TemplateSelector';
-import type { SectionConfig } from '../types';
+import type { SectionConfig, CVContent } from '../types';
+import type { Template } from '../templates';
 
 interface CVCreatorLayoutProps {
   templatesLoading: boolean;
@@ -10,13 +11,13 @@ interface CVCreatorLayoutProps {
   setSectionsOrder: (sections: SectionConfig[]) => void;
   templates: Array<{ id: string; name: string; preview: string }>;
   onTemplateSelect: (templateId: string, templateName: string) => void;
-  onDownloadTemplate: (template: any) => void;
+  onDownloadTemplate: (template: Template) => void;
   setCustomColor: (color: string) => void;
   setTitleColor: (color: string) => void;
   setCustomFont: (font: string) => void;
   setNameAlignment: (alignment: 'left' | 'center' | 'right') => void;
   setLayoutColumns: (columns: number) => void;
-  setEditableContent: (content: any) => void;
+  setEditableContent: React.Dispatch<React.SetStateAction<CVContent>>;
 }
 
 export const CVCreatorLayout: React.FC<CVCreatorLayoutProps> = ({

@@ -1,5 +1,4 @@
 import React, { useCallback } from 'react';
-import { useAppStore } from '../../store/useAppStore';
 import { CVCreatorProvider } from './CVCreatorContext.provider';
 import { CVCreatorHeader } from './components/CVCreatorHeader';
 import { TemplateSelector } from './components/TemplateSelector';
@@ -7,11 +6,39 @@ import { PreviewModule } from './modules/PreviewModule';
 import { StyleControlsModule } from './modules/StyleControlsModule';
 import { useCVData } from './useCVData';
 import { useCVHandlers } from './handlers';
-import { templates, type Template } from './templates';
-import type { SectionConfig } from './types';
+
+interface SectionConfig {
+  id: string;
+  name: string;
+  component: string;
+  visible: boolean;
+  layer?: number;
+  order?: number;
+  width?: "full" | "half";
+}
+
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  preview: string;
+  image: string;
+  category: string;
+  atsScore: number;
+  theme: { primaryColor: string; font: string };
+  layoutColumns: number;
+  sectionTitles: {
+    profileTitle: string;
+    experienceTitle: string;
+    educationTitle: string;
+    skillsTitle: string;
+    languagesTitle: string;
+    contactTitle: string;
+  };
+  sectionsOrder: SectionConfig[];
+}
 
 const CVCreatorRefactored: React.FC = () => {
-  const setActiveTab = useAppStore(s => s.setActiveTab);
 
   // Hook pour la gestion des données
   const {
@@ -28,7 +55,6 @@ const CVCreatorRefactored: React.FC = () => {
     selectedTemplate,
     setSelectedTemplate,
     selectedTemplateName,
-    setSelectedTemplateName,
     templatesLoading,
     error,
     setError,
@@ -112,7 +138,6 @@ const CVCreatorRefactored: React.FC = () => {
     setLanguages,
     educations,
     setEducations,
-    editableContent,
     setEditableContent,
     setError
   );
@@ -264,11 +289,14 @@ const CVCreatorRefactored: React.FC = () => {
   }, [selectedTemplate, editableContent, experiences, languages, educations, templates]);
 
   const handleDownloadTemplate = useCallback(async (template: Template) => {
+    const fullTemplate = templates.find(t => t.id === template.id);
+    if (!fullTemplate) return;
+
     try {
       const { generateCVDocument } = await import('./ExportModule');
 
       await generateCVDocument(
-        template,
+        fullTemplate,
         editableContent,
         experiences,
         languages,
@@ -278,7 +306,7 @@ const CVCreatorRefactored: React.FC = () => {
     } catch (error) {
       console.error('Erreur lors du téléchargement du template:', error);
     }
-  }, [editableContent, experiences, languages, educations, addCreatedCV]);
+  }, [editableContent, experiences, languages, educations, addCreatedCV, templates]);
 
   // Context value for provider
   const contextValue = {

@@ -42,7 +42,7 @@ export const defaultCVContent = {
   name: '[VOTRE NOM]',
   contact: '[Votre Email] • [Votre Téléphone] • [LinkedIn]',
   contactTitle: 'CONTACT',
-  profileTitle: 'PROFIL PROFESSIONNEL',
+  profileTitle: 'PROFIL',
   profileContent: 'Résumé de votre profil et de vos objectifs.',
   experienceTitle: 'EXPÉRIENCE PROFESSIONNELLE',
   educationTitle: 'FORMATION',

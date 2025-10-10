@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { CVExperience, CVSkill, CVLanguage, CVEducation } from './types';
+import type { CVExperience, CVSkill, CVLanguage, CVEducation, CVContent } from './types';
 import { useOpenAI } from '../../hooks/useOpenAI';
 
 export const useCVHandlers = (
@@ -11,8 +11,7 @@ export const useCVHandlers = (
   setLanguages: React.Dispatch<React.SetStateAction<CVLanguage[]>>,
   educations: CVEducation[],
   setEducations: React.Dispatch<React.SetStateAction<CVEducation[]>>,
-  editableContent: any,
-  setEditableContent: React.Dispatch<React.SetStateAction<any>>,
+  setEditableContent: React.Dispatch<React.SetStateAction<CVContent>>,
   setError: React.Dispatch<React.SetStateAction<string | null>>
 ) => {
   const { editCVField, isLoading, error: openAIError } = useOpenAI();
@@ -154,31 +153,31 @@ export const useCVHandlers = (
       content: '[Poste] - [Entreprise] (Dates)',
       details: '• Réalisation clé ou projet important.'
     }]);
-  }, [experiences]);
+  }, [experiences, setExperiences]);
 
   const removeExperience = useCallback((id: number) => {
     setExperiences(prev => prev.filter(exp => exp.id !== id));
-  }, []);
+  }, [setExperiences]);
 
   // Handlers pour les compétences
   const addSkill = useCallback(() => {
     const newId = skills.length > 0 ? Math.max(...skills.map(skill => skill.id)) + 1 : 1;
     setSkills(prev => [...prev, { id: newId, content: 'Nouvelle compétence' }]);
-  }, [skills]);
+  }, [skills, setSkills]);
 
   const removeSkill = useCallback((id: number) => {
     setSkills(prev => prev.filter(skill => skill.id !== id));
-  }, []);
+  }, [setSkills]);
 
   // Handlers pour les langues
   const addLanguage = useCallback(() => {
     const newId = languages.length > 0 ? Math.max(...languages.map(lang => lang.id)) + 1 : 1;
     setLanguages(prev => [...prev, { id: newId, name: 'Nouvelle langue', level: 'Niveau' }]);
-  }, [languages]);
+  }, [languages, setLanguages]);
 
   const removeLanguage = useCallback((id: number) => {
     setLanguages(prev => prev.filter(lang => lang.id !== id));
-  }, []);
+  }, [setLanguages]);
 
   // Handlers pour les formations
   const addEducation = useCallback(() => {
@@ -189,11 +188,11 @@ export const useCVHandlers = (
       school: '[École]',
       year: '[Année]'
     }]);
-  }, [educations]);
+  }, [educations, setEducations]);
 
   const removeEducation = useCallback((id: number) => {
     setEducations(prev => prev.filter(edu => edu.id !== id));
-  }, []);
+  }, [setEducations]);
 
   return {
     generateWithAI,
