@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../hooks/useAdmin';
 import { AdminUser } from '../../hooks/useAdmin';
+import { useAdminTheme } from '../../contexts/useAdminTheme';
 import {
   Search,
   Filter,
@@ -35,6 +36,8 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
     deleteUser,
     logAction
   } = useAdmin();
+
+  const { themeClasses } = useAdminTheme();
 
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
@@ -100,15 +103,15 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className={`${themeClasses.card} rounded-lg shadow`}>
       {/* Table Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className={`px-6 py-4 border-b ${themeClasses.border}`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium text-gray-900">
+          <h2 className={`text-lg font-medium ${themeClasses.text}`}>
             Liste des utilisateurs ({users.length})
           </h2>
           <div className="flex items-center space-x-2">
-            <button className="p-2 text-gray-400 hover:text-gray-600">
+            <button className={`p-2 ${themeClasses.textSecondary} hover:${themeClasses.text}`}>
               <Filter className="h-5 w-5" />
             </button>
           </div>
@@ -118,31 +121,31 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className={`${themeClasses.bgSurface}`}>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className={`px-6 py-3 text-left text-xs font-medium ${themeClasses.textSecondary} uppercase tracking-wider`}>
                 Utilisateur
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className={`px-6 py-3 text-left text-xs font-medium ${themeClasses.textSecondary} uppercase tracking-wider`}>
                 Rôle
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className={`px-6 py-3 text-left text-xs font-medium ${themeClasses.textSecondary} uppercase tracking-wider`}>
                 Contenu
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className={`px-6 py-3 text-left text-xs font-medium ${themeClasses.textSecondary} uppercase tracking-wider`}>
                 Dernière activité
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className={`px-6 py-3 text-left text-xs font-medium ${themeClasses.textSecondary} uppercase tracking-wider`}>
                 Créé le
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className={`px-6 py-3 text-right text-xs font-medium ${themeClasses.textSecondary} uppercase tracking-wider`}>
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className={`${themeClasses.card} divide-y ${themeClasses.border}`}>
             {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
+              <tr key={user.id} className={`hover:${themeClasses.bgSurface}`}>
                 {/* User Info */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -152,10 +155,10 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
                       </div>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className={`text-sm font-medium ${themeClasses.text}`}>
                         {user.first_name} {user.last_name}
                       </div>
-                      <div className="text-sm text-gray-500 flex items-center">
+                      <div className={`text-sm ${themeClasses.textSecondary} flex items-center`}>
                         <Mail className="h-3 w-3 mr-1" />
                         {user.email}
                       </div>
@@ -172,20 +175,20 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
 
                 {/* Content */}
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 space-y-1">
+                  <div className={`text-sm ${themeClasses.text} space-y-1`}>
                     <div className="flex items-center">
-                      <FileText className="h-3 w-3 mr-1 text-blue-500" />
+                      <FileText className="h-3 w-3 mr-1 text-blue-400" />
                       <span>CV: {user.cv_count || 0}</span>
                     </div>
                     <div className="flex items-center">
-                      <FileText className="h-3 w-3 mr-1 text-green-500" />
+                      <FileText className="h-3 w-3 mr-1 text-green-400" />
                       <span>Lettres: {user.letter_count || 0}</span>
                     </div>
                   </div>
                 </td>
 
                 {/* Last Activity */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className={`px-6 py-4 whitespace-nowrap text-sm ${themeClasses.textSecondary}`}>
                   {user.last_login ? (
                     <div className="flex items-center">
                       <Calendar className="h-3 w-3 mr-1" />
@@ -197,7 +200,7 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
                 </td>
 
                 {/* Created At */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className={`px-6 py-4 whitespace-nowrap text-sm ${themeClasses.textSecondary}`}>
                   {formatDate(user.created_at)}
                 </td>
 
@@ -210,7 +213,7 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
                         setSelectedUser(user);
                         setShowUserModal(true);
                       }}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="text-blue-400 hover:text-blue-300"
                       title="Voir les détails"
                     >
                       <Eye className="h-4 w-4" />
@@ -220,7 +223,7 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
                     {user.role !== 'admin' && (
                       <button
                         onClick={() => handleRoleChange(user, 'admin')}
-                        className="text-purple-600 hover:text-purple-900"
+                        className="text-purple-400 hover:text-purple-300"
                         title="Promouvoir admin"
                       >
                         <Shield className="h-4 w-4" />
@@ -230,7 +233,7 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
                     {/* Toggle Status */}
                     <button
                       onClick={() => handleToggleStatus(user)}
-                      className={`${user.is_active ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
+                      className={`${user.is_active ? 'text-yellow-400 hover:text-yellow-300' : 'text-green-400 hover:text-green-300'}`}
                       title={user.is_active ? 'Désactiver' : 'Activer'}
                     >
                       {user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
@@ -240,7 +243,7 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
                     {user.role !== 'admin' && (
                       <button
                         onClick={() => setConfirmDelete(user)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-400 hover:text-red-300"
                         title="Supprimer"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -255,8 +258,8 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
             {users.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-6 py-12 text-center">
-                  <div className="text-gray-500">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <div className={themeClasses.textSecondary}>
+                    <Users className={`h-12 w-12 mx-auto mb-4 ${themeClasses.textSecondary}`} />
                     <p className="text-lg font-medium">Aucun utilisateur trouvé</p>
                     <p className="text-sm">Commencez par inviter des utilisateurs sur la plateforme.</p>
                   </div>
@@ -270,18 +273,18 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
       {/* Delete Confirmation Modal */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className={`${themeClasses.card} rounded-lg p-6 max-w-md w-full mx-4`}>
+            <h3 className={`text-lg font-semibold ${themeClasses.text} mb-4`}>
               Confirmer la suppression
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className={`${themeClasses.textSecondary} mb-6`}>
               Êtes-vous sûr de vouloir supprimer l'utilisateur {confirmDelete.first_name} {confirmDelete.last_name} ({confirmDelete.email}) ?
               Cette action est irréversible.
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                className={`px-4 py-2 ${themeClasses.text} ${themeClasses.bgSurface} rounded-lg hover:${themeClasses.border}`}
               >
                 Annuler
               </button>
@@ -299,14 +302,14 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
       {/* User Details Modal */}
       {showUserModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className={`${themeClasses.card} rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">
+              <h3 className={`text-xl font-semibold ${themeClasses.text}`}>
                 Détails de l'utilisateur
               </h3>
               <button
                 onClick={() => setShowUserModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className={`${themeClasses.textSecondary} hover:${themeClasses.text}`}
               >
                 ✕
               </button>
@@ -314,59 +317,59 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
 
             <div className="space-y-6">
               {/* User Info */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-3">Informations personnelles</h4>
+              <div className={`${themeClasses.bgSurface} p-4 rounded-lg`}>
+                <h4 className={`font-medium ${themeClasses.text} mb-3`}>Informations personnelles</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500">Nom:</span>
+                    <span className={themeClasses.textSecondary}>Nom:</span>
                     <p className="font-medium">{selectedUser.first_name} {selectedUser.last_name}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Email:</span>
+                    <span className={themeClasses.textSecondary}>Email:</span>
                     <p className="font-medium">{selectedUser.email}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Rôle:</span>
+                    <span className={themeClasses.textSecondary}>Rôle:</span>
                     <p className="font-medium">{selectedUser.role}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Statut:</span>
+                    <span className={themeClasses.textSecondary}>Statut:</span>
                     <p className="font-medium">{selectedUser.is_active ? 'Actif' : 'Inactif'}</p>
                   </div>
                 </div>
               </div>
 
               {/* Content Stats */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-3">Contenu créé</h4>
+              <div className={`${themeClasses.bgSurface} p-4 rounded-lg`}>
+                <h4 className={`font-medium ${themeClasses.text} mb-3`}>Contenu créé</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500">CV créés:</span>
+                    <span className={themeClasses.textSecondary}>CV créés:</span>
                     <p className="font-medium text-lg">{selectedUser.cv_count || 0}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Lettres créées:</span>
+                    <span className={themeClasses.textSecondary}>Lettres créées:</span>
                     <p className="font-medium text-lg">{selectedUser.letter_count || 0}</p>
                   </div>
                 </div>
                 {selectedUser.last_document_created && (
                   <div className="mt-3 pt-3 border-t">
-                    <span className="text-gray-500">Dernier document:</span>
+                    <span className={themeClasses.textSecondary}>Dernier document:</span>
                     <p className="font-medium">{formatDate(selectedUser.last_document_created)}</p>
                   </div>
                 )}
               </div>
 
               {/* Activity */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-3">Activité</h4>
+              <div className={`${themeClasses.bgSurface} p-4 rounded-lg`}>
+                <h4 className={`font-medium ${themeClasses.text} mb-3`}>Activité</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500">Créé le:</span>
+                    <span className={themeClasses.textSecondary}>Créé le:</span>
                     <p className="font-medium">{formatDate(selectedUser.created_at)}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Dernière connexion:</span>
+                    <span className={themeClasses.textSecondary}>Dernière connexion:</span>
                     <p className="font-medium">
                       {selectedUser.last_login ? formatDate(selectedUser.last_login) : 'Jamais'}
                     </p>
@@ -378,7 +381,7 @@ export function UsersTable({ users, onRefresh }: UsersTableProps) {
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowUserModal(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                className={`px-4 py-2 ${themeClasses.bgSurface} ${themeClasses.text} rounded-lg hover:${themeClasses.border}`}
               >
                 Fermer
               </button>

@@ -264,7 +264,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ">
           {metricCards.map((metric, index) => (
-            <MetricCard key={index} {...metric} />
+            <MetricCard key={index} {...metric} isAdmin={isAdmin} />
           ))}
         </div>
       )}
@@ -272,7 +272,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       {/* Charts and Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
         <div className="flex justify-center">
-          <RecentActivity onShowAllActivities={() => setIsActivityModalOpen(true)} />
+          <RecentActivity
+            onShowAllActivities={() => setIsActivityModalOpen(true)}
+            isAdmin={isAdmin}
+          />
         </div>
       </div>
 

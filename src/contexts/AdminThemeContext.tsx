@@ -33,7 +33,7 @@ export function AdminThemeProvider({ children }: AdminThemeProviderProps) {
   }), []);
 
   // Classes CSS pour le thème admin ou régulier
-  const themeClasses = isAdmin ? {
+  const themeClasses = isAdmin ? (isDark ? {
     bg: 'bg-slate-950',
     bgGradient: 'bg-gradient-to-br from-slate-950 via-blue-900 to-cyan-900',
     bgSurface: 'bg-slate-900/50',
@@ -46,7 +46,20 @@ export function AdminThemeProvider({ children }: AdminThemeProviderProps) {
     card: 'bg-slate-800/30 border-slate-700 backdrop-blur-sm',
     button: 'bg-blue-600 hover:bg-blue-700 text-white',
     buttonHover: 'hover:bg-blue-700'
-  } : isDark ? {
+  } : {
+    bg: 'bg-slate-100',
+    bgGradient: 'bg-gradient-to-br from-slate-100 via-blue-50 to-cyan-50',
+    bgSurface: 'bg-white/90',
+    text: 'text-slate-800',
+    textSecondary: 'text-slate-600',
+    border: 'border-slate-300',
+    primary: 'bg-blue-600 hover:bg-blue-700 text-white',
+    secondary: 'bg-cyan-600 hover:bg-cyan-700 text-white',
+    accent: 'bg-sky-600 hover:bg-sky-700 text-white',
+    card: 'bg-white border-slate-300 backdrop-blur-sm',
+    button: 'bg-blue-600 hover:bg-blue-700 text-white',
+    buttonHover: 'hover:bg-blue-700'
+  }) : isDark ? {
     bg: 'bg-slate-900',
     bgGradient: 'bg-gradient-to-br from-slate-900 via-gray-900 to-gray-950',
     bgSurface: 'bg-slate-800/50',
@@ -55,7 +68,7 @@ export function AdminThemeProvider({ children }: AdminThemeProviderProps) {
     border: 'border-slate-700',
     primary: 'bg-blue-700 hover:bg-blue-800 text-white',
     secondary: 'bg-gray-700 hover:bg-gray-800 text-white',
-    accent: 'bg-purple-700 hover:bg-purple-800 text-white',
+    accent: 'bg-purple-700 hover:bg-purple-800 text-white ',
     card: 'bg-slate-800/30 border-slate-700 backdrop-blur-sm',
     button: 'bg-blue-600 hover:bg-blue-700 text-white',
     buttonHover: 'hover:bg-blue-700'

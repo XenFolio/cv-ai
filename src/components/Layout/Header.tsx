@@ -1,9 +1,8 @@
+import { AlertTriangle, BarChart3, Brain, Briefcase, ChevronDown, Crown, FileText, FolderOpen, LayoutTemplate, LogOut, ChevronDown as MenuDown, MessageSquare, Plus, Search, Settings, Shield, Sparkles, Star, User } from 'lucide-react';
 import React from 'react';
-import { User, LogOut, Settings, AlertTriangle, ChevronDown, Sparkles, BarChart3, FileText, FolderOpen, Brain, MessageSquare, ChevronDown as MenuDown, Plus, Search, Briefcase, LayoutTemplate, Star, Shield, Crown } from 'lucide-react';
-import ThemeToggle from '../UI/ThemeToggle';
-import { useIsAdmin } from '../../hooks/useAdmin';
 import { useAdminTheme } from '../../contexts/useAdminTheme';
-import { AdminIndicator } from '../Admin/AdminIndicator';
+import { useIsAdmin } from '../../hooks/useAdmin';
+import ThemeToggle from '../UI/ThemeToggle';
 
 interface HeaderProps {
   user: {
@@ -19,7 +18,7 @@ interface HeaderProps {
   onTabChange?: (tab: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout, apiKeyStatus = 'valid', activeTab = '', onTabChange = () => {} }) => {
+export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout, apiKeyStatus = 'valid', activeTab = '', onTabChange = () => { } }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
   const { isAdmin } = useIsAdmin();
@@ -125,20 +124,18 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
               onClick={() => onTabChange('dashboard')}
               className="relative"
             >
-              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shadow-lg ${
-                isAdmin
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shadow-lg ${isAdmin
                   ? 'bg-gradient-to-br from-violet-600 via-purple-600 to-pink-600'
                   : 'bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-600'
-              }`}>
+                }`}>
                 {isAdmin ? (
                   <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 ) : (
                   <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 )}
               </div>
-              <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
-                isAdmin ? 'bg-purple-400' : 'bg-green-400'
-              }`}></div>
+              <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${isAdmin ? 'bg-purple-400' : 'bg-green-400'
+                }`}></div>
             </button>
             <button
               onClick={() => onTabChange('dashboard')}
@@ -178,40 +175,43 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
                         setOpenDropdown(item.id);
                       }
                     }}
-                    className={`relative flex items-center space-x-1 px-2 py-1.5 text-xs font-medium rounded-md ${
-                      item.id === 'admin' && isActive
+                    className={`relative flex items-center space-x-1 px-2 py-1.5 text-xs font-medium rounded-md ${item.id === 'admin' && isActive
                         ? 'text-purple-400 bg-purple-900/60 shadow-sm'
                         : item.id === 'admin'
-                        ? 'text-purple-300 hover:text-purple-400 hover:bg-purple-900/40'
-                        : isActive
-                        ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/60 shadow-sm'
-                        : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/40'
+                          ? 'text-purple-300 hover:text-purple-400 hover:bg-purple-900/40'
+                          : isActive
+                            ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/60 shadow-sm'
+                            : isAdmin
+                              ? `${themeClasses.text} hover:text-indigo-400 hover:bg-indigo-900/40`
+                              : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/40'
                       }`}
                     aria-current={isActive ? 'page' : undefined}
                   >
-                    <Icon className={`w-3 h-3 ${
-                        item.id === 'admin'
-                          ? isActive
-                            ? 'text-purple-400'
-                            : 'text-purple-500'
-                          : isActive
+                    <Icon className={`w-3 h-3 ${item.id === 'admin'
+                        ? isActive
+                          ? 'text-purple-400'
+                          : 'text-purple-500'
+                        : isActive
                           ? 'text-indigo-600 dark:text-indigo-400'
-                          : 'text-gray-500 dark:text-gray-400'
+                          : isAdmin
+                            ? themeClasses.textSecondary
+                            : 'text-gray-500 dark:text-gray-400'
                       }`} />
                     <span className="font-medium hidden sm:block">{item.label}</span>
 
                     {hasDropdown && (
-                      <MenuDown className={`w-2 h-2 ${openDropdown === item.id ? 'rotate-180 text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'
+                      <MenuDown className={`w-2 h-2 ${openDropdown === item.id ? 'rotate-180 text-indigo-600 dark:text-indigo-400' : (
+                        isAdmin ? themeClasses.textSecondary : 'text-gray-400 dark:text-gray-500'
+                      )
                         }`} />
                     )}
 
                     {/* Active indicator */}
                     {isActive && (
-                      <div className={`absolute bottom-0 left-1 right-1 h-0.5 rounded-full ${
-                        item.id === 'admin'
+                      <div className={`absolute bottom-0 left-1 right-1 h-0.5 rounded-full ${item.id === 'admin'
                           ? 'bg-gradient-to-r from-purple-500 to-pink-500'
                           : 'bg-gradient-to-r from-indigo-500 to-purple-500'
-                      }`} />
+                        }`} />
                     )}
                   </button>
 
@@ -231,10 +231,14 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
                             onClick={() => handleItemClick(subItem.id)}
                             className={`w-full flex items-center space-x-2 px-3 py-2 text-xs font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/50 ${isSubActive
                               ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/60'
-                              : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
+                              : isAdmin
+                                ? `${themeClasses.text} hover:text-indigo-400`
+                                : 'text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
                               }`}
                           >
-                            <SubIcon className={`w-3 h-3 ${isSubActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                            <SubIcon className={`w-3 h-3 ${isSubActive ? 'text-indigo-600 dark:text-indigo-400' : (
+                              isAdmin ? themeClasses.textSecondary : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                            )
                               }`} />
                             <span className="text-left font-medium">{subItem.label}</span>
                           </button>
@@ -260,8 +264,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
               </button>
             )}
 
-            {/* Admin Indicator */}
-            <AdminIndicator size="md" />
+
 
             {/* Theme Toggle */}
             <ThemeToggle />
@@ -269,7 +272,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
             {/* Settings */}
             <button
               onClick={onSettingsClick}
-              className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg"
+              className={`p-2 ${isAdmin ? themeClasses.textSecondary : 'text-gray-400 dark:text-gray-500'} hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg`}
               title="Paramètres"
             >
               <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -281,11 +284,10 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className="flex items-center space-x-2 sm:space-x-3 bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-100/80 dark:hover:bg-gray-700/80 rounded-xl px-3 py-2 sm:px-4 sm:py-2.5 border border-gray-100 dark:border-gray-700"
               >
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shadow-sm ${
-                  isAdmin
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shadow-sm ${isAdmin
                     ? 'bg-gradient-to-br from-violet-500 to-purple-600'
                     : 'bg-gradient-to-br from-indigo-500 to-purple-600'
-                }`}>
+                  }`}>
                   {isAdmin ? (
                     <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                   ) : (
@@ -293,10 +295,10 @@ export const Header: React.FC<HeaderProps> = ({ user, onSettingsClick, onLogout,
                   )}
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight truncate max-w-[120px]">{user.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{user.email}</p>
+                  <p className={`text-sm font-medium ${isAdmin ? themeClasses.text : 'text-gray-900 dark:text-gray-100'} leading-tight truncate max-w-[120px]`}>{user.name}</p>
+                  <p className={`text-xs ${isAdmin ? themeClasses.textSecondary : 'text-gray-500 dark:text-gray-400'} truncate max-w-[120px]`}>{user.email}</p>
                 </div>
-                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 dark:text-gray-500" />
+                <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 ${isAdmin ? themeClasses.textSecondary : 'text-gray-400 dark:text-gray-500'}`} />
               </button>
 
               {/* Dropdown Menu */}

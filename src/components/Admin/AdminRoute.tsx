@@ -4,7 +4,6 @@
 // Composant de protection des routes admin
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
 import { useIsAdmin } from '../../hooks/useAdmin';
 import { Shield, Loader2 } from 'lucide-react';
 

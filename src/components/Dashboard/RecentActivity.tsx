@@ -1,14 +1,36 @@
 import React from 'react';
 import { Clock, FileText, CheckCircle, AlertCircle, TrendingUp, Wand2, Target, Loader2 } from 'lucide-react';
 import { useSupabase } from '../../hooks/useSupabase';
+import { useAdminTheme } from '../../contexts/useAdminTheme';
 import { RecentActivitySkeleton } from './RecentActivitySkeleton';
 
 interface RecentActivityProps {
   onShowAllActivities: () => void;
+  isAdmin: boolean;
 }
 
-export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivities }) => {
+export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivities, isAdmin }) => {
   const { activities, activitiesLoading, error } = useSupabase();
+  const { themeClasses } = useAdminTheme();
+
+  // Classes pour les utilisateurs non-admin (garder l'apparence originale)
+  const userClasses = {
+    card: 'bg-white/70',
+    border: 'border-gray-200/30',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-600',
+    hoverBg: 'hover:bg-gray-100',
+    gradientHeader: 'bg-gradient-to-r from-violet-600 to-pink-500',
+    gradientButton: 'bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-700 hover:to-pink-700'
+  };
+
+  // Classes selon le mode
+  const classes = isAdmin ? {
+    ...themeClasses,
+    hoverBg: 'hover:bg-slate-700/50',
+    gradientHeader: 'bg-gradient-to-r from-blue-600 to-cyan-600',
+    gradientButton: 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700'
+  } : userClasses;
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -37,24 +59,33 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivit
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success': return 'text-emerald-600 bg-emerald-100';
-      case 'warning': return 'text-amber-600 bg-amber-100';
-      case 'info': return 'text-blue-600 bg-blue-100';
-      default: return 'text-gray-600 bg-gray-100';
+    if (isAdmin) {
+      switch (status) {
+        case 'success': return 'text-emerald-400 bg-emerald-900/30';
+        case 'warning': return 'text-amber-400 bg-amber-900/30';
+        case 'info': return 'text-blue-400 bg-blue-900/30';
+        default: return 'text-gray-400 bg-gray-800/30';
+      }
+    } else {
+      switch (status) {
+        case 'success': return 'text-emerald-600 bg-emerald-100';
+        case 'warning': return 'text-amber-600 bg-amber-100';
+        case 'info': return 'text-blue-600 bg-blue-100';
+        default: return 'text-gray-600 bg-gray-100';
+      }
     }
   };
 
   return (
-    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-gray-200/30 mx-auto w-full shadow-sm">
-      <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-violet-600 to-pink-500 p-2 px-4  rounded-xl">
-        <h3 className="w-full text-white text-lg font-semibold text-gray-900  ">Activité Récente</h3>
+    <div className={`${classes.card} backdrop-blur-sm rounded-2xl p-4 ${classes.border} mx-auto w-full shadow-sm`}>
+      <div className={`flex items-center justify-between mb-4 ${classes.gradientHeader} p-2 px-4 rounded-xl`}>
+        <h3 className={`w-full text-white text-lg font-semibold ${classes.text}`}>Activité Récente</h3>
         <div className="flex items-center space-x-2">
-          <Clock className="w-5 h-5 text-gray-400" />
-          {activitiesLoading && <Loader2 className="w-4 h-4 text-violet-500 animate-spin" />}
+          <Clock className={`w-5 h-5 ${isAdmin ? 'text-gray-400' : 'text-gray-400'}`} />
+          {activitiesLoading && <Loader2 className={`w-4 h-4 ${isAdmin ? 'text-blue-400' : 'text-violet-500'} animate-spin`} />}
         </div>
       </div>
-      
+
       {activitiesLoading ? (
         <RecentActivitySkeleton />
       ) : error ? (
@@ -64,9 +95,9 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivit
         </div>
       ) : activities.length === 0 ? (
         <div className="text-center py-8">
-          <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h4 className="font-semibold text-gray-700 mb-2">Aucune activité pour le moment</h4>
-          <p className="text-sm text-gray-600 mb-4">
+          <Clock className={`w-16 h-16 ${isAdmin ? 'text-gray-600' : 'text-gray-300'} mx-auto mb-4`} />
+          <h4 className={`font-semibold ${classes.text} mb-2`}>Aucune activité pour le moment</h4>
+          <p className={`text-sm ${classes.textSecondary} mb-4`}>
             Commencez par analyser un CV ou créer un nouveau document pour voir vos activités ici
           </p>
 
@@ -76,29 +107,37 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivit
           {activities.slice(0, 5).map((activity) => {
             const Icon = getActivityIcon(activity.type);
             return (
-              <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-100 cursor-pointer duration-200 transition-colors group">
+              <div key={activity.id} className={`flex items-start space-x-3 p-3 rounded-xl ${classes.hoverBg} cursor-pointer duration-200 transition-colors group`}>
                 <div className={`p-2 rounded-lg ${getStatusColor(activity.status)} group-hover:scale-110 transition-transform duration-200`}>
                   <Icon className="w-4 h-4" />
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className={`text-sm font-medium ${classes.text} truncate`}>
                     {activity.title}
                   </p>
                   {activity.description && (
-                    <p className="text-xs text-gray-600 truncate mt-0.5">
+                    <p className={`text-xs ${classes.textSecondary} truncate mt-0.5`}>
                       {activity.description}
                     </p>
                   )}
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs text-gray-500">{formatTimeAgo(activity.created_at)}</p>
+                    <p className={`text-xs ${classes.textSecondary}`}>{formatTimeAgo(activity.created_at)}</p>
                     {activity.score && (
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                        activity.score >= 80 
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : activity.score >= 60
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-red-100 text-red-700'
+                        isAdmin ? (
+                          activity.score >= 80
+                            ? 'bg-emerald-900/30 text-emerald-400'
+                            : activity.score >= 60
+                            ? 'bg-amber-900/30 text-amber-400'
+                            : 'bg-red-900/30 text-red-400'
+                        ) : (
+                          activity.score >= 80
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : activity.score >= 60
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-red-100 text-red-700'
+                        )
                       }`}>
                         {activity.score}%
                       </span>
@@ -112,10 +151,10 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ onShowAllActivit
       )}
 
       {/* Footer */}
-      <div className="mt-4 pt-4 border-t border-gray-200/30 flex justify-center">
+      <div className={`mt-4 pt-4 ${classes.border} flex justify-center`}>
         <button
           onClick={onShowAllActivities}
-          className="bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-violet-700 hover:to-pink-700 transition-all duration-200 hover:scale-105 shadow-sm"
+          className={`${classes.gradientButton} text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 shadow-sm`}
         >
           Voir toute l'activité
         </button>
