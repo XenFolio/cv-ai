@@ -43,13 +43,13 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
             }}
             autoFocus
           />
-          <button
+          <div
             onClick={addExperience}
             className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
             title="Ajouter une expérience"
           >
             <Plus className="w-4 h-4" />
-          </button>
+          </div>
         </div>
       ) : (
         <div
@@ -70,13 +70,13 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
               onClick={() => generateWithAI('experienceTitle', editableContent.experienceTitle)}
               title="Modifier avec IA"
             />
-            <button
+            <div
               onClick={addExperience}
               className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
               title="Ajouter une expérience"
             >
               <Plus className="w-4 h-4" />
-            </button>
+            </div>
           </div>
         </div>
       )}
@@ -94,13 +94,13 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
               onClick={() => generateWithAI('experienceContent', exp.content)}
               title="Modifier avec IA"
             />
-            <button
+            <div
               onClick={() => removeExperience(exp.id)}
               className="p-1 text-red-600 hover:text-red-800"
               title="Supprimer l'expérience"
             >
               <Minus className="w-4 h-4" />
-            </button>
+            </div>
           </div>
 
           {editingField === `experienceContent-${exp.id}` ? (

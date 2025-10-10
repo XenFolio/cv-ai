@@ -3,7 +3,7 @@ import { Sparkles } from 'lucide-react';
 
 interface AIButtonProps {
   isLoading?: boolean;
-  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
   title: string;
   className?: string;
   disabled?: boolean;
@@ -17,9 +17,8 @@ export const AIButton: React.FC<AIButtonProps> = ({
   disabled = false
 }) => {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled || isLoading}
+    <div
+      onClick={disabled || isLoading ? undefined : onClick}
       className={`p-1 text-violet-600 hover:text-violet-800 disabled:opacity-50 transition-colors duration-200 ${className}`}
       title={title}
     >
@@ -36,7 +35,7 @@ export const AIButton: React.FC<AIButtonProps> = ({
       ) : (
         <Sparkles className="w-4 h-4" />
       )}
-    </button>
+    </div>
   );
 };
 

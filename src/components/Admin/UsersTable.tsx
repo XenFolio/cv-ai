@@ -3,7 +3,7 @@
 // =====================================================
 // Tableau complet pour la gestion des utilisateurs
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAdmin } from '../../hooks/useAdmin';
 import { AdminUser } from '../../hooks/useAdmin';
 import { useAdminTheme } from '../../contexts/useAdminTheme';

@@ -80,112 +80,113 @@ const SortableSkill: React.FC<{
   showSeparator,
   showBulletPoint
 }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: skill.id });
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: skill.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
 
-  return (
-    <span
-      ref={setNodeRef}
-      style={style}
-      className={`inline-flex items-center relative ${isDragging ? 'z-10' : ''}`}
-    >
-      {/* Contenu de la compétence avec groupe hover individuel */}
-      <span className="group relative inline-flex items-center">
-        {/* Handle de drag */}
-        <button
-          {...attributes}
-          {...listeners}
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
-          title="Déplacer la compétence"
-        >
-          <GripVertical className="w-3 h-3" />
-        </button>
-
-        {/* Boutons IA et suppression - visibles seulement si sélectionné */}
-        {isSelected && (
-          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white rounded shadow-md p-1 z-20 flex gap-1">
-            <AIButton
-              isLoading={isLoading}
-              onClick={onAIGenerate}
-              title="Modifier avec IA"
-            />
-            <button
-              onClick={onRemove}
-              className="p-1 text-red-600 hover:text-red-800"
-              title="Supprimer la compétence"
-            >
-              <Minus className="w-3 h-3" />
-            </button>
+    return (
+      <span
+        ref={setNodeRef}
+        style={style}
+        className={`inline-flex items-center relative ${isDragging ? 'z-10' : ''}`}
+      >
+        {/* Contenu de la compétence avec groupe hover individuel */}
+        <span className="group relative inline-flex items-center">
+          {/* Handle de drag */}
+          <div
+            {...attributes}
+            {...listeners}
+            className="h-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-0 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+            title="Déplacer la compétence"
+            role='div'
+          >
+            <GripVertical className="w-3 h-3" />
           </div>
-        )}
 
-        {/* Contenu de la compétence */}
-        <div className="flex items-center">
-          {/* Point devant la compétence si les colonnes sont actives */}
-          {showBulletPoint && (
-            <span className="text-sm mr-2" style={{ color: `#${skillColor}` }}>
-              •
-            </span>
+          {/* Boutons IA et suppression - visibles seulement si sélectionné */}
+          {isSelected && (
+            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white rounded shadow-md p-1 z-20 flex gap-1">
+              <AIButton
+                isLoading={isLoading}
+                onClick={onAIGenerate}
+                title="Modifier avec IA"
+              />
+              <div
+                onClick={onRemove}
+                className="p-1 text-red-600 hover:text-red-800"
+                title="Supprimer la compétence"
+              >
+                <Minus className="w-3 h-3" />
+              </div>
+            </div>
           )}
-          
-          {isEditing ? (
-            <input
-              type="text"
-              value={skill.content}
-              onChange={(e) => onUpdate(e.target.value)}
-              onBlur={onFinishEdit}
-              onKeyDown={(e) => e.key === 'Enter' && onFinishEdit()}
-              className="text-sm border-b focus:outline-none focus:border-violet-500 bg-transparent min-w-0 max-w-full"
-              style={{
-                width: `${Math.min(Math.max(skill.content.length * 8 + 20, 80), 150)}px`,
-                borderColor: colors.border ? `#${colors.border}` : '#d1d5db'
-              }}
-              autoFocus
-            />
-          ) : (
-            <span
-              className={`text-sm cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors duration-200 truncate max-w-full inline-block ${isSelected ? 'bg-violet-50 border border-violet-200' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isSelected) {
-                  onEdit();
-                } else {
-                  onSelect();
-                }
-              }}
-              style={{ 
-                color: `#${skillColor}`,
-                maxWidth: '150px'
-              }}
-              title={isSelected ? "Clic pour éditer" : "Clic pour sélectionner"}
-            >
-              {skill.content}
-            </span>
-          )}
-        </div>
-      </span>
 
-      {/* Séparateur - seulement en mode libre */}
-      {showSeparator && !isLast && (
-        <span className="text-sm text-gray-400 mx-1" style={{ color: `#${skillColor}` }}>
-          •
+          {/* Contenu de la compétence */}
+          <div className="flex items-center">
+            {/* Point devant la compétence si les colonnes sont actives */}
+            {showBulletPoint && (
+              <span className="text-sm mr-2" style={{ color: `#${skillColor}` }}>
+                •
+              </span>
+            )}
+
+            {isEditing ? (
+              <input
+                type="text"
+                value={skill.content}
+                onChange={(e) => onUpdate(e.target.value)}
+                onBlur={onFinishEdit}
+                onKeyDown={(e) => e.key === 'Enter' && onFinishEdit()}
+                className="text-sm border-b focus:outline-none focus:border-violet-500 bg-transparent min-w-0 max-w-full"
+                style={{
+                  width: `${Math.min(Math.max(skill.content.length * 8 + 20, 80), 150)}px`,
+                  borderColor: colors.border ? `#${colors.border}` : '#d1d5db'
+                }}
+                autoFocus
+              />
+            ) : (
+              <span
+                className={`text-sm cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors duration-200 truncate max-w-full inline-block ${isSelected ? 'bg-violet-50 border border-violet-200' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isSelected) {
+                    onEdit();
+                  } else {
+                    onSelect();
+                  }
+                }}
+                style={{
+                  color: `#${skillColor}`,
+                  maxWidth: '150px'
+                }}
+                title={isSelected ? "Clic pour éditer" : "Clic pour sélectionner"}
+              >
+                {skill.content}
+              </span>
+            )}
+          </div>
         </span>
-      )}
-    </span>
-  );
-};
+
+        {/* Séparateur - seulement en mode libre */}
+        {showSeparator && !isLast && (
+          <span className="text-sm text-gray-400 mx-1" style={{ color: `#${skillColor}` }}>
+            •
+          </span>
+        )}
+      </span>
+    );
+  };
 
 export const SkillsSection: React.FC<SkillsSectionProps> = ({
   editableContent,
@@ -243,7 +244,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     if (over && active.id !== over.id) {
       const oldIndex = skills.findIndex((skill) => skill.id === active.id);
       const newIndex = skills.findIndex((skill) => skill.id === over.id);
-      
+
       if (oldIndex !== -1 && newIndex !== -1) {
         const newSkills = [...skills];
         const [movedSkill] = newSkills.splice(oldIndex, 1);
@@ -268,7 +269,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
 
     // Charger immédiatement les catégories par défaut
     setAvailableCategories(['technique', 'soft-skills', 'outils', 'langues', 'certifications']);
-    
+
     // Puis essayer de charger depuis la base de données
     loadCategories();
   }, [getAvailableCategories]);
@@ -363,7 +364,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                 onClick={() => generateWithAI('skillsTitle', editableContent.skillsTitle)}
                 title="Modifier avec IA"
               />
-              
+
               {/* Sélecteur de mise en page */}
               <select
                 value={skillsLayout}
@@ -380,21 +381,21 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                 <option value="2col">2 colonnes</option>
                 <option value="3col">3 colonnes</option>
               </select>
-              
-              <button
+
+              <div
                 onClick={() => setShowSkillsLibrary(!showSkillsLibrary)}
                 className="p-1 text-blue-600 hover:text-blue-800 transition-all duration-200 hover:scale-110"
                 title="Bibliothèque de compétences"
               >
                 <Database className="w-4 h-4" />
-              </button>
-              <button
+              </div>
+              <div
                 onClick={addSkill}
                 className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
                 title="Ajouter une compétence"
               >
                 <Plus className="w-4 h-4" />
-              </button>
+              </div>
             </div>
           </div>
         )}
@@ -413,9 +414,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
               <div
                 className={
                   skillsLayout === 'free' ? 'flex flex-wrap items-center gap-1' :
-                  skillsLayout === '1col' ? 'flex flex-col gap-1' :
-                  skillsLayout === '2col' ? 'grid grid-cols-2 gap-1' :
-                  'grid grid-cols-3 gap-1'
+                    skillsLayout === '1col' ? 'flex flex-col gap-1' :
+                      skillsLayout === '2col' ? 'grid grid-cols-2 gap-1' :
+                        'grid grid-cols-3 gap-1'
                 }
                 onClick={(e) => e.stopPropagation()}
               >
@@ -447,166 +448,168 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
           </DndContext>
         </div>
 
-      {/* Bibliothèque de compétences - Version compacte */}
-      {showSkillsLibrary && (
-        <div
-          className="mt-2 p-3 border rounded-lg bg-white shadow-lg relative z-10"
-          style={{
-            borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-            maxHeight: '300px',
-            overflow: 'hidden'
-          }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <h5 className="font-medium text-gray-700 text-sm">Bibliothèque</h5>
-            <button
-              onClick={() => setShowSkillsLibrary(false)}
-              className="text-gray-500 hover:text-gray-700 text-lg leading-none"
-            >
-              ×
-            </button>
-          </div>
-
-          {/* Barre de recherche */}
-          <div className="mb-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Rechercher une compétence..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-md text-sm focus:outline-none focus:border-violet-500"
-              style={{
-                borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-                color: `#${colors.input}`
-              }}
-              />
+        {/* Bibliothèque de compétences - Version compacte */}
+        {showSkillsLibrary && (
+          <div
+            className="mt-2 p-3 border rounded-lg bg-white shadow-lg relative z-10"
+            style={{
+              borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+              maxHeight: '300px',
+              overflow: 'hidden'
+            }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h5 className="font-medium text-gray-700 text-sm">Bibliothèque</h5>
+              <div
+                onClick={() => setShowSkillsLibrary(false)}
+                className="text-gray-500 hover:text-gray-700 text-lg leading-none"
+              >
+                ×
+              </div>
             </div>
-          </div>
 
-          {/* Résultats de recherche */}
-          {searchResults.length > 0 && (
-            <div className="mb-4">
-              <h6 className="text-sm font-medium text-gray-600 mb-2">Résultats de recherche</h6>
-              <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                {searchResults.map((skill) => (
-                  <button
+            {/* Barre de recherche */}
+            <div className="mb-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Rechercher une compétence..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border rounded-md text-sm focus:outline-none focus:border-violet-500"
+                  style={{
+                    borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+                    color: `#${colors.input}`
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Résultats de recherche */}
+            {searchResults.length > 0 && (
+              <div className="mb-4">
+                <h6 className="text-sm font-medium text-gray-600 mb-2">Résultats de recherche</h6>
+                <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                  {searchResults.map((skill) => (
+                    <div
+                      key={skill.id}
+                      onClick={() => addSkillFromLibrary(skill)}
+                      className="text-left p-2 text-sm border rounded hover:bg-violet-50 hover:border-violet-300 transition-colors"
+                      style={{
+                        borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+                        color: `#${colors.content}`
+                      }}
+                      title={skill.description}
+                    >
+                      <div className="font-medium">{skill.name}</div>
+                      {skill.level && (
+                        <div className="text-xs text-gray-500">{skill.level}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sélecteur de catégorie */}
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Catégorie de compétences
+              </label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full p-2 border rounded-md text-sm focus:outline-none focus:border-violet-500 bg-white cursor-pointer"
+                style={{
+                  borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+                  color: `#${colors.input}`,
+                  minHeight: '36px'
+                }}
+              >
+                {availableCategories.length > 0 ? (
+                  availableCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category === 'technique' ? 'Techniques' :
+                        category === 'soft-skills' ? 'Soft Skills' :
+                          category === 'outils' ? 'Outils' :
+                            category === 'langues' ? 'Langues' :
+                              category === 'certifications' ? 'Certifications' :
+                                category.charAt(0).toUpperCase() + category.slice(1)}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="technique">Techniques</option>
+                    <option value="soft-skills">Soft Skills</option>
+                    <option value="outils">Outils</option>
+                    <option value="langues">Langues</option>
+                    <option value="certifications">Certifications</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            {/* Compétences par catégorie */}
+            {skillsLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="flex space-x-1">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="w-2 h-2 bg-violet-600 rounded-full animate-bounce"
+                      style={{ animationDelay: `${i * 0.2}s` }}
+                    />
+                  ))}
+                </div>
+                <span className="ml-2 text-sm text-gray-600">
+                  {categorySkills.length === 0 ? 'Génération avec IA...' : 'Chargement...'}
+                </span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                {categorySkills.map((skill) => (
+                  <div
                     key={skill.id}
                     onClick={() => addSkillFromLibrary(skill)}
                     className="text-left p-2 text-sm border rounded hover:bg-violet-50 hover:border-violet-300 transition-colors"
-                style={{
-                  borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-                  color: `#${colors.content}`
-                }}
+                    style={{
+                      borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
+                      color: `#${colors.content}`
+                    }}
                     title={skill.description}
                   >
                     <div className="font-medium">{skill.name}</div>
                     {skill.level && (
                       <div className="text-xs text-gray-500">{skill.level}</div>
                     )}
-                  </button>
+                    {skill.is_ai_generated && (
+                      <AIButton
+                        isLoading={isLoading}
+                        onClick={() => generateWithAI('skillContent', editableContent.profileContent)}
+                        title="Modifier avec IA"
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Sélecteur de catégorie */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Catégorie de compétences
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full p-2 border rounded-md text-sm focus:outline-none focus:border-violet-500 bg-white cursor-pointer"
-            style={{
-              borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-              color: `#${colors.input}`,
-              minHeight: '36px'
-            }}
-            >
-              {availableCategories.length > 0 ? (
-                availableCategories.map((category) => (
-                  <option key={category} value={category}>
-                    {category === 'technique' ? 'Techniques' :
-                     category === 'soft-skills' ? 'Soft Skills' :
-                     category === 'outils' ? 'Outils' :
-                     category === 'langues' ? 'Langues' :
-                     category === 'certifications' ? 'Certifications' :
-                     category.charAt(0).toUpperCase() + category.slice(1)}
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="technique">Techniques</option>
-                  <option value="soft-skills">Soft Skills</option>
-                  <option value="outils">Outils</option>
-                  <option value="langues">Langues</option>
-                  <option value="certifications">Certifications</option>
-                </>
-              )}
-            </select>
-          </div>
-
-          {/* Compétences par catégorie */}
-          {skillsLoading ? (
-            <div className="flex items-center justify-center py-4">
-              <div className="flex space-x-1">
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="w-2 h-2 bg-violet-600 rounded-full animate-bounce"
-                    style={{ animationDelay: `${i * 0.2}s` }}
-                  />
-                ))}
-              </div>
-              <span className="ml-2 text-sm text-gray-600">
-                {categorySkills.length === 0 ? 'Génération avec IA...' : 'Chargement...'}
-              </span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-              {categorySkills.map((skill) => (
-                <button
-                  key={skill.id}
-                  onClick={() => addSkillFromLibrary(skill)}
-                  className="text-left p-2 text-sm border rounded hover:bg-violet-50 hover:border-violet-300 transition-colors"
-                style={{
-                  borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-                  color: `#${colors.content}`
-                }}
-                  title={skill.description}
+            {categorySkills.length === 0 && !skillsLoading && (
+              <div className="text-center py-4 text-gray-500 text-sm">
+                <p>Aucune compétence trouvée pour cette catégorie</p>
+                <div
+                  onClick={() => loadSkillsByCategory(selectedCategory)}
+                  className="mt-2 px-3 py-1 text-xs bg-violet-100 text-violet-700 rounded-md hover:bg-violet-200 transition-colors"
                 >
-                  <div className="font-medium">{skill.name}</div>
-                  {skill.level && (
-                    <div className="text-xs text-gray-500">{skill.level}</div>
-                  )}
-                  {skill.is_ai_generated && (
-                    <div className="text-xs text-violet-600 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" />
-                      IA
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {categorySkills.length === 0 && !skillsLoading && (
-            <div className="text-center py-4 text-gray-500 text-sm">
-              <p>Aucune compétence trouvée pour cette catégorie</p>
-              <button
-                onClick={() => loadSkillsByCategory(selectedCategory)}
-                className="mt-2 px-3 py-1 text-xs bg-violet-100 text-violet-700 rounded-md hover:bg-violet-200 transition-colors"
-              >
-                Générer avec IA
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  </>
-);
+                  Générer avec IA
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
 };

@@ -28,7 +28,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
   return (
     <div className="mt-0">
         {editingField === 'educationTitle' ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <input
               type="text"
               value={editableContent.educationTitle}
@@ -45,7 +45,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
           </div>
         ) : (
           <div
-            className="flex items-center gap-2"
+            className="flex items-center gap-1"
             onMouseEnter={() => setTitleHovered(true)}
             onMouseLeave={() => setTitleHovered(false)}
           >
@@ -65,13 +65,13 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                 onClick={() => generateWithAI('educationTitle', editableContent.educationTitle)}
                 title="Modifier avec IA"
               />
-              <button
+              <div
                 onClick={addEducation}
                 className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
                 title="Ajouter une formation"
               >
                 <Plus className="w-4 h-4" />
-              </button>
+              </div>
             </div>
           </div>
         )}
@@ -82,7 +82,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
             className="relative mt-2 group"
           >
             {/* Layout aligné : Diplôme, École, Année sur une seule ligne */}
-            <div className="flex items-center gap-2 overflow-hidden w-full">
+            <div className="flex items-center gap-1 overflow-hidden w-full">
               {/* Diplôme */}
               {editingField === `educationDegree-${edu.id}` ? (
                 <input
@@ -166,13 +166,13 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                     {edu.year}
                   </p>
                   {/* Delete button */}
-                  <button
+                  <div
                     onClick={() => removeEducation(edu.id)}
                     className="p-1 text-red-600 hover:text-red-800 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
                     title="Supprimer cette formation"
                   >
                     <Minus className="w-3 h-3" />
-                  </button>
+                  </div>
                 </div>
               )}
 

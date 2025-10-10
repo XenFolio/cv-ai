@@ -3,7 +3,6 @@
 // =====================================================
 // Composant pour afficher les statistiques principales
 
-import React from 'react';
 import { AdminStats as AdminStatsType } from '../../hooks/useAdmin';
 import { useAdminTheme } from '../../contexts/useAdminTheme';
 import { Users, UserCheck, TrendingUp,  Shield, Activity } from 'lucide-react';

@@ -25,7 +25,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
   children,
   className = "",
   position,
-  alignment = 'center',
+  alignment = 'left',
   onSectionClick,
   hasAdjacentSection = false,
   adjacentSectionColor,
@@ -107,11 +107,11 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
       // Section gauche : priorité visuelle avec ombre
       const shadowIntensity = width === '2/3' ? 'shadow-md' : 'shadow-sm';
       return `relative z-10 ${shadowIntensity}`;
-    } else if (position === 'right') {
-      // Section droite : superposition adaptée à la largeur
-      const marginOffset = width === '1/3' ? '-ml-2' : width === '2/3' ? '-ml-1' : '-ml-1';
-      return `relative z-0 ${marginOffset}`;
-    }
+  } else if (position === 'right') {
+    // Section droite : superposition adaptée à la largeur (éviter de couvrir les slots vides)
+    const marginOffset = width === '1/3' ? '-ml-2' : width === '2/3' ? '-ml-1' : width === 'half' ? '' : '-ml-1';
+    return `relative z-0 ${marginOffset}`.trim();
+  }
     
     return '';
   }
@@ -137,20 +137,21 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
       }}
     >
       {/* Poignée de drag */}
-      <div className="absolute top-1 left-1 flex gap-1 z-10">
+      <div className="absolute top-1 left-0 flex gap-1 z-10 ">
         <div
           {...attributes}
           {...listeners}
           data-drag-handle
-          className="p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/80 rounded-md shadow-sm"
+          className="h-4 w-3 p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 rounded-md shadow-sm"
           title={`Déplacer la section ${title}`}
+          role="div"
         >
           <GripVertical className="w-3 h-3 text-gray-500" />
         </div>
       </div>
 
       {/* Contenu de la section */}
-      <div className="pt-1 flex-1 w-full min-w-0" style={{ textAlign: alignment }}>
+      <div className="pt-0 flex-1 w-full min-w-0" style={{ textAlign: alignment }}>
         <div className="w-full overflow-hidden">
           <div className="max-w-full break-words">
             {children}

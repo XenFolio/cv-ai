@@ -32,16 +32,16 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
           onChange={(e) => setEditableContent(prev => ({ ...prev, profileTitle: e.target.value }))}
           onBlur={() => setEditingField(null)}
           onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-          className="text-sm font-semibold border-b focus:outline-none focus:border-violet-500 bg-transparent"
+          className="text-sm font-semibold border-b focus:outline-none focus:border-violet-500 bg-transparent max-w-full"
           style={{
             color: `#${colors.title}`,
             borderColor: `#${colors.border}`,
-            width: `${Math.max(editableContent.profileTitle.length * 7 + 20, 180)}px`
+            width: `${Math.min(Math.max(editableContent.profileTitle.length * 7 + 20, 120), 200)}px`
           }}
           autoFocus
         />
       ) : (
-        <div className="group flex items-center gap-2">
+        <div className="group flex items-center gap-1">
           <h4
             className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
             onClick={() => setEditingField('profileTitle')}
@@ -67,13 +67,14 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
           className="text-sm w-full border focus:outline-none focus:border-violet-500 p-1 rounded"
           style={{
             borderColor: `#${colors.border}`,
-            color: `#${colors.input}`
+            color: `#${colors.input}`,
+             textAlign: 'left' 
           }}
           autoFocus
           rows={3}
         />
       ) : (
-        <div className="group flex items-start gap-2 relative">
+        <div className="group flex items-start gap-1 relative">
           <p
             className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded flex-1 transition-colors duration-200 line-clamp-3"
             onClick={() => setEditingField('profileContent')}
