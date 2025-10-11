@@ -2,6 +2,7 @@ import React from 'react';
 import type { CVContent } from '../types';
 import { useCVCreator } from '../CVCreatorContext.hook';
 import { AIButton } from '../../UI';
+import EditableFieldWithTitle from '../EditableFieldWithTitle';
 
 interface ContactSectionProps {
   editableContent: CVContent;
@@ -53,29 +54,25 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           />
         </div>
       ) : (
-        <div
-          className="flex items-center gap-2"
-          onMouseEnter={() => setTitleHovered(true)}
-          onMouseLeave={() => setTitleHovered(false)}
-        >
-          <h4
-            className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded whitespace-nowrap transition-colors duration-200"
-            onClick={() => setEditingField('contactTitle')}
-            style={{
-              color: `#${textColor}`,
-              textTransform: isTitleCapitalized ? 'uppercase' : 'none'
-            }}
-          >
-            {editableContent.contactTitle}
-          </h4>
-          <div className={`flex gap-1 ml-auto transition-opacity duration-200 ${titleHovered ? 'opacity-100' : 'opacity-0'}`}>
-            <AIButton
-              isLoading={isLoading}
-              onClick={() => generateWithAI('contactTitle', editableContent.contactTitle)}
-              title="Modifier avec IA"
-            />
-          </div>
-        </div>
+        <EditableFieldWithTitle
+          title={editableContent.contactTitle}
+          value={editableContent.contactTitle}
+          isEditing={editingField === 'contactTitle'}
+          isLoading={isLoading}
+          colors={{
+            title: textColor,
+            text: contentColor
+          }}
+          isTitleCapitalized={isTitleCapitalized}
+          onEdit={() => setEditingField('contactTitle')}
+          onAdd={() => {
+            // Logique pour ajouter un nouveau contact ou information
+            console.log('Ajouter une information de contact');
+          }}
+          onGenerateWithAI={() => generateWithAI('contactTitle', editableContent.contactTitle)}
+          showAddButton={false}
+          showEditButton={true}
+        />
       )}
 
       {editingField === 'contact' ? (

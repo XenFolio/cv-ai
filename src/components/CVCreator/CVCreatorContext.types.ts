@@ -89,8 +89,30 @@ export interface CVCreatorContextType {
   updateSectionElementColor: (sectionId: string, elementType: 'background' | 'title' | 'content' | 'input' | 'button' | 'aiButton' | 'separator' | 'border', color: string) => void;
   updateSectionCapitalization: (sectionId: string, capitalize: boolean) => void;
   capitalizeSections: Record<string, boolean>;
+  setCapitalizeSections: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  updateSectionTopBorder: (sectionId: string, hasTopBorder: boolean) => void;
+  sectionTopBorders: Record<string, boolean>;
+  setSectionTopBorders: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   selectedTemplateName: string;
   selectedTemplate: string | null;
+
+  // Skills library state
+  showSkillsLibrary: boolean;
+  setShowSkillsLibrary: () => void;
+  selectedSkillsCategory: string;
+  setSelectedSkillsCategory: (category: string) => void;
+  availableSkillsCategories: string[];
+  categorySkills: Array<{ id: number; name: string; category: string }>;
+  searchSkillsQuery: string;
+  setSearchSkillsQuery: (query: string) => void;
+  skillsSearchResults: Array<{ id: number; name: string; category: string }>;
+  openSkillsLibrary: () => void;
+  closeSkillsLibrary: () => void;
+  addSkillFromLibrary: (skill: { id: number; name: string; category: string }) => void;
+
+  // Skills layout state
+  skillsLayout: 'free' | '1col' | '2col' | '3col';
+  setSkillsLayout: (layout: 'free' | '1col' | '2col' | '3col') => void;
 
   // Actions
   addExperience: () => void;

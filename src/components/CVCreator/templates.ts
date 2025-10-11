@@ -25,6 +25,7 @@ export interface Template {
     order?: number;
     width?: 'full' | 'half';
   }>;
+  sectionTopBorders?: Record<string, boolean>;
 }
 
 export const templates: Template[] = [
@@ -55,7 +56,13 @@ export const templates: Template[] = [
       { id: 'education', name: 'Formation', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'half' as const },
       { id: 'skills', name: 'Compétences', component: 'SkillsSection', visible: true, layer: 3, order: 0, width: 'full' as const },
       { id: 'languages', name: 'Langues', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'full' as const }
-    ]
+    ],
+    sectionTopBorders: {
+      'experience': true,
+      'contact': true,
+      'education': true,
+      'languages': true
+    }
   },
   {
     id: "2",

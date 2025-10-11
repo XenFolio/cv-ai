@@ -24,8 +24,6 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
   const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
   const textColor = sectionColorSettings?.title || titleColor;
   const contentColor = sectionColorSettings?.content || '000000';
-  const [titleHovered, setTitleHovered] = React.useState(false);
-
   // Vérifier si la capitalisation des titres est activée
   const isTitleCapitalized = sectionId ? capitalizeSections[sectionId] ?? true : true;
   return (
@@ -47,23 +45,18 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
           />
         </div>
       ) : (
-        <div
-          className="flex items-center gap-1"
-          onMouseEnter={() => setTitleHovered(true)}
-          onMouseLeave={() => setTitleHovered(false)}
-        >
+        <div className="group flex items-center gap-2">
           <h4
             className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
             onClick={() => setEditingField('educationTitle')}
             style={{
               color: `#${textColor}`,
-              width: `${Math.max(editableContent.educationTitle.length * 7 + 20, 180)}px`,
               textTransform: isTitleCapitalized ? 'uppercase' : 'none'
             }}
           >
             {editableContent.educationTitle}
           </h4>
-          <div className={`flex gap-1 transition-opacity duration-200 ${titleHovered ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
             <AIButton
               isLoading={isLoading}
               onClick={() => generateWithAI('educationTitle', editableContent.educationTitle)}

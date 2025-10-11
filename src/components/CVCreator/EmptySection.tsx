@@ -1,15 +1,15 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { Plus } from 'lucide-react';
+import { Expand } from 'lucide-react';
 
-interface EmptySlotProps {
+interface EmptySectionProps {
   width?: "full" | "half" | "1/3" | "2/3";
   onExpand?: () => void;
   id: string;
   isDragging?: boolean;
 }
 
-export const EmptySlot: React.FC<EmptySlotProps> = ({
+export const EmptySection: React.FC<EmptySectionProps> = ({
   width = "full",
   onExpand,
   id,
@@ -36,30 +36,29 @@ export const EmptySlot: React.FC<EmptySlotProps> = ({
     <div
       ref={setNodeRef}
       className={`
-        ${widthClass} h-full
+        ${widthClass}
         ${paddingClass}
         relative transition-colors
-        ${isOver ? "bg-violet-50" : "bg-gray-50/50"}
+        ${isOver ? "bg-violet-50" : "bg-transparent"}
         ${isDragging ? 'opacity-50' : ''}
-        border-2 border-dashed border-gray-300 rounded-lg
-        min-h-[60px]
-        flex items-center justify-center
-        hover:border-violet-400 hover:bg-violet-50/30
+        border border-transparent rounded-lg
+        flex items-center justify-center min-h-[60px]
+        hover:border hover:border-dashed hover:border-violet-400 hover:bg-violet-50/30
         transition-all duration-200
       `}
     >
       {onExpand && (
-        <button
+        <div
           onClick={onExpand}
-          className="p-2 text-violet-600 hover:text-violet-800 hover:bg-violet-100 rounded-lg transition-all duration-200 hover:scale-105"
+          className="opacity-0 hover:opacity-100 p-2 text-violet-600 hover:text-violet-800 hover:bg-violet-50 rounded-lg transition-all duration-200 hover:scale-105"
           title="Ajouter une section"
         >
-          <Plus className="w-5 h-5" />
-        </button>
+          <Expand className="w-5 h-5" />
+        </div>
       )}
       {!onExpand && (
-        <div className="text-gray-400 text-sm">
-          <Plus className="w-4 h-4 mx-auto mb-1" />
+        <div className="opacity-0 hover:opacity-100 text-gray-400 text-sm transition-opacity duration-200">
+          <Expand className="w-4 h-4 mx-auto mb-1" />
           Emplacement vide
         </div>
       )}

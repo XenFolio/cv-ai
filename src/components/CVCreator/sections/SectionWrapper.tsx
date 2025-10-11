@@ -43,7 +43,10 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
     isDragging,
   } = useSortable({ id });
 
-  const { sectionColors, selectedSection } = useCVCreator();
+  const { sectionColors, selectedSection, sectionTopBorders } = useCVCreator();
+
+  // Vérifier si le trait de séparation en haut est activé
+  const hasTopBorder = sectionTopBorders[id] || false;
 
   const currentColors = sectionColors[id] || { background: 'transparent' };
 
@@ -128,7 +131,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
       ref={setNodeRef}
       style={style}
       data-section
-      className={`relative group ${isDragging ? 'opacity-50' : ''} ${className} cursor-pointer hover:bg-violet-50 hover:border hover:border-violet-200 transition-all duration-200 h-full flex flex-col ${paddingClass} ${intersectionClass} ${selectedSection === id ? 'ring-2 ring-violet-500' : ''} ${!isFullWidth ? 'overflow-hidden' : ''} min-w-0`}
+      className={`relative group ${isDragging ? 'opacity-50' : ''} ${className} cursor-pointer hover:bg-violet-50 hover:border hover:border-violet-200 transition-all duration-200 h-full flex flex-col ${paddingClass} ${intersectionClass} ${selectedSection === id ? 'ring-2 ring-violet-500' : ''} ${!isFullWidth ? 'overflow-hidden' : ''} ${hasTopBorder ? 'border-t border-gray-300' : ''} min-w-0`}
       onClick={(e) => {
         // Ne pas déclencher si on clique sur la poignée de drag
         if ((e.target as HTMLElement).closest('[data-drag-handle]')) {
@@ -138,12 +141,12 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
       }}
     >
       {/* Poignée de drag */}
-      <div className="absolute top-1 left-0 flex gap-1 z-10 ">
+      <div className={`absolute ${hasTopBorder ? 'top-4' : 'top-1'} left-0 flex gap-1 z-10`}>
         <div
           {...attributes}
           {...listeners}
           data-drag-handle
-          className="h-4 w-3 p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 rounded-md shadow-sm"
+          className={`h-4 w-3 p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 rounded-md shadow-sm`}
           title={`Déplacer la section ${title}`}
           role="div"
         >
@@ -152,7 +155,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
       </div>
 
       {/* Contenu de la section */}
-      <div className="pt-0 flex-1 w-full min-w-0" style={{ textAlign: alignment }}>
+      <div className={`${hasTopBorder ? 'pt-3' : 'pt-0'} flex-1 w-full min-w-0`} style={{ textAlign: alignment }}>
         <div className="w-full overflow-hidden">
           <div className="max-w-full break-words">
             {children}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { AIButton } from '../../UI';
+import EditableFieldWithTitle from '../EditableFieldWithTitle';
 import type { ExperienceSectionProps } from '../types';
 import { useCVCreator } from '../CVCreatorContext.hook';
 
@@ -24,7 +25,7 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
   const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
   const textColor = sectionColorSettings?.title || titleColor;
   const contentColor = sectionColorSettings?.content || '000000';
-  const [titleHovered, setTitleHovered] = React.useState(false);
+  /* const [titleHovered, setTitleHovered] = React.useState(false); */
   const [hoveredExpId, setHoveredExpId] = React.useState<number | null>(null);
 
   // Vérifier si la capitalisation des titres est activée
@@ -55,36 +56,22 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
           </div>
         </div>
       ) : (
-        <div
-          className="flex items-center gap-2"
-          onMouseEnter={() => setTitleHovered(true)}
-          onMouseLeave={() => setTitleHovered(false)}
-        >
-          <h4
-            className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded whitespace-nowrap transition-colors duration-200"
-            onClick={() => setEditingField('experienceTitle')}
-            style={{
-              color: `#${textColor}`,
-              textTransform: isTitleCapitalized ? 'uppercase' : 'none'
-            }}
-          >
-            {editableContent.experienceTitle}
-          </h4>
-          <div className={`flex gap-1 ml-auto transition-opacity duration-200 ${titleHovered ? 'opacity-100' : 'opacity-0'}`}>
-            <AIButton
-              isLoading={isLoading}
-              onClick={() => generateWithAI('experienceTitle', editableContent.experienceTitle)}
-              title="Modifier avec IA"
-            />
-            <div
-              onClick={addExperience}
-              className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
-              title="Ajouter une expérience"
-            >
-              <Plus className="w-4 h-4" />
-            </div>
-          </div>
-        </div>
+        <EditableFieldWithTitle
+          title={editableContent.experienceTitle}
+          value={editableContent.experienceTitle}
+          isEditing={editingField === 'experienceTitle'}
+          isLoading={isLoading}
+          colors={{
+            title: textColor,
+            text: contentColor
+          }}
+          isTitleCapitalized={isTitleCapitalized}
+          onEdit={() => setEditingField('experienceTitle')}
+          onAdd={addExperience}
+          onGenerateWithAI={() => generateWithAI('experienceTitle', editableContent.experienceTitle)}
+          showAddButton={true}
+          showEditButton={true}
+        />
       )}
 
       {experiences.map(exp => (

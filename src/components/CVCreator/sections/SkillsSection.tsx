@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Minus, Database, Search, GripVertical } from 'lucide-react';
+import React, { useState } from 'react';
+import {  Minus, GripVertical } from 'lucide-react';
 import { AIButton } from '../../UI';
 import {
   DndContext,
@@ -18,8 +18,9 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { CVContent, CVSkill } from '../types';
-import { useSkills, type Skill } from '../../../hooks/useSkills';
 import { useCVCreator } from '../CVCreatorContext.hook';
+import EditableFieldWithLayout from '../EditableFieldWithLayout';
+import { SkillsLibraryModal } from '../SkillsLibraryModal';
 
 interface SkillsSectionProps {
   editableContent: CVContent;
@@ -33,7 +34,6 @@ interface SkillsSectionProps {
   removeSkill: (id: number) => void;
   generateWithAI: (field: string, currentContent?: string) => Promise<void>;
   isLoading: boolean;
-  templateName?: string;
   sectionId?: string;
 }
 
@@ -200,10 +200,14 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   removeSkill,
   generateWithAI,
   isLoading,
-  templateName,
   sectionId
 }) => {
-  const { sectionColors, capitalizeSections } = useCVCreator();
+  const {
+    sectionColors,
+    capitalizeSections,
+    // Props pour la bibliothèque de compétences depuis le contexte
+    showSkillsLibrary,
+    setShowSkillsLibrary  } = useCVCreator();
 
   // Couleurs personnalisées pour la section
   const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
@@ -219,18 +223,11 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
 
   // Vérifier si la capitalisation des titres est activée
   const isTitleCapitalized = sectionId ? capitalizeSections[sectionId] ?? true : true;
-  const { getSkillsByCategory, getAvailableCategories, searchSkills, loading: skillsLoading } = useSkills();
-  const [showSkillsLibrary, setShowSkillsLibrary] = useState(false);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('technique');
-  const [categorySkills, setCategorySkills] = useState<Skill[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Skill[]>([]);
-  // Forcer 2 colonnes pour le template minimaliste
-  const defaultLayout = templateName?.toLowerCase() === 'minimaliste' ? '1col' : 'free';
-  const [skillsLayout, setSkillsLayout] = useState<'free' | '1col' | '2col' | '3col'>(defaultLayout);
   const [selectedSkillId, setSelectedSkillId] = useState<number | null>(null);
-  const [titleHovered, setTitleHovered] = React.useState(false);
+  /* const [titleHovered, setTitleHovered] = React.useState(false); */
+
+  // Récupérer la disposition des compétences depuis le contexte
+  const { skillsLayout, setSkillsLayout } = useCVCreator();
 
   // Configuration du drag & drop
   const sensors = useSensors(
@@ -257,73 +254,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     }
   };
 
-  // Charger les catégories disponibles au montage
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const categories = await getAvailableCategories();
-        const defaultCategories = ['technique', 'soft-skills', 'outils', 'langues', 'certifications'];
-        setAvailableCategories(categories.length > 0 ? categories : defaultCategories);
-      } catch (error) {
-        console.error('Erreur lors du chargement des catégories:', error);
-        setAvailableCategories(['technique', 'soft-skills', 'outils', 'langues', 'certifications']);
-      }
-    };
-
-    // Charger immédiatement les catégories par défaut
-    setAvailableCategories(['technique', 'soft-skills', 'outils', 'langues', 'certifications']);
-
-    // Puis essayer de charger depuis la base de données
-    loadCategories();
-  }, [getAvailableCategories]);
-
-  // Charger les compétences par catégorie
-  const loadSkillsByCategory = useCallback(async (category: string) => {
-    try {
-      const skills = await getSkillsByCategory(category, {
-        generateIfEmpty: true,
-        context: `Compétences ${category} pour un CV professionnel`,
-        count: 8
-      });
-      setCategorySkills(skills);
-    } catch (error) {
-      console.error('Erreur lors du chargement des compétences:', error);
-      setCategorySkills([]);
-    }
-  }, [getSkillsByCategory]);
-
-  // Rechercher des compétences
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (query.trim().length > 2) {
-      try {
-        const results = await searchSkills(query);
-        setSearchResults(results);
-      } catch (error) {
-        console.error('Erreur lors de la recherche:', error);
-        setSearchResults([]);
-      }
-    } else {
-      setSearchResults([]);
-    }
-  };
-
-  // Ajouter une compétence depuis la bibliothèque
-  const addSkillFromLibrary = (skill: Skill) => {
-    const newSkill: CVSkill = {
-      id: Date.now(),
-      content: skill.name
-    };
-    setSkills(prev => [...prev, newSkill]);
-    setShowSkillsLibrary(false);
-  };
-
-  // Charger les compétences de la catégorie sélectionnée
-  useEffect(() => {
-    if (showSkillsLibrary && selectedCategory) {
-      loadSkillsByCategory(selectedCategory);
-    }
-  }, [loadSkillsByCategory, selectedCategory, showSkillsLibrary]);
+  // Gérer l'ouverture de la bibliothèque
 
   return (
     <>
@@ -349,61 +280,37 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
             />
           </div>
         ) : (
-          <div
-            className="flex items-center gap-2"
-            onMouseEnter={() => setTitleHovered(true)}
-            onMouseLeave={() => setTitleHovered(false)}
-          >
-            <h4
-              className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
-              onClick={() => setEditingField('skillsTitle')}
-              style={{
-                color: `#${colors.title}`,
-                textTransform: isTitleCapitalized ? 'uppercase' : 'none'
-              }}
-            >
-              {editableContent.skillsTitle}
-            </h4>
-            <div className={`flex gap-1 ml-2 transition-opacity duration-200 ${titleHovered ? 'opacity-100' : 'opacity-0'}`}>
-              <AIButton
-                isLoading={isLoading}
-                onClick={() => generateWithAI('skillsTitle', editableContent.skillsTitle)}
-                title="Modifier avec IA"
-              />
-
-              {/* Sélecteur de mise en page */}
-              <select
-                value={skillsLayout}
-                onChange={(e) => setSkillsLayout(e.target.value as 'free' | '1col' | '2col' | '3col')}
-                className="p-1 text-xs border rounded text-gray-600 hover:text-gray-800 focus:outline-none focus:border-violet-500 w-auto min-w-fit"
-                style={{
-                  borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-                  color: `#${colors.input}`
-                }}
-                title="Mise en page des compétences"
-              >
-                <option value="free">Libre</option>
-                <option value="1col">1 colonne</option>
-                <option value="2col">2 colonnes</option>
-                <option value="3col">3 colonnes</option>
-              </select>
-
-              <div
-                onClick={() => setShowSkillsLibrary(!showSkillsLibrary)}
-                className="p-1 text-blue-600 hover:text-blue-800 transition-all duration-200 hover:scale-110"
-                title="Bibliothèque de compétences"
-              >
-                <Database className="w-4 h-4" />
-              </div>
-              <div
-                onClick={addSkill}
-                className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
-                title="Ajouter une compétence"
-              >
-                <Plus className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
+          <EditableFieldWithLayout
+            title={editableContent.skillsTitle}
+            value={editableContent.skillsTitle}
+            isEditing={editingField === 'skillsTitle'}
+            isLoading={isLoading}
+            colors={{
+              title: colors.title,
+              text: colors.content
+            }}
+            isTitleCapitalized={isTitleCapitalized}
+            onEdit={() => setEditingField('skillsTitle')}
+            onAdd={addSkill}
+            onGenerateWithAI={() => generateWithAI('skillsTitle', editableContent.skillsTitle)}
+            onLayoutChange={(layout) => {
+              // Convertir les valeurs pour correspondre à l'état existant
+              const layoutMap: { [key: string]: 'free' | '1col' | '2col' | '3col' } = {
+                'libre': 'free',
+                '1colonne': '1col',
+                '2colonnes': '2col',
+                '3colonnes': '3col'
+              };
+              setSkillsLayout(layoutMap[layout] || 'free');
+            }}
+            showAddButton={true}
+            showEditButton={true}
+            selectedLayout={
+              skillsLayout === 'free' ? 'libre' :
+              skillsLayout === '1col' ? '1colonne' :
+              skillsLayout === '2col' ? '2colonnes' : '3colonnes'
+            }
+          />
         )}
 
         {/* Compétences en ligne avec drag & drop */}
@@ -454,167 +361,16 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
           </DndContext>
         </div>
 
-        {/* Bibliothèque de compétences - Version compacte */}
-        {showSkillsLibrary && (
-          <div
-            className="mt-2 p-3 border rounded-lg bg-white shadow-lg relative z-10"
-            style={{
-              borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-              maxHeight: '300px',
-              overflow: 'hidden'
-            }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h5 className="font-medium text-gray-700 text-sm">Bibliothèque</h5>
-              <div
-                onClick={() => setShowSkillsLibrary(false)}
-                className="text-gray-500 hover:text-gray-700 text-lg leading-none"
-              >
-                ×
-              </div>
-            </div>
-
-            {/* Barre de recherche */}
-            <div className="mb-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Rechercher une compétence..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border rounded-md text-sm focus:outline-none focus:border-violet-500"
-                  style={{
-                    borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-                    color: `#${colors.input}`
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Résultats de recherche */}
-            {searchResults.length > 0 && (
-              <div className="mb-4">
-                <h6 className="text-sm font-medium text-gray-600 mb-2">Résultats de recherche</h6>
-                <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                  {searchResults.map((skill) => (
-                    <div
-                      key={skill.id}
-                      onClick={() => addSkillFromLibrary(skill)}
-                      className="text-left p-2 text-sm border rounded hover:bg-violet-50 hover:border-violet-300 transition-colors"
-                      style={{
-                        borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-                        color: `#${colors.content}`
-                      }}
-                      title={skill.description}
-                    >
-                      <div className="font-medium">{skill.name}</div>
-                      {skill.level && (
-                        <div className="text-xs text-gray-500">{skill.level}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Sélecteur de catégorie */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Catégorie de compétences
-              </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full p-2 border rounded-md text-sm focus:outline-none focus:border-violet-500 bg-white cursor-pointer"
-                style={{
-                  borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-                  color: `#${colors.input}`,
-                  minHeight: '36px'
-                }}
-              >
-                {availableCategories.length > 0 ? (
-                  availableCategories.map((category) => (
-                    <option key={category} value={category}>
-                      {category === 'technique' ? 'Techniques' :
-                        category === 'soft-skills' ? 'Soft Skills' :
-                          category === 'outils' ? 'Outils' :
-                            category === 'langues' ? 'Langues' :
-                              category === 'certifications' ? 'Certifications' :
-                                category.charAt(0).toUpperCase() + category.slice(1)}
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value="technique">Techniques</option>
-                    <option value="soft-skills">Soft Skills</option>
-                    <option value="outils">Outils</option>
-                    <option value="langues">Langues</option>
-                    <option value="certifications">Certifications</option>
-                  </>
-                )}
-              </select>
-            </div>
-
-            {/* Compétences par catégorie */}
-            {skillsLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="flex space-x-1">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="w-2 h-2 bg-violet-600 rounded-full animate-bounce"
-                      style={{ animationDelay: `${i * 0.2}s` }}
-                    />
-                  ))}
-                </div>
-                <span className="ml-2 text-sm text-gray-600">
-                  {categorySkills.length === 0 ? 'Génération avec IA...' : 'Chargement...'}
-                </span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                {categorySkills.map((skill) => (
-                  <div
-                    key={skill.id}
-                    onClick={() => addSkillFromLibrary(skill)}
-                    className="text-left p-2 text-sm border rounded hover:bg-violet-50 hover:border-violet-300 transition-colors"
-                    style={{
-                      borderColor: colors.border ? `#${colors.border}` : '#d1d5db',
-                      color: `#${colors.content}`
-                    }}
-                    title={skill.description}
-                  >
-                    <div className="font-medium">{skill.name}</div>
-                    {skill.level && (
-                      <div className="text-xs text-gray-500">{skill.level}</div>
-                    )}
-                    {skill.is_ai_generated && (
-                      <AIButton
-                        isLoading={isLoading}
-                        onClick={() => generateWithAI('skillContent', editableContent.profileContent)}
-                        title="Modifier avec IA"
-                        className="mt-1"
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {categorySkills.length === 0 && !skillsLoading && (
-              <div className="text-center py-4 text-gray-500 text-sm">
-                <p>Aucune compétence trouvée pour cette catégorie</p>
-                <div
-                  onClick={() => loadSkillsByCategory(selectedCategory)}
-                  className="mt-2 px-3 py-1 text-xs bg-violet-100 text-violet-700 rounded-md hover:bg-violet-200 transition-colors"
-                >
-                  Générer avec IA
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Bibliothèque de compétences - Modal */}
+        <SkillsLibraryModal
+          isOpen={showSkillsLibrary}
+          onClose={() => setShowSkillsLibrary()}
+          colors={{
+            border: colors.border,
+            input: colors.input,
+            content: colors.content
+          }}
+        />
       </div>
     </>
   );

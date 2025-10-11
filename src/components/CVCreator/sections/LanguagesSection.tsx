@@ -1,6 +1,7 @@
 import React from 'react';
-import { Plus, Minus } from 'lucide-react';
+import {  Minus } from 'lucide-react';
 import { AIButton } from '../../UI';
+import EditableFieldWithTitle from '../EditableFieldWithTitle';
 import type { LanguagesSectionProps } from '../types';
 import { useCVCreator } from '../CVCreatorContext.hook';
 
@@ -24,7 +25,6 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
   const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
   const textColor = sectionColorSettings?.title || titleColor;
   const contentColor = sectionColorSettings?.content || '000000';
-  const [titleHovered, setTitleHovered] = React.useState(false);
   const [hoveredLangId, setHoveredLangId] = React.useState<number | null>(null);
 
   // Vérifier si la capitalisation des titres est activée
@@ -48,36 +48,22 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
           />
         </div>
       ) : (
-        <div
-          className="flex items-center gap-2"
-          onMouseEnter={() => setTitleHovered(true)}
-          onMouseLeave={() => setTitleHovered(false)}
-        >
-          <h4
-            className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
-            onClick={() => setEditingField('languagesTitle')}
-            style={{
-              color: `#${textColor}`,
-              textTransform: isTitleCapitalized ? 'uppercase' : 'none'
-            }}
-          >
-            {editableContent.languagesTitle}
-          </h4>
-          <div className={`flex gap-1 ml-auto transition-opacity duration-200 ${titleHovered ? 'opacity-100' : 'opacity-0'}`}>
-            <AIButton
-              isLoading={isLoading}
-              onClick={() => generateWithAI('languagesTitle', editableContent.languagesTitle)}
-              title="Modifier avec IA"
-            />
-            <div
-              onClick={addLanguage}
-              className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
-              title="Ajouter une langue"
-            >
-              <Plus className="w-4 h-4" />
-            </div>
-          </div>
-        </div>
+        <EditableFieldWithTitle
+          title={editableContent.languagesTitle}
+          value={editableContent.languagesTitle}
+          isEditing={editingField === 'languagesTitle'}
+          isLoading={isLoading}
+          colors={{
+            title: textColor,
+            text: contentColor
+          }}
+          isTitleCapitalized={isTitleCapitalized}
+          onEdit={() => setEditingField('languagesTitle')}
+          onAdd={addLanguage}
+          onGenerateWithAI={() => generateWithAI('languagesTitle', editableContent.languagesTitle)}
+          showAddButton={true}
+          showEditButton={true}
+        />
       )}
 
       {/* Liste des langues */}

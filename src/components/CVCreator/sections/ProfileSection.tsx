@@ -1,6 +1,7 @@
 import React from 'react';
 import { AIButton } from '../../UI';
 import { useCVCreator } from '../CVCreatorContext.hook';
+import EditableFieldWithTitle from '../EditableFieldWithTitle';
 import type { ProfileSectionProps } from '../types';
 
 export const ProfileSection: React.FC<ProfileSectionProps> = ({
@@ -44,25 +45,25 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
           autoFocus
         />
       ) : (
-        <div className="group flex items-center gap-1">
-          <h4
-            className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
-            onClick={() => setEditingField('profileTitle')}
-            style={{
-              color: `#${colors.title}`,
-              textTransform: isTitleCapitalized ? 'uppercase' : 'none'
-            }}
-          >
-            {editableContent.profileTitle}
-          </h4>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <AIButton
-              isLoading={isLoading}
-              onClick={() => generateWithAI('profileTitle', editableContent.profileTitle)}
-              title="Modifier avec IA"
-            />
-          </div>
-        </div>
+        <EditableFieldWithTitle
+          title={editableContent.profileTitle}
+          value={editableContent.profileTitle}
+          isEditing={editingField === 'profileTitle'}
+          isLoading={isLoading}
+          colors={{
+            title: colors.title,
+            text: colors.content
+          }}
+          isTitleCapitalized={isTitleCapitalized}
+          onEdit={() => setEditingField('profileTitle')}
+          onAdd={() => {
+            // Logique pour ajouter un nouveau profil ou section
+            console.log('Ajouter un nouveau profil');
+          }}
+          onGenerateWithAI={() => generateWithAI('profileTitle', editableContent.profileTitle)}
+          showAddButton={false}
+          showEditButton={true}
+        />
       )}
 
       {editingField === 'profileContent' ? (

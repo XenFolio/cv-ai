@@ -21,7 +21,7 @@ import React from "react";
 // import { useCVSections } from "../../hooks/useCVSections";
 // import { cleanupLayersPure } from "../../hooks/useCVSections";
 import { useCVCreator } from "./CVCreatorContext.hook";
-import { EmptySlot } from "./EmptySlot";
+import { EmptySection } from "./EmptySection";
 import { InterLayerDropZone } from "./InterLayerDropZone";
 import {
   ContactSection,
@@ -145,17 +145,17 @@ const LayerContainer: React.FC<LayerContainerProps> = ({
 
       {/* Bouton contract en haut à droite */}
       {hasFullWidthSection && fullWidthSection && onContract && (
-        <div className="absolute top-0 right-2 pr-2">
-          <button
+        <div className="absolute top-0 -right-2 pr-2">
+          <div
             onClick={(e) => {
               e.stopPropagation();
               onContract(fullWidthSection.id);
             }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-gray-100 pointer-events-auto"
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-gray-50/50 pointer-events-auto"
             title="Revenir en deux colonnes"
           >
             <Minimize2 className="w-4 h-4 text-gray-500 hover:text-violet-600" />
-          </button>
+          </div>
         </div>
       )}
     </div>
@@ -502,7 +502,6 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
           addSkill={addSkill}
           removeSkill={removeSkill}
           sectionId="skills"
-          templateName={selectedTemplate ?? undefined}
         />
       );
       case "languages": return (
@@ -592,7 +591,7 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
                                 </SectionWrapper>
                               </SectionDroppable>
                             ) : (
-                              <EmptySlot
+                              <EmptySection
                                 key={`empty-${layer}-0`}
                                 id={`empty-${layer}-0`}
                                 isDragging={isDragging}
@@ -625,7 +624,7 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
                                 </SectionWrapper>
                               </SectionDroppable>
                             ) : (
-                              <EmptySlot
+                              <EmptySection
                                 key={`empty-${layer}-1`}
                                 id={`empty-${layer}-1`}
                                 isDragging={isDragging}

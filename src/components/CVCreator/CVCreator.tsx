@@ -97,6 +97,21 @@ export const CVCreator: React.FC = () => {
   }>>({});
   // État pour la capitalisation des sections
   const [capitalizeSections, setCapitalizeSections] = useState<Record<string, boolean>>({});
+  // État pour les traits de séparation en haut des sections
+  const [sectionTopBorders, setSectionTopBorders] = useState<Record<string, boolean>>({});
+
+  // État pour la bibliothèque de compétences (centralisé)
+  const [skillsLibraryState, setSkillsLibraryState] = useState({
+    showSkillsLibrary: false,
+    selectedCategory: '',
+    availableCategories: [] as string[],
+    categorySkills: [] as Array<{ id: number; name: string; category: string }>,
+    searchQuery: '',
+    searchResults: [] as Array<{ id: number; name: string; category: string }>
+  });
+
+  // État pour la disposition des compétences
+  const [skillsLayout, setSkillsLayout] = useState<'free' | '1col' | '2col' | '3col'>('free');
 
   // Fonction pour mettre à jour les couleurs d'un élément de section
   const updateSectionElementColor = useCallback((sectionId: string, elementType: 'background' | 'title' | 'content' | 'input' | 'button' | 'aiButton' | 'separator' | 'border', color: string) => {
@@ -117,6 +132,14 @@ export const CVCreator: React.FC = () => {
     }));
   }, []);
 
+  // Fonction pour mettre à jour les traits de séparation en haut d'une section
+  const updateSectionTopBorder = useCallback((sectionId: string, hasTopBorder: boolean) => {
+    setSectionTopBorders(prev => ({
+      ...prev,
+      [sectionId]: hasTopBorder
+    }));
+  }, []);
+
   // Fonction de compatibilité pour l'ancien système
   const updateSectionColor = useCallback((sectionId: string, type: 'foreground' | 'background', color: string) => {
     if (type === 'foreground') {
@@ -125,6 +148,133 @@ export const CVCreator: React.FC = () => {
       updateSectionElementColor(sectionId, 'background', color);
     }
   }, [updateSectionElementColor]);
+
+  // Déclaration du state skills AVANT toute utilisation
+  const [skills, setSkills] = useState<CVSkill[]>([
+    { id: 1, content: 'Compétence 1' },
+    { id: 2, content: 'Compétence 2' },
+    { id: 3, content: 'Compétence 3' }
+  ]);
+
+  // Fonctions pour la bibliothèque de compétences
+  const closeSkillsLibrary = useCallback(() => {
+    setSkillsLibraryState(prev => ({ ...prev, showSkillsLibrary: false }));
+  }, []);
+
+  const loadSkillsForCategory = useCallback((category: string) => {
+    const skillsByCategory: Record<string, Array<{ id: number; name: string; category: string }>> = {
+      'Développement': [
+        { id: 1, name: 'JavaScript', category: 'Développement' },
+        { id: 2, name: 'React', category: 'Développement' },
+        { id: 3, name: 'TypeScript', category: 'Développement' },
+        { id: 4, name: 'Node.js', category: 'Développement' },
+        { id: 5, name: 'Python', category: 'Développement' },
+        { id: 6, name: 'HTML/CSS', category: 'Développement' },
+        { id: 7, name: 'Git', category: 'Développement' },
+        { id: 8, name: 'Docker', category: 'Développement' }
+      ],
+      'Marketing': [
+        { id: 9, name: 'Google Analytics', category: 'Marketing' },
+        { id: 10, name: 'SEO/SEM', category: 'Marketing' },
+        { id: 11, name: 'Social Media', category: 'Marketing' },
+        { id: 12, name: 'Content Marketing', category: 'Marketing' },
+        { id: 13, name: 'Email Marketing', category: 'Marketing' }
+      ],
+      'Finance': [
+        { id: 14, name: 'Excel', category: 'Finance' },
+        { id: 15, name: 'Modélisation financière', category: 'Finance' },
+        { id: 16, name: 'Analyse de risque', category: 'Finance' },
+        { id: 17, name: 'Bloomberg', category: 'Finance' },
+        { id: 18, name: 'SAP', category: 'Finance' }
+      ],
+      'Design': [
+        { id: 19, name: 'Photoshop', category: 'Design' },
+        { id: 20, name: 'Illustrator', category: 'Design' },
+        { id: 21, name: 'Figma', category: 'Design' },
+        { id: 22, name: 'Sketch', category: 'Design' }
+      ],
+      'Communication': [
+        { id: 23, name: 'Rédaction', category: 'Communication' },
+        { id: 24, name: 'Présentation', category: 'Communication' },
+        { id: 25, name: 'Négociation', category: 'Communication' },
+        { id: 26, name: 'Gestion de projet', category: 'Communication' }
+      ],
+      'Management': [
+        { id: 27, name: 'Leadership', category: 'Management' },
+        { id: 28, name: 'Management d\'équipe', category: 'Management' },
+        { id: 29, name: 'Stratégie', category: 'Management' },
+        { id: 30, name: 'Prise de décision', category: 'Management' }
+      ],
+      'Data': [
+        { id: 31, name: 'SQL', category: 'Data' },
+        { id: 32, name: 'Tableau', category: 'Data' },
+        { id: 33, name: 'Power BI', category: 'Data' },
+        { id: 34, name: 'Machine Learning', category: 'Data' }
+      ],
+      'Autres': [
+        { id: 35, name: 'Anglais', category: 'Autres' },
+        { id: 36, name: 'Espagnol', category: 'Autres' },
+        { id: 37, name: 'Résolution de problèmes', category: 'Autres' }
+      ]
+    };
+
+    const categorySkills = skillsByCategory[category] || [];
+
+    setSkillsLibraryState(prev => ({
+      ...prev,
+      categorySkills,
+      searchResults: categorySkills
+    }));
+  }, []);
+
+  const openSkillsLibrary = useCallback(() => {
+    // Initialiser les catégories disponibles
+    const categories = ['Développement', 'Marketing', 'Finance', 'Design', 'Communication', 'Management', 'Data', 'Autres'];
+
+    setSkillsLibraryState(prev => ({
+      ...prev,
+      showSkillsLibrary: true,
+      availableCategories: categories,
+      selectedCategory: categories[0] || ''
+    }));
+
+    // Charger les compétences pour la première catégorie
+    loadSkillsForCategory(categories[0] || '');
+  }, []);
+
+  const searchSkills = useCallback((query: string) => {
+    setSkillsLibraryState(prev => ({ ...prev, searchQuery: query }));
+
+    if (!query.trim()) {
+      setSkillsLibraryState(prev => ({ ...prev, searchResults: prev.categorySkills }));
+      return;
+    }
+
+    const allSkills: Array<{ id: number; name: string; category: string }> = [
+      ...skillsLibraryState.categorySkills,
+      // Ajouter d'autres compétences si nécessaire
+    ];
+
+    const filtered = allSkills.filter(skill =>
+      skill.name.toLowerCase().includes(query.toLowerCase())
+    );
+
+    setSkillsLibraryState(prev => ({ ...prev, searchResults: filtered }));
+  }, [skillsLibraryState.categorySkills]);
+
+  const setSelectedSkillsCategory = useCallback((category: string) => {
+    setSkillsLibraryState(prev => ({ ...prev, selectedCategory: category }));
+    loadSkillsForCategory(category);
+  }, []);
+
+  const addSkillFromLibrary = useCallback((skill: { id: number; name: string; category: string }) => {
+    // Vérifier si la compétence n'est pas déjà ajoutée
+    const skillExists = skills.some(s => s.content === skill.name);
+    if (!skillExists) {
+      const newId = skills.length > 0 ? Math.max(...skills.map(s => s.id)) + 1 : 1;
+      setSkills(prev => [...prev, { id: newId, content: skill.name }]);
+    }
+  }, [skills]);
 
   // Hook pour la gestion des sections
   const {
@@ -182,15 +332,8 @@ export const CVCreator: React.FC = () => {
   // Hook pour la bibliothèque CV
   const { addCreatedCV } = useCVLibrary();
 
-
   const [experiences, setExperiences] = useState<CVExperience[]>([
     { id: 1, content: '[Poste] - [Entreprise] (Dates)', details: '• Réalisation clé ou projet important.' }
-  ]);
-
-  const [skills, setSkills] = useState<CVSkill[]>([
-    { id: 1, content: 'Compétence 1' },
-    { id: 2, content: 'Compétence 2' },
-    { id: 3, content: 'Compétence 3' }
   ]);
 
   const [languages, setLanguages] = useState<CVLanguage[]>([
@@ -895,6 +1038,27 @@ export const CVCreator: React.FC = () => {
     updateSectionCapitalization,
     capitalizeSections,
     setCapitalizeSections,
+    updateSectionTopBorder,
+    sectionTopBorders,
+    setSectionTopBorders,
+
+    // Skills library state
+    showSkillsLibrary: skillsLibraryState.showSkillsLibrary,
+    setShowSkillsLibrary: closeSkillsLibrary,
+    selectedSkillsCategory: skillsLibraryState.selectedCategory,
+    setSelectedSkillsCategory,
+    availableSkillsCategories: skillsLibraryState.availableCategories,
+    categorySkills: skillsLibraryState.categorySkills,
+    searchSkillsQuery: skillsLibraryState.searchQuery,
+    setSearchSkillsQuery: searchSkills,
+    skillsSearchResults: skillsLibraryState.searchResults,
+    openSkillsLibrary,
+    closeSkillsLibrary,
+    addSkillFromLibrary,
+
+    // Skills layout state
+    skillsLayout,
+    setSkillsLayout,
 
     // Actions
     addExperience,
@@ -914,6 +1078,22 @@ export const CVCreator: React.FC = () => {
     error,
     openAIError
   };
+
+  // Effet pour sauvegarder l'état du layout dans localStorage
+  React.useEffect(() => {
+    if (autoSaveEnabled) {
+      const layoutState = {
+        layoutColumns,
+        columnRatio,
+        sectionSpacing
+      };
+      try {
+        localStorage.setItem('cvCreatorState', JSON.stringify(layoutState));
+      } catch (e) {
+        console.warn('[CVCreator] Échec sauvegarde layout state:', e);
+      }
+    }
+  }, [layoutColumns, columnRatio, sectionSpacing, autoSaveEnabled]);
 
   return (
     <CVCreatorProvider value={contextValue}>
@@ -1064,6 +1244,13 @@ export const CVCreator: React.FC = () => {
                       console.warn('Erreur lors de l\'application de l\'ordre des sections:', error);
                     }
                   }
+                }
+                // Appliquer les traits de séparation du template
+                if (template?.sectionTopBorders) {
+                  setSectionTopBorders(template.sectionTopBorders);
+                } else {
+                  // Réinitialiser si pas défini dans le template
+                  setSectionTopBorders({});
                 }
               }}
               onDownloadTemplate={handleDownloadTemplate}

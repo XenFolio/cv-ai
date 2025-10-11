@@ -219,9 +219,48 @@ export const useCVSections = () => {
 
   const contractSection = useCallback((id: string) => {
     setSections((prev) => {
-      const next = prev.map((s) =>
-        s.id === id ? { ...s, width: "half" as const } : s
-      );
+      const next = prev.map((s) => {
+        if (s.id === id) {
+          // Récupérer le layout actuel depuis localStorage
+          let layoutColumns = 1;
+          let columnRatio = '1/2-1/2';
+          try {
+            const cvCreatorState = localStorage.getItem('cvCreatorState');
+            if (cvCreatorState) {
+              const state = JSON.parse(cvCreatorState);
+              layoutColumns = state.layoutColumns || 1;
+              columnRatio = state.columnRatio || '1/2-1/2';
+            }
+          } catch (e) {
+            console.warn("[useCVSections] Échec lecture état layout:", e);
+          }
+
+          let targetWidth: "full" | "half" | "1/3" | "2/3" = "half";
+
+          // SkillsSection a besoin de rester en "full" pour sa logique de layout spéciale
+          if (s.id === 'skills') {
+            targetWidth = "full";
+          } else if (layoutColumns === 2) {
+            if (columnRatio === '1/3-2/3') {
+              // Gauche (order=0) → 1/3, Droite (order=1) → 2/3
+              targetWidth = s.order === 0 ? "1/3" : "2/3";
+            } else if (columnRatio === '2/3-1/3') {
+              // Gauche (order=0) → 2/3, Droite (order=1) → 1/3
+              targetWidth = s.order === 0 ? "2/3" : "1/3";
+            } else {
+              // 1/2-1/2 par défaut
+              targetWidth = "half";
+            }
+          } else {
+            // Mode 1 colonne, garder en half pour cohérence
+            targetWidth = "half";
+          }
+
+          return { ...s, width: targetWidth };
+        }
+        return s;
+      });
+
       try {
         localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(next));
       } catch (e) {
