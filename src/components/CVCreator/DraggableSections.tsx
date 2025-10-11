@@ -1,39 +1,39 @@
-import React from "react";
 import {
   DndContext,
   DragEndEvent,
-  DragStartEvent,
   DragOverlay,
-  useDroppable,
-  rectIntersection,
-  type CollisionDetection,
+  DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  rectIntersection,
+  useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
 } from "@dnd-kit/core";
 import {
+  rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
-  rectSortingStrategy,
 } from "@dnd-kit/sortable";
-import { RotateCcw, Move, Minimize2 } from "lucide-react";
+import { Minimize2, Move, RotateCcw } from "lucide-react";
+import React from "react";
 // import { useCVSections } from "../../hooks/useCVSections";
 // import { cleanupLayersPure } from "../../hooks/useCVSections";
 import { useCVCreator } from "./CVCreatorContext.hook";
+import { EmptySlot } from "./EmptySlot";
+import { InterLayerDropZone } from "./InterLayerDropZone";
 import {
+  ContactSection,
+  EducationSection,
+  ExperienceSection,
+  LanguagesSection,
   NameSection,
   PhotoSection,
   ProfileSection,
-  ContactSection,
-  ExperienceSection,
-  EducationSection,
-  SkillsSection,
-  LanguagesSection,
   SectionWrapper,
+  SkillsSection,
 } from "./sections";
-import { EmptySlot } from "./EmptySlot";
-import { InterLayerDropZone } from "./InterLayerDropZone";
 import type {
   SectionConfig,
 } from "./types";

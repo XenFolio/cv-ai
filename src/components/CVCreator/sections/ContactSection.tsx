@@ -24,13 +24,16 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   isLoading,
   sectionId
 }) => {
-  const { sectionColors } = useCVCreator();
+  const { sectionColors, capitalizeSections } = useCVCreator();
 
   // Couleurs personnalisées pour la section
   const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
   const textColor = sectionColorSettings?.title || titleColor;
   const contentColor = sectionColorSettings?.content || '000000';
   const [titleHovered, setTitleHovered] = React.useState(false);
+
+  // Vérifier si la capitalisation des titres est activée
+  const isTitleCapitalized = sectionId ? capitalizeSections[sectionId] ?? true : true;
   return (
     <div className="mt-0">
       {editingField === 'contactTitle' ? (
@@ -58,7 +61,10 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           <h4
             className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded whitespace-nowrap transition-colors duration-200"
             onClick={() => setEditingField('contactTitle')}
-            style={{ color: `#${textColor}` }}
+            style={{
+              color: `#${textColor}`,
+              textTransform: isTitleCapitalized ? 'uppercase' : 'none'
+            }}
           >
             {editableContent.contactTitle}
           </h4>

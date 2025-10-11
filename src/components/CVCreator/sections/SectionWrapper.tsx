@@ -1,7 +1,7 @@
-import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
+import React from 'react';
 import { useCVCreator } from '../CVCreatorContext.hook';
 
 interface SectionWrapperProps {
@@ -17,6 +17,7 @@ interface SectionWrapperProps {
   hasIntersection?: boolean;
   isFullWidth?: boolean;
   width?: "full" | "half" | "1/3" | "2/3";
+
 }
 
 export const SectionWrapper: React.FC<SectionWrapperProps> = ({
@@ -86,11 +87,11 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
   };
 
   const adjustedBackgroundColor = getAdjustedBackgroundColor(
-  currentColors.background === 'transparent' ? 'transparent' :
-  (currentColors.background && typeof currentColors.background === 'string' && currentColors.background.includes('gradient')) ? currentColors.background :
-  `#${currentColors.background}`,
-  position
-);
+    currentColors.background === 'transparent' ? 'transparent' :
+      (currentColors.background && typeof currentColors.background === 'string' && currentColors.background.includes('gradient')) ? currentColors.background :
+        `#${currentColors.background}`,
+    position
+  );
 
   // Padding harmonisé pour aligner les titres entre sections full et half width
   const paddingClass = 'px-4';
@@ -101,18 +102,18 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
   // Fonction qui génère l'effet d'intersection
   function getIntersectionEffect(): string {
     if (!hasIntersection || isFullWidth || width === 'full') return '';
-    
+
     // Effet d'intersection adapté selon la largeur et la position
     if (position === 'left') {
       // Section gauche : priorité visuelle avec ombre
       const shadowIntensity = width === '2/3' ? 'shadow-md' : 'shadow-sm';
       return `relative z-10 ${shadowIntensity}`;
-  } else if (position === 'right') {
-    // Section droite : superposition adaptée à la largeur (éviter de couvrir les slots vides)
-    const marginOffset = width === '1/3' ? '-ml-2' : width === '2/3' ? '-ml-1' : width === 'half' ? '' : '-ml-1';
-    return `relative z-0 ${marginOffset}`.trim();
-  }
-    
+    } else if (position === 'right') {
+      // Section droite : superposition adaptée à la largeur (éviter de couvrir les slots vides)
+      const marginOffset = width === '1/3' ? '-ml-2' : width === '2/3' ? '-ml-1' : width === 'half' ? '' : '-ml-1';
+      return `relative z-0 ${marginOffset}`.trim();
+    }
+
     return '';
   }
 

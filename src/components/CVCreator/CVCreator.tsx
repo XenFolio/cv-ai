@@ -95,6 +95,8 @@ export const CVCreator: React.FC = () => {
     separator: string;
     border: string;
   }>>({});
+  // État pour la capitalisation des sections
+  const [capitalizeSections, setCapitalizeSections] = useState<Record<string, boolean>>({});
 
   // Fonction pour mettre à jour les couleurs d'un élément de section
   const updateSectionElementColor = useCallback((sectionId: string, elementType: 'background' | 'title' | 'content' | 'input' | 'button' | 'aiButton' | 'separator' | 'border', color: string) => {
@@ -104,6 +106,14 @@ export const CVCreator: React.FC = () => {
         ...prev[sectionId],
         [elementType]: color
       }
+    }));
+  }, []);
+
+  // Fonction pour mettre à jour la capitalisation d'une section
+  const updateSectionCapitalization = useCallback((sectionId: string, capitalize: boolean) => {
+    setCapitalizeSections(prev => ({
+      ...prev,
+      [sectionId]: capitalize
     }));
   }, []);
 
@@ -882,6 +892,9 @@ export const CVCreator: React.FC = () => {
     setSectionColors,
     updateSectionColor,
     updateSectionElementColor,
+    updateSectionCapitalization,
+    capitalizeSections,
+    setCapitalizeSections,
 
     // Actions
     addExperience,

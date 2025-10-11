@@ -224,7 +224,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
   pageMarginVertical = 20,
   setPageMarginVertical
 }) => {
-  const { sectionColors, updateSectionElementColor, sectionSpacing, setSectionSpacing, cleanupLayers } = useCVCreator();
+  const { sectionColors, updateSectionElementColor, updateSectionCapitalization, capitalizeSections, sectionSpacing, setSectionSpacing, cleanupLayers } = useCVCreator();
 
   // Utiliser directement les sections passées en props, elles sont déjà réactives
   const contextSections = sections || [];
@@ -1352,6 +1352,24 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Contrôle de capitalisation */}
+          {selectedSection && selectedSection !== 'photo' && (
+            <div className="flex-shrink-0 w-full border-t border-violet-200 pt-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id={`capitalize-${selectedSection}`}
+                  checked={capitalizeSections[selectedSection] ?? true}
+                  onChange={(e) => updateSectionCapitalization(selectedSection, e.target.checked)}
+                  className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                />
+                <label htmlFor={`capitalize-${selectedSection}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+                  TITRE EN MAJUSCULES
+                </label>
               </div>
             </div>
           )}

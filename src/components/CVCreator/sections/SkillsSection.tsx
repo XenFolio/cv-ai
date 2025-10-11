@@ -203,7 +203,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   templateName,
   sectionId
 }) => {
-  const { sectionColors } = useCVCreator();
+  const { sectionColors, capitalizeSections } = useCVCreator();
 
   // Couleurs personnalisées pour la section
   const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
@@ -216,6 +216,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     separator: sectionColorSettings?.separator || 'd1d5db',
     border: sectionColorSettings?.border || 'd1d5db',
   };
+
+  // Vérifier si la capitalisation des titres est activée
+  const isTitleCapitalized = sectionId ? capitalizeSections[sectionId] ?? true : true;
   const { getSkillsByCategory, getAvailableCategories, searchSkills, loading: skillsLoading } = useSkills();
   const [showSkillsLibrary, setShowSkillsLibrary] = useState(false);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -354,7 +357,10 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
             <h4
               className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
               onClick={() => setEditingField('skillsTitle')}
-              style={{ color: `#${colors.title}` }}
+              style={{
+                color: `#${colors.title}`,
+                textTransform: isTitleCapitalized ? 'uppercase' : 'none'
+              }}
             >
               {editableContent.skillsTitle}
             </h4>

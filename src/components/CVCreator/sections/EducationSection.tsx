@@ -1,8 +1,8 @@
+import { Minus, Plus } from 'lucide-react';
 import React from 'react';
-import { Plus, Minus } from 'lucide-react';
 import { AIButton } from '../../UI';
-import type { EducationSectionProps } from '../types';
 import { useCVCreator } from '../CVCreatorContext.hook';
+import type { EducationSectionProps } from '../types';
 
 export const EducationSection: React.FC<EducationSectionProps> = ({
   editableContent,
@@ -18,167 +18,171 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
   isLoading,
   sectionId
 }) => {
-  const { sectionColors } = useCVCreator();
+  const { sectionColors, capitalizeSections } = useCVCreator();
 
   // Couleurs personnalisées pour la section
   const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
   const textColor = sectionColorSettings?.title || titleColor;
   const contentColor = sectionColorSettings?.content || '000000';
   const [titleHovered, setTitleHovered] = React.useState(false);
+
+  // Vérifier si la capitalisation des titres est activée
+  const isTitleCapitalized = sectionId ? capitalizeSections[sectionId] ?? true : true;
   return (
     <div className="mt-0">
-        {editingField === 'educationTitle' ? (
-          <div className="flex items-center gap-1">
-            <input
-              type="text"
-              value={editableContent.educationTitle}
-              onChange={(e) => setEditableContent(prev => ({ ...prev, educationTitle: e.target.value }))}
-              onBlur={() => setEditingField(null)}
-              onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-              className="text-sm font-semibold border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
-              style={{
-                width: `${Math.max(editableContent.educationTitle.length * 7 + 20, 180)}px`,
-                color: `#${textColor}`
-              }}
-              autoFocus
+      {editingField === 'educationTitle' ? (
+        <div className="flex items-center gap-1">
+          <input
+            type="text"
+            value={editableContent.educationTitle}
+            onChange={(e) => setEditableContent(prev => ({ ...prev, educationTitle: e.target.value }))}
+            onBlur={() => setEditingField(null)}
+            onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+            className="text-sm font-semibold border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
+            style={{
+              width: `${Math.max(editableContent.educationTitle.length * 7 + 20, 180)}px`,
+              color: `#${textColor}`
+            }}
+            autoFocus
+          />
+        </div>
+      ) : (
+        <div
+          className="flex items-center gap-1"
+          onMouseEnter={() => setTitleHovered(true)}
+          onMouseLeave={() => setTitleHovered(false)}
+        >
+          <h4
+            className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
+            onClick={() => setEditingField('educationTitle')}
+            style={{
+              color: `#${textColor}`,
+              width: `${Math.max(editableContent.educationTitle.length * 7 + 20, 180)}px`,
+              textTransform: isTitleCapitalized ? 'uppercase' : 'none'
+            }}
+          >
+            {editableContent.educationTitle}
+          </h4>
+          <div className={`flex gap-1 transition-opacity duration-200 ${titleHovered ? 'opacity-100' : 'opacity-0'}`}>
+            <AIButton
+              isLoading={isLoading}
+              onClick={() => generateWithAI('educationTitle', editableContent.educationTitle)}
+              title="Modifier avec IA"
             />
-          </div>
-        ) : (
-          <div
-            className="flex items-center gap-1"
-            onMouseEnter={() => setTitleHovered(true)}
-            onMouseLeave={() => setTitleHovered(false)}
-          >
-            <h4
-              className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
-              onClick={() => setEditingField('educationTitle')}
-              style={{
-                color: `#${textColor}`,
-                width: `${Math.max(editableContent.educationTitle.length * 7 + 20, 180)}px`
-              }}
+            <div
+              onClick={addEducation}
+              className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
+              title="Ajouter une formation"
             >
-              {editableContent.educationTitle}
-            </h4>
-            <div className={`flex gap-1 transition-opacity duration-200 ${titleHovered ? 'opacity-100' : 'opacity-0'}`}>
-              <AIButton
-                isLoading={isLoading}
-                onClick={() => generateWithAI('educationTitle', editableContent.educationTitle)}
-                title="Modifier avec IA"
+              <Plus className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {educations.map(edu => (
+        <div
+          key={edu.id}
+          className="relative mt-2 group"
+        >
+          {/* Layout aligné : Diplôme, École, Année sur une seule ligne */}
+          <div className="flex items-center gap-1 overflow-hidden w-full">
+            {/* Diplôme */}
+            {editingField === `educationDegree-${edu.id}` ? (
+              <input
+                type="text"
+                value={edu.degree}
+                onChange={(e) => setEducations(prev => prev.map(item => item.id === edu.id ? { ...item, degree: e.target.value } : item))}
+                onBlur={() => setEditingField(null)}
+                onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                className="text-sm border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
+                placeholder="Diplôme"
+                style={{ width: `${Math.min(Math.max(edu.degree.length * 7 + 20, 80), 120)}px` }}
+                autoFocus
               />
-              <div
-                onClick={addEducation}
-                className="p-1 text-violet-600 hover:text-violet-800 transition-all duration-200 hover:scale-110"
-                title="Ajouter une formation"
+            ) : (
+              <p
+                className="text-sm font-medium cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200 truncate"
+                onClick={() => setEditingField(`educationDegree-${edu.id}`)}
+                style={{
+                  color: `#${contentColor}`,
+                  width: `${Math.min(Math.max(edu.degree.length * 7 + 20, 80), 140)}px`,
+                  maxWidth: '140px'
+                }}
+                title={edu.degree}
               >
-                <Plus className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-        )}
+                {edu.degree}
+              </p>
+            )}
 
-        {educations.map(edu => (
-          <div
-            key={edu.id}
-            className="relative mt-2 group"
-          >
-            {/* Layout aligné : Diplôme, École, Année sur une seule ligne */}
-            <div className="flex items-center gap-1 overflow-hidden w-full">
-              {/* Diplôme */}
-              {editingField === `educationDegree-${edu.id}` ? (
-                <input
-                  type="text"
-                  value={edu.degree}
-                  onChange={(e) => setEducations(prev => prev.map(item => item.id === edu.id ? { ...item, degree: e.target.value } : item))}
-                  onBlur={() => setEditingField(null)}
-                  onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-                  className="text-sm border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
-                  placeholder="Diplôme"
-                  style={{ width: `${Math.min(Math.max(edu.degree.length * 7 + 20, 80), 120)}px` }}
-                  autoFocus
-                />
-              ) : (
+            <span className="text-sm text-gray-400 flex-shrink-0">•</span>
+
+            {/* École */}
+            {editingField === `educationSchool-${edu.id}` ? (
+              <input
+                type="text"
+                value={edu.school}
+                onChange={(e) => setEducations(prev => prev.map(item => item.id === edu.id ? { ...item, school: e.target.value } : item))}
+                onBlur={() => setEditingField(null)}
+                onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                className="text-sm border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
+                placeholder="École"
+                style={{ width: `${Math.min(Math.max(edu.school.length * 7 + 20, 60), 100)}px` }}
+                autoFocus
+              />
+            ) : (
+              <p
+                className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200 truncate"
+                onClick={() => setEditingField(`educationSchool-${edu.id}`)}
+                style={{
+                  color: `#${contentColor}`,
+                  width: `${Math.min(Math.max(edu.school.length * 7 + 20, 80), 120)}px`,
+                  maxWidth: '120px'
+                }}
+                title={edu.school}
+              >
+                {edu.school}
+              </p>
+            )}
+
+            <span className="text-sm text-gray-400 flex-shrink-0">•</span>
+
+            {/* Année */}
+            {editingField === `educationYear-${edu.id}` ? (
+              <input
+                type="text"
+                value={edu.year}
+                onChange={(e) => setEducations(prev => prev.map(item => item.id === edu.id ? { ...item, year: e.target.value } : item))}
+                onBlur={() => setEditingField(null)}
+                onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                className="text-sm border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent w-16 flex-shrink-0"
+                placeholder="Année"
+                autoFocus
+              />
+            ) : (
+              <div className="flex items-center gap-1">
                 <p
-                  className="text-sm font-medium cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200 truncate"
-                  onClick={() => setEditingField(`educationDegree-${edu.id}`)}
-                  style={{
-                    color: `#${contentColor}`,
-                    width: `${Math.min(Math.max(edu.degree.length * 7 + 20, 80), 140)}px`,
-                    maxWidth: '140px'
-                  }}
-                  title={edu.degree}
+                  className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200 w-16 flex-shrink-0 text-center"
+                  onClick={() => setEditingField(`educationYear-${edu.id}`)}
+                  style={{ color: `#${contentColor}` }}
+                  title={edu.year}
                 >
-                  {edu.degree}
+                  {edu.year}
                 </p>
-              )}
-              
-              <span className="text-sm text-gray-400 flex-shrink-0">•</span>
-
-              {/* École */}
-              {editingField === `educationSchool-${edu.id}` ? (
-                <input
-                  type="text"
-                  value={edu.school}
-                  onChange={(e) => setEducations(prev => prev.map(item => item.id === edu.id ? { ...item, school: e.target.value } : item))}
-                  onBlur={() => setEditingField(null)}
-                  onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-                  className="text-sm border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent"
-                  placeholder="École"
-                  style={{ width: `${Math.min(Math.max(edu.school.length * 7 + 20, 60), 100)}px` }}
-                  autoFocus
-                />
-              ) : (
-                <p
-                  className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200 truncate"
-                  onClick={() => setEditingField(`educationSchool-${edu.id}`)}
-                  style={{
-                    color: `#${contentColor}`,
-                    width: `${Math.min(Math.max(edu.school.length * 7 + 20, 80), 120)}px`,
-                    maxWidth: '120px'
-                  }}
-                  title={edu.school}
+                {/* Delete button */}
+                <div
+                  onClick={() => removeEducation(edu.id)}
+                  className="p-1 text-red-600 hover:text-red-800 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
+                  title="Supprimer cette formation"
                 >
-                  {edu.school}
-                </p>
-              )}
-
-              <span className="text-sm text-gray-400 flex-shrink-0">•</span>
-
-              {/* Année */}
-              {editingField === `educationYear-${edu.id}` ? (
-                <input
-                  type="text"
-                  value={edu.year}
-                  onChange={(e) => setEducations(prev => prev.map(item => item.id === edu.id ? { ...item, year: e.target.value } : item))}
-                  onBlur={() => setEditingField(null)}
-                  onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-                  className="text-sm border-b border-gray-400 focus:outline-none focus:border-violet-500 bg-transparent w-16 flex-shrink-0"
-                  placeholder="Année"
-                  autoFocus
-                />
-              ) : (
-                <div className="flex items-center gap-1">
-                  <p
-                    className="text-sm cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200 w-16 flex-shrink-0 text-center"
-                    onClick={() => setEditingField(`educationYear-${edu.id}`)}
-                    style={{ color: `#${contentColor}` }}
-                    title={edu.year}
-                  >
-                    {edu.year}
-                  </p>
-                  {/* Delete button */}
-                  <div
-                    onClick={() => removeEducation(edu.id)}
-                    className="p-1 text-red-600 hover:text-red-800 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
-                    title="Supprimer cette formation"
-                  >
-                    <Minus className="w-3 h-3" />
-                  </div>
+                  <Minus className="w-3 h-3" />
                 </div>
-              )}
+              </div>
+            )}
 
-            </div>
           </div>
-        ))}
+        </div>
+      ))}
     </div>
   );
 };

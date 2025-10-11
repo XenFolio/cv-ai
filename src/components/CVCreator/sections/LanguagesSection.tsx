@@ -18,7 +18,7 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
   isLoading,
   sectionId
 }) => {
-  const { sectionColors } = useCVCreator();
+  const { sectionColors, capitalizeSections } = useCVCreator();
 
   // Couleurs personnalisées pour la section
   const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
@@ -26,6 +26,9 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
   const contentColor = sectionColorSettings?.content || '000000';
   const [titleHovered, setTitleHovered] = React.useState(false);
   const [hoveredLangId, setHoveredLangId] = React.useState<number | null>(null);
+
+  // Vérifier si la capitalisation des titres est activée
+  const isTitleCapitalized = sectionId ? capitalizeSections[sectionId] ?? true : true;
   return (
     <div className="mt-0">
       {editingField === 'languagesTitle' ? (
@@ -53,7 +56,10 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
           <h4
             className="text-sm font-semibold cursor-pointer hover:bg-gray-100 p-1 rounded transition-colors duration-200"
             onClick={() => setEditingField('languagesTitle')}
-            style={{ color: `#${textColor}` }}
+            style={{
+              color: `#${textColor}`,
+              textTransform: isTitleCapitalized ? 'uppercase' : 'none'
+            }}
           >
             {editableContent.languagesTitle}
           </h4>

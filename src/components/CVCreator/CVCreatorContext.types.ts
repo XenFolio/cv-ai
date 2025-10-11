@@ -87,6 +87,8 @@ export interface CVCreatorContextType {
     border: string;
   }>>>;
   updateSectionElementColor: (sectionId: string, elementType: 'background' | 'title' | 'content' | 'input' | 'button' | 'aiButton' | 'separator' | 'border', color: string) => void;
+  updateSectionCapitalization: (sectionId: string, capitalize: boolean) => void;
+  capitalizeSections: Record<string, boolean>;
   selectedTemplateName: string;
   selectedTemplate: string | null;
 
