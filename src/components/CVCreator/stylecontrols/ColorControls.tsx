@@ -1,6 +1,6 @@
 import React from 'react';
 import { Palette } from 'lucide-react';
-import { getSectionName } from '../StyleControls';
+import { getSectionName } from '../utils/sections';
 import { ColorToneSelector } from '../StyleControls';
 
 interface ColorControlsProps {

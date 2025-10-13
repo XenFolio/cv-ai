@@ -259,7 +259,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   return (
     <>
       <div
-        className="mt-0"
+        className="mt-0 "
         onClick={() => setSelectedSkillId(null)}
       >
         {editingField === 'skillsTitle' ? (
@@ -314,7 +314,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
         )}
 
         {/* Compétences en ligne avec drag & drop */}
-        <div className="mt-2">
+        <div className="mt-2 w-full flex justify-start items-start p-0 -ml-2 my-0">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}

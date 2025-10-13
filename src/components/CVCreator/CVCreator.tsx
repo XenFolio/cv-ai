@@ -6,7 +6,7 @@ import { useCVLibrary } from '../../hooks/useCVLibrary';
 import { useCVSections } from '../../hooks/useCVSections';
 import { CVTemplateCarousel } from './CVTemplateCarousel';
 import { TemplateSkeleton } from './TemplateSkeleton';
-import { CVCreatorProvider } from './CVCreatorContext.provider';
+import { CVCreatorProviders } from './CVCreatorProviderOptimized';
 import { BreadcrumbNavigation } from '../UI/BreadcrumbNavigation';
 import { useAppStore } from '../../store/useAppStore';
 import { NavigationIcons } from '../UI/iconsData';
@@ -141,13 +141,7 @@ export const CVCreator: React.FC = () => {
   }, []);
 
   // Fonction de compatibilité pour l'ancien système
-  const updateSectionColor = useCallback((sectionId: string, type: 'foreground' | 'background', color: string) => {
-    if (type === 'foreground') {
-      updateSectionElementColor(sectionId, 'title', color);
-    } else {
-      updateSectionElementColor(sectionId, 'background', color);
-    }
-  }, [updateSectionElementColor]);
+  // (Supprimé car non utilisé)
 
   // Déclaration du state skills AVANT toute utilisation
   const [skills, setSkills] = useState<CVSkill[]>([
@@ -965,9 +959,10 @@ export const CVCreator: React.FC = () => {
     }
   }, [editableContent, experiences, languages, educations, addCreatedCV]);
 
-  // Context value for provider
-  const contextValue = {
-    // Content state
+  // Diviser le contexte en 3 contexts spécialisés pour optimiser les re-rendus
+
+  // Context pour le contenu du CV
+  const contentValue = {
     editableContent,
     setEditableContent,
     experiences,
@@ -978,8 +973,18 @@ export const CVCreator: React.FC = () => {
     setLanguages,
     educations,
     setEducations,
+    addExperience,
+    removeExperience,
+    addSkill,
+    removeSkill,
+    addLanguage,
+    removeLanguage,
+    addEducation,
+    removeEducation
+  };
 
-    // Style state
+  // Context pour le style du CV
+  const styleValue = {
     customFont,
     setCustomFont,
     customColor,
@@ -1016,24 +1021,8 @@ export const CVCreator: React.FC = () => {
     setPageMarginHorizontal,
     pageMarginVertical,
     setPageMarginVertical,
-
-    // UI state
-    editingField,
-    setEditingField,
-    selectedSection,
-    setSelectedSection,
-    selectedTemplateName,
-    selectedTemplate,
-    // Sections state
-    sections,
-    toggleSectionVisibility,
-    setSectionsOrder: setSectionsOrderFunc,
-    cleanupLayers,
-    expandSection,
-    contractSection,
     sectionColors,
     setSectionColors,
-    updateSectionColor,
     updateSectionElementColor,
     updateSectionCapitalization,
     capitalizeSections,
@@ -1041,8 +1030,24 @@ export const CVCreator: React.FC = () => {
     updateSectionTopBorder,
     sectionTopBorders,
     setSectionTopBorders,
+    availableFonts,
+    availableColors
+  };
 
-    // Skills library state
+  // Context pour l'interface utilisateur
+  const uiValue = {
+    editingField,
+    setEditingField,
+    selectedSection,
+    setSelectedSection,
+    sections,
+    toggleSectionVisibility,
+    setSectionsOrder: setSectionsOrderFunc,
+    cleanupLayers,
+    expandSection,
+    contractSection,
+    selectedTemplateName,
+    selectedTemplate,
     showSkillsLibrary: skillsLibraryState.showSkillsLibrary,
     setShowSkillsLibrary: closeSkillsLibrary,
     selectedSkillsCategory: skillsLibraryState.selectedCategory,
@@ -1055,25 +1060,9 @@ export const CVCreator: React.FC = () => {
     openSkillsLibrary,
     closeSkillsLibrary,
     addSkillFromLibrary,
-
-    // Skills layout state
     skillsLayout,
     setSkillsLayout,
-
-    // Actions
-    addExperience,
-    removeExperience,
-    addSkill,
-    removeSkill,
-    addLanguage,
-    removeLanguage,
-    addEducation,
-    removeEducation,
     generateWithAI,
-
-    // Data
-    availableFonts,
-    availableColors,
     isLoading,
     error,
     openAIError
@@ -1096,7 +1085,11 @@ export const CVCreator: React.FC = () => {
   }, [layoutColumns, columnRatio, sectionSpacing, autoSaveEnabled]);
 
   return (
-    <CVCreatorProvider value={contextValue}>
+    <CVCreatorProviders
+      contentValue={contentValue}
+      styleValue={styleValue}
+      uiValue={uiValue}
+    >
       <main className="w-full min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header responsive */}
         <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 px-3 py-1 sm:py-1">
@@ -1217,14 +1210,20 @@ export const CVCreator: React.FC = () => {
                   // Appliquer le nombre de colonnes du template
                   setLayoutColumns(template.layoutColumns);
                   // Appliquer les titres de sections du template
+                  // Extraire les noms des sections depuis sectionsOrder
+                  const getSectionName = (sectionId: string): string => {
+                    const section = template.sectionsOrder.find(s => s.id === sectionId);
+                    return section?.name || '';
+                  };
+
                   setEditableContent(prev => ({
                     ...prev,
-                    profileTitle: template.sectionTitles.profileTitle,
-                    experienceTitle: template.sectionTitles.experienceTitle,
-                    educationTitle: template.sectionTitles.educationTitle,
-                    skillsTitle: template.sectionTitles.skillsTitle,
-                    languagesTitle: template.sectionTitles.languagesTitle,
-                    contactTitle: template.sectionTitles.contactTitle
+                    profileTitle: getSectionName('profile'),
+                    experienceTitle: getSectionName('experience'),
+                    educationTitle: getSectionName('education'),
+                    skillsTitle: getSectionName('skills'),
+                    languagesTitle: getSectionName('languages'),
+                    contactTitle: getSectionName('contact')
                   }));
                   // Appliquer l'ordre des sections du template
                   if (setSectionsOrderFunc && Array.isArray(template.sectionsOrder)) {
@@ -1246,8 +1245,14 @@ export const CVCreator: React.FC = () => {
                   }
                 }
                 // Appliquer les traits de séparation du template
-                if (template?.sectionTopBorders) {
-                  setSectionTopBorders(template.sectionTopBorders);
+                if (template?.sectionsOrder) {
+                  const topBorders: Record<string, boolean> = {};
+                  template.sectionsOrder.forEach(section => {
+                    if (section.topBorder !== undefined) {
+                      topBorders[section.id] = section.topBorder;
+                    }
+                  });
+                  setSectionTopBorders(topBorders);
                 } else {
                   // Réinitialiser si pas défini dans le template
                   setSectionTopBorders({});
@@ -1260,6 +1265,6 @@ export const CVCreator: React.FC = () => {
         </aside>
       </div>
       </main>
-    </CVCreatorProvider>
+    </CVCreatorProviders>
   );
 };

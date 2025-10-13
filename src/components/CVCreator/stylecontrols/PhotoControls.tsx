@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlignLeft, AlignCenter, AlignRight, Circle, Square, Minus, Plus, ZoomIn, ZoomOut, RotateCw, Move, RotateCcw, Maximize, Frame } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, Circle, Square,  ZoomIn, ZoomOut, RotateCw, Move, RotateCcw, Maximize, Frame } from 'lucide-react';
 
 interface PhotoControlsProps {
   photoShape: 'circle' | 'square' | 'rounded';

@@ -142,20 +142,6 @@ export const ColorToneSelector: React.FC<{
   );
 };
 
-// Helper function to get section display name
-export const getSectionName = (sectionId: string): string => {
-  const sectionNames: Record<string, string> = {
-    'name': 'Nom',
-    'profile': 'Profil',
-    'contact': 'Contact',
-    'experience': 'Expériences',
-    'education': 'Formations',
-    'skills': 'Compétences',
-    'languages': 'Langues'
-  };
-  return sectionNames[sectionId] || sectionId;
-};
-
 interface StyleControlsProps {
   customFont: string;
   setCustomFont: (font: string) => void;
@@ -203,7 +189,7 @@ interface StyleControlsProps {
   setPageMarginVertical?: (margin: number) => void;
 }
 
-export const StyleControls: React.FC<StyleControlsProps> = ({
+export const StyleControls: React.FC<StyleControlsProps> = React.memo(({
   customFont,
   setCustomFont,
   customColor,
@@ -261,9 +247,23 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
   } = useCVCreator();
 
   // Utiliser directement les sections passées en props, elles sont déjà réactives
-  const contextSections = sections || [];
+  const contextSections = React.useMemo(() => sections || [], [sections]);
 
-  const fontOptions = availableFonts.map(font => ({ value: font, label: font }));
+  const fontOptions = React.useMemo(() =>
+    availableFonts.map(font => ({ value: font, label: font })),
+    [availableFonts]
+  );
+
+  // Always declare hooks at the top level
+  const handleResetAdjustments = React.useCallback(() => {
+    setPhotoZoom?.(100);
+    setPhotoPositionX?.(0);
+    setPhotoPositionY?.(0);
+    setPhotoRotation?.(0);
+    setPhotoShape?.('circle');
+    setPhotoSize?.('medium');
+    setPhotoAlignment?.('center');
+  }, [setPhotoZoom, setPhotoPositionX, setPhotoPositionY, setPhotoRotation, setPhotoShape, setPhotoSize, setPhotoAlignment]);
 
   // Si la section photo est sélectionnée, afficher seulement les contrôles photo
   if (selectedSection === 'photo') {
@@ -302,15 +302,7 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
           setPhotoPositionY={setPhotoPositionY || (() => {})}
           photoRotation={photoRotation}
           setPhotoRotation={setPhotoRotation || (() => {})}
-          handleResetAdjustments={() => {
-            setPhotoZoom?.(100);
-            setPhotoPositionX?.(0);
-            setPhotoPositionY?.(0);
-            setPhotoRotation?.(0);
-            setPhotoShape?.('circle');
-            setPhotoSize?.('medium');
-            setPhotoAlignment?.('center');
-          }}
+          handleResetAdjustments={handleResetAdjustments}
         />
       </div>
     );
@@ -531,10 +523,12 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
                       setSectionsOrder?.(updatedSections);
                     }
                   }}
-                  className={`p-1 rounded transition-all duration-200 ${contextSections?.find(s => s.id === selectedSection)?.alignment === 'center' || !contextSections?.find(s => s.id === selectedSection)?.alignment
-                    ? 'bg-violet-500 text-white shadow-md'
-                    : 'bg-white text-gray-600 hover:bg-violet-100'
-                    }`}
+                  className={`p-1 rounded transition-all duration-200 ${
+                    contextSections?.find(s => s.id === selectedSection)?.alignment === 'center' ||
+                    !contextSections?.find(s => s.id === selectedSection)?.alignment
+                      ? 'bg-violet-500 text-white shadow-md'
+                      : 'bg-white text-gray-600 hover:bg-violet-100'
+                  }`}
                   title="Centrer"
                 >
                   <AlignCenter className="w-4 h-4" />
@@ -597,4 +591,4 @@ export const StyleControls: React.FC<StyleControlsProps> = ({
       </div>
     </div>
   );
-};
+});

@@ -49,6 +49,7 @@ export interface SectionConfig {
   order: number;                // ordre dans le layer (0 = gauche, 1 = droite)
   width?: "full" | "half" | "1/3" | "2/3";      // largeur visuelle
   alignment?: 'left' | 'center' | 'right';     // alignement du contenu
+  topBorder?: boolean;         // bordure supérieure de la section
 }
 
 
@@ -130,6 +131,7 @@ export interface BaseSectionProps {
   generateWithAI: (field: string, currentContent?: string) => Promise<void>;
   isLoading: boolean;
   sectionId: string;
+  sectionName: string;
 }
 
 export interface ExperienceSectionProps extends BaseSectionProps {

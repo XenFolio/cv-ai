@@ -8,14 +8,6 @@ export interface Template {
   atsScore: number;
   theme: { primaryColor: string; font: string };
   layoutColumns: number;
-  sectionTitles: {
-    profileTitle: string;
-    experienceTitle: string;
-    educationTitle: string;
-    skillsTitle: string;
-    languagesTitle: string;
-    contactTitle: string;
-  };
   sectionsOrder: Array<{
     id: string;
     name: string;
@@ -24,8 +16,9 @@ export interface Template {
     layer?: number;
     order?: number;
     width?: 'full' | 'half';
+    alignment?: 'left' | 'center' | 'right';
+    topBorder?: boolean;
   }>;
-  sectionTopBorders?: Record<string, boolean>;
 }
 
 export const templates: Template[] = [
@@ -39,30 +32,16 @@ export const templates: Template[] = [
     image: "/images/minimalist.png",
     theme: { primaryColor: "2E3A59", font: "Calibri" },
     layoutColumns: 2,
-    sectionTitles: {
-      profileTitle: "PROFIL",
-      experienceTitle: "EXPÉRIENCE",
-      educationTitle: "FORMATION",
-      skillsTitle: "COMPÉTENCES",
-      languagesTitle: "LANGUES",
-      contactTitle: "CONTACT"
-    },
     sectionsOrder: [
-      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-      { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: false, layer: 2, order: 0, width: 'half' as const },
-      { id: 'profile', name: 'Profil', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
-      { id: 'experience', name: 'Expérience', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-      { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 4, order: 1, width: 'half' as const },
-      { id: 'education', name: 'Formation', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'half' as const },
-      { id: 'skills', name: 'Compétences', component: 'SkillsSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-      { id: 'languages', name: 'Langues', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'full' as const }
-    ],
-    sectionTopBorders: {
-      'experience': true,
-      'contact': true,
-      'education': true,
-      'languages': true
-    }
+      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: false, layer: 2, order: 0, width: 'half' as const, alignment: 'left', topBorder: false },
+      { id: 'profile', name: 'PROFIL', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'experience', name: 'EXPÉRIENCE', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'contact', name: 'CONTACT', component: 'ContactSection', visible: true, layer: 4, order: 1, width: 'half' as const, alignment: 'left', topBorder: true },
+      { id: 'education', name: 'FORMATION', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'half' as const, alignment: 'left', topBorder: true },
+      { id: 'skills', name: 'COMPÉTENCES', component: 'SkillsSection', visible: true, layer: 3, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'languages', name: 'LANGUES', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'full' as const, alignment: 'left', topBorder: true }
+    ]
   },
   {
     id: "2",
@@ -70,25 +49,19 @@ export const templates: Template[] = [
     description: "Un modèle visuel et audacieux pour les métiers artistiques.",
     category: "Créatif",
     atsScore: 70,
-    preview: "bg-gradient-to-br from-yellow-100 to-amber-100",
+    preview: "bg-gradient-to-br from-yellow-50 to-amber-50",
     image: "/images/creatif.png",
     theme: { primaryColor: "49332c", font: "Helvetica" },
     layoutColumns: 1,
-    sectionTitles: {
-      profileTitle: "À PROPOS DE MOI",
-      experienceTitle: "PARCOURS CRÉATIF",
-      educationTitle: "FORMATION ARTISTIQUE",
-      skillsTitle: "TALENTS & OUTILS",
-      languagesTitle: "LANGUES PARLÉES",
-      contactTitle: "CONTACT"
-    },
     sectionsOrder: [
-      { id: 'profile', name: 'À propos de moi', component: 'ProfileSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-      { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 2, order: 0, width: 'full' as const },
-      { id: 'skills', name: 'Talents & Outils', component: 'SkillsSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-      { id: 'experience', name: 'Parcours Créatif', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-      { id: 'education', name: 'Formation Artistique', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'half' as const },
-      { id: 'languages', name: 'Langues Parlées', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'half' as const }
+      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const, alignment: 'center', topBorder: false },
+      { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: false, layer: 2, order: 0, width: 'full' as const, alignment: 'center', topBorder: false },
+      { id: 'profile', name: 'À PROPOS DE MOI', component: 'ProfileSection', visible: true, layer: 2, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'contact', name: 'CONTACT', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const, alignment: 'center', topBorder: false },
+      { id: 'experience', name: 'PARCOURS CRÉATIF', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'education', name: 'FORMATION ARTISTIQUE', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'skills', name: 'TALENTS & OUTILS', component: 'SkillsSection', visible: true, layer: 6, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'languages', name: 'LANGUES PARLÉES', component: 'LanguagesSection', visible: true, layer: 7, order: 0, width: 'full' as const, alignment: 'left', topBorder: true }
     ]
   },
   {
@@ -98,26 +71,17 @@ export const templates: Template[] = [
     category: "Classique",
     atsScore: 85,
     preview: "bg-gradient-to-br from-gray-100 to-slate-100",
-    image: "/images/corporate.png",
-    theme: { primaryColor: "111827", font: "Times New Roman" },
+    image: "/images/corporate2.png",
+    theme: { primaryColor: "0b3796ff", font: "Times New Roman" },
     layoutColumns: 1,
-    sectionTitles: {
-      profileTitle: "PROFIL PROFESSIONNEL",
-      experienceTitle: "EXPÉRIENCE PROFESSIONNELLE",
-      educationTitle: "FORMATION ACADÉMIQUE",
-      skillsTitle: "COMPÉTENCES TECHNIQUES",
-      languagesTitle: "LANGUES ÉTRANGÈRES",
-      contactTitle: "CONTACT"
-    },
     sectionsOrder: [
-      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-      { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
-      { id: 'profile', name: 'Profil Professionnel', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
-      { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-      { id: 'experience', name: 'Expérience Professionnelle', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-      { id: 'education', name: 'Formation Académique', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'full' as const },
-      { id: 'skills', name: 'Compétences Techniques', component: 'SkillsSection', visible: true, layer: 6, order: 0, width: 'half' as const },
-      { id: 'languages', name: 'Langues Étrangères', component: 'LanguagesSection', visible: true, layer: 6, order: 1, width: 'half' as const }
+      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const, alignment: 'center', topBorder: false },
+      { id: 'profile', name: 'PROFIL PROFESSIONNEL', component: 'ProfileSection', visible: true, layer: 2, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'contact', name: 'CONTACT', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'experience', name: 'EXPÉRIENCE PROFESSIONNELLE', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'education', name: 'FORMATION ACADÉMIQUE', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'skills', name: 'COMPÉTENCES Cléfs', component: 'SkillsSection', visible: true, layer: 6, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'languages', name: 'LANGUES ÉTRANGÈRES', component: 'LanguagesSection', visible: true, layer: 7, order: 0, width: 'full' as const, alignment: 'left', topBorder: true }
     ]
   },
   {
@@ -126,27 +90,18 @@ export const templates: Template[] = [
     description: "Design contemporain avec des touches de couleur vive.",
     category: "Moderne",
     atsScore: 88,
-    preview: "bg-gradient-to-br from-violet-100 to-purple-100",
-    image: "/images/modern.png",
-    theme: { primaryColor: "7C3AED", font: "Calibri" },
+    preview: "bg-gradient-to-br from-gray-50/20 to-white",
+    image: "/images/modern2.png",
+    theme: { primaryColor: "960d0dff", font: "Calibri" },
     layoutColumns: 1,
-    sectionTitles: {
-      profileTitle: "QUI SUIS-JE ?",
-      experienceTitle: "MON PARCOURS",
-      educationTitle: "MES ÉTUDES",
-      skillsTitle: "MES COMPÉTENCES",
-      languagesTitle: "MES LANGUES",
-      contactTitle: "CONTACT"
-    },
     sectionsOrder: [
-      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-      { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
-      { id: 'profile', name: 'Qui suis-je ?', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
-      { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-      { id: 'skills', name: 'Mes Compétences', component: 'SkillsSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-      { id: 'experience', name: 'Mon Parcours', component: 'ExperienceSection', visible: true, layer: 5, order: 0, width: 'full' as const },
-      { id: 'languages', name: 'Mes Langues', component: 'LanguagesSection', visible: true, layer: 6, order: 0, width: 'half' as const },
-      { id: 'education', name: 'Mes Études', component: 'EducationSection', visible: true, layer: 6, order: 1, width: 'half' as const }
+      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'contact', name: '', component: 'ContactSection', visible: true, layer: 2, order: 0, width: 'full' as const, alignment: 'center', topBorder: false },
+      { id: 'profile', name: 'QUI SUIS-JE ?', component: 'ProfileSection', visible: true, layer: 3, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'experience', name: 'MON PARCOURS', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'education', name: 'MES ÉTUDES', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'skills', name: 'MES COMPÉTENCES', component: 'SkillsSection', visible: true, layer: 6, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'languages', name: 'MES LANGUES', component: 'LanguagesSection', visible: true, layer: 7, order: 0, width: 'full' as const, alignment: 'left', topBorder: true }
     ]
   },
   {
@@ -155,55 +110,38 @@ export const templates: Template[] = [
     description: "Style sobre en noir et blanc pour un look professionnel raffiné.",
     category: "Classique",
     atsScore: 92,
-    preview: "bg-gradient-to-br from-gray-100 to-gray-200",
-    image: "/images/elegant-bw.png",
+    preview: "bg-gradient-to-br from-gray-50/20 to-gray-50/80",
+    image: "/images/elegant-bw2.png",
     theme: { primaryColor: "0F172A", font: "Georgia" },
     layoutColumns: 1,
-    sectionTitles: {
-      profileTitle: "PRÉSENTATION",
-      experienceTitle: "CARRIÈRE PROFESSIONNELLE",
-      educationTitle: "CURSUS ACADÉMIQUE",
-      skillsTitle: "EXPERTISE TECHNIQUE",
-      languagesTitle: "MAÎTRISE LINGUISTIQUE",
-      contactTitle: "CONTACT"
-    },
     sectionsOrder: [
-      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-      { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
-      { id: 'profile', name: 'Présentation', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
-      { id: 'experience', name: 'Carrière Professionnelle', component: 'ExperienceSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-      { id: 'education', name: 'Cursus Académique', component: 'EducationSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-      { id: 'skills', name: 'Expertise Technique', component: 'SkillsSection', visible: true, layer: 5, order: 0, width: 'half' as const },
-      { id: 'languages', name: 'Maîtrise Linguistique', component: 'LanguagesSection', visible: true, layer: 5, order: 1, width: 'half' as const }
+      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const, alignment: 'center', topBorder: false },
+      { id: 'contact', name: '', component: 'ContactSection', visible: true, layer: 2, order: 0, width: 'full' as const, alignment: 'center', topBorder: false },
+      { id: 'profile', name: 'PRÉSENTATION', component: 'ProfileSection', visible: true, layer: 3, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'experience', name: 'CARRIÈRE PROFESSIONNELLE', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'education', name: 'CURSUS ACADÉMIQUE', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'skills', name: 'EXPERTISE TECHNIQUE', component: 'SkillsSection', visible: true, layer: 6, order: 0, width: 'full' as const, alignment: 'left', topBorder: true },
+      { id: 'languages', name: 'MAÎTRISE LINGUISTIQUE', component: 'LanguagesSection', visible: true, layer: 7, order: 0, width: 'full' as const, alignment: 'left', topBorder: true }
     ]
   },
   {
     id: "6",
     name: "Émeraude",
-    description: "Style élégant avec des accents émeraude pour un look professionnel moderne.",
+    description: "Style élégant avec en-tête verte émeraude pour un look professionnel moderne.",
     category: "Moderne",
     atsScore: 94,
-    preview: "bg-[#fbf9f4]",
-    image: "/images/emeraude.png",
-    theme: { primaryColor: "10B981", font: "Georgia" },
+    preview: "bg-white",
+    image: "/images/emeraude2.png",
+    theme: { primaryColor: "0D7D5C", font: "Calibri" },
     layoutColumns: 1,
-    sectionTitles: {
-      profileTitle: "PROFIL PERSONNEL",
-      experienceTitle: "EXPÉRIENCES CLÉS",
-      educationTitle: "PARCOURS ÉDUCATIF",
-      skillsTitle: "SAVOIR-FAIRE",
-      languagesTitle: "COMPÉTENCES LINGUISTIQUES",
-      contactTitle: "CONTACT"
-    },
     sectionsOrder: [
-      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const },
-      { id: 'photo', name: 'Photo', component: 'PhotoSection', visible: true, layer: 2, order: 0, width: 'full' as const },
-      { id: 'profile', name: 'Profil Personnel', component: 'ProfileSection', visible: true, layer: 2, order: 1, width: 'full' as const },
-      { id: 'contact', name: 'Contact', component: 'ContactSection', visible: true, layer: 3, order: 0, width: 'full' as const },
-      { id: 'experience', name: 'Expériences Clés', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const },
-      { id: 'skills', name: 'Savoir-faire', component: 'SkillsSection', visible: true, layer: 5, order: 0, width: 'full' as const },
-      { id: 'education', name: 'Parcours Éducatif', component: 'EducationSection', visible: true, layer: 6, order: 0, width: 'full' as const },
-      { id: 'languages', name: 'Compétences Linguistiques', component: 'LanguagesSection', visible: true, layer: 7, order: 0, width: 'full' as const }
+      { id: 'name', name: 'Nom', component: 'NameSection', visible: true, layer: 1, order: 0, width: 'full' as const, alignment: 'center', topBorder: false },
+      { id: 'contact', name: '', component: 'ContactSection', visible: true, layer: 2, order: 0, width: 'full' as const, alignment: 'center', topBorder: false },
+      { id: 'profile', name: 'PROFIL PROFESSIONNEL', component: 'ProfileSection', visible: true, layer: 3, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'experience', name: 'EXPÉRIENCE PROFESSIONNELLE', component: 'ExperienceSection', visible: true, layer: 4, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'education', name: 'FORMATION', component: 'EducationSection', visible: true, layer: 5, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'skills', name: 'COMPÉTENCES', component: 'SkillsSection', visible: true, layer: 6, order: 0, width: 'full' as const, alignment: 'left', topBorder: false },
+      { id: 'languages', name: 'LANGUES', component: 'LanguagesSection', visible: true, layer: 7, order: 0, width: 'full' as const, alignment: 'left', topBorder: false }
     ]
   }
 ];

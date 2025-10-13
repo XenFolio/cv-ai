@@ -14,15 +14,17 @@ interface Template {
   atsScore: number;
   theme: { primaryColor: string; font: string };
   layoutColumns: number;
-  sectionTitles: {
-    profileTitle: string;
-    experienceTitle: string;
-    educationTitle: string;
-    skillsTitle: string;
-    languagesTitle: string;
-    contactTitle: string;
-  };
-  sectionsOrder: unknown[];
+  sectionsOrder: Array<{
+    id: string;
+    name: string;
+    component: string;
+    visible: boolean;
+    layer?: number;
+    order?: number;
+    width?: 'full' | 'half';
+    alignment?: 'left' | 'center' | 'right';
+    topBorder?: boolean;
+  }>;
 }
 
 // Fonction pour calculer un score ATS approximatif

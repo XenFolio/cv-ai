@@ -206,7 +206,7 @@ const SectionDroppable: React.FC<SectionDroppableProps> = ({
         ${isOver ? "bg-violet-50" : ""}
       `}
       style={{
-        minHeight: section.id === "name" ? "auto" : "80px",
+        minHeight: section.id === "name" ? "auto" : "auto",
         display: "flex",
         flexDirection: "column",
         opacity: isDragging && activeSection === section.id ? 0 : 1,
@@ -226,7 +226,7 @@ interface DraggableSectionsProps {
   setSectionsOrder: (sections: SectionConfig[]) => void;
 }
 
-export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSectionsOrder }) => {
+export const DraggableSections: React.FC<DraggableSectionsProps> = React.memo(({ setSectionsOrder }) => {
   const {
     editableContent,
     setEditableContent,
@@ -276,10 +276,11 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
   const [isDragging, setIsDragging] = React.useState(false);
   const [activeSection, setActiveSection] = React.useState<string | undefined>(undefined);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  // Move hooks to the top level
+  const pointerSensor = useSensor(PointerSensor);
+  const keyboardSensor = useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates });
+
+  const sensors = useSensors(pointerSensor, keyboardSensor);
 
   const handleDragStart = (event: DragStartEvent) => {
     setIsDragging(true);
@@ -397,6 +398,12 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
     isLoading,
   };
 
+  // Fonction pour obtenir le nom d'une section depuis sa configuration
+  const getSectionName = (sectionId: string): string => {
+    const section = sections.find(s => s.id === sectionId);
+    return section?.name || '';
+  };
+
 
 
   // Fonction pour obtenir la couleur de la section gauche d'un layer
@@ -437,26 +444,45 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
     );
   };
 
-  const visible = sections.filter((s) => s.visible);
+  const visible = React.useMemo(() => sections.filter((s) => s.visible), [sections]);
   console.log('All sections:', sections);
   console.log('Visible sections:', visible);
-  const layersMap = new Map<number, { capacity: number; sections: SectionConfig[] }>();
 
-  visible.forEach((s) => {
-    const key = s.layer ?? 1;
-    if (!layersMap.has(key)) layersMap.set(key, { capacity: 2, sections: [] });
-    layersMap.get(key)!.sections.push(s);
-  });
+  const layersMap = React.useMemo(() => {
+    const map = new Map<number, { capacity: number; sections: SectionConfig[] }>();
 
-  // capacité = 1 si une section est full
-  layersMap.forEach((entry) => {
-    if (entry.sections.some((s) => s.width === "full")) entry.capacity = 1;
-  });
+    visible.forEach((s) => {
+      const key = s.layer ?? 1;
+      if (!map.has(key)) map.set(key, { capacity: 2, sections: [] });
+      map.get(key)!.sections.push(s);
+    });
+
+    // capacité = 1 si une section est full
+    map.forEach((entry) => {
+      if (entry.sections.some((s) => s.width === "full")) entry.capacity = 1;
+    });
+
+    return map;
+  }, [visible]);
+
+  // Fonction pour obtenir l'alignement d'une section depuis sa configuration
+  const getSectionAlignment = (sectionId: string): 'left' | 'center' | 'right' => {
+    const section = sections.find(s => s.id === sectionId);
+    return section?.alignment || 'left';
+  };
+
+  // Fonction pour obtenir si une section doit avoir une bordure supérieure
+  /* const getSectionTopBorder = (sectionId: string): boolean => {
+    const section = sections.find(s => s.id === sectionId);
+    return section?.topBorder || false;
+  }; */
 
   // utilitaire de rendu de contenu
   const renderContent = (id: string) => {
+    const sectionName = getSectionName(id);
+
     switch (id) {
-      case "name": return <NameSection {...commonSectionProps} nameAlignment={nameAlignment} nameFontSize={nameFontSize} isCreativeTemplate={selectedTemplate === "2"} sectionId="name" />;
+      case "name": return <NameSection {...commonSectionProps} nameAlignment={nameAlignment} nameFontSize={nameFontSize} isCreativeTemplate={selectedTemplate === "2"} sectionId="name"  />;
       case "photo": return (
         <PhotoSection
           editableContent={editableContent}
@@ -472,8 +498,8 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
           photoObjectFit={photoObjectFit}
         />
       );
-      case "profile": return <ProfileSection {...commonSectionProps} sectionId="profile" />;
-      case "contact": return <ContactSection {...commonSectionProps} sectionId="contact" />;
+      case "profile": return <ProfileSection {...commonSectionProps} sectionId="profile" sectionName={sectionName} />;
+      case "contact": return <ContactSection {...commonSectionProps} sectionId="contact" alignment={getSectionAlignment("contact")} />;
       case "experience": return (
         <ExperienceSection
           {...commonSectionProps}
@@ -482,6 +508,7 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
           addExperience={addExperience}
           removeExperience={removeExperience}
           sectionId="experience"
+          sectionName={sectionName}
         />
       );
       case "education": return (
@@ -492,6 +519,7 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
           addEducation={addEducation}
           removeEducation={removeEducation}
           sectionId="education"
+          sectionName={sectionName}
         />
       );
       case "skills": return (
@@ -512,23 +540,28 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
           addLanguage={addLanguage}
           removeLanguage={removeLanguage}
           sectionId="languages"
+          sectionName={sectionName}
         />
       );
       default: return null;
     }
   };
 
+  const handleResetSections = React.useCallback(() => {
+    setSectionsOrder(cleanupLayers(sections));
+  }, [setSectionsOrder, cleanupLayers, sections]);
+
   return (
     <div className="w-full space-y-1">
-      <div className="flex justify-end mb-2">
-        <button
-          onClick={() => setSectionsOrder(cleanupLayers(sections))}
-          className="flex items-center gap-1 px-2 py-0 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-all duration-200"
+      <div className="flex justify-end mb-0">
+        <div
+          onClick={handleResetSections}
+          className="flex items-center gap-1 px-2 py-0.5 text-xs border border-transparent text-transparent rounded-md  hover:text-violet-500 hover:border-violet-500 cursor-pointer transition-all duration-200"
           title="Réinitialiser l'ordre des sections"
         >
           <RotateCcw className="w-3 h-3" />
           Réinitialiser l'ordre
-        </button>
+        </div>
       </div>
 
       <DndContext
@@ -690,4 +723,4 @@ export const DraggableSections: React.FC<DraggableSectionsProps> = ({ setSection
       </DndContext>
     </div>
   );
-};
+});

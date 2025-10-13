@@ -1,7 +1,6 @@
 import React from 'react';
 import type { CVContent } from '../types';
 import { useCVCreator } from '../CVCreatorContext.hook';
-import { AIButton } from '../../UI';
 import EditableFieldWithTitle from '../EditableFieldWithTitle';
 
 interface ContactSectionProps {
@@ -13,6 +12,7 @@ interface ContactSectionProps {
   generateWithAI: (field: string, content?: string) => Promise<void>;
   isLoading: boolean;
   sectionId?: string;
+  alignment?: 'left' | 'center' | 'right';
 }
 
 export const ContactSection: React.FC<ContactSectionProps> = ({
@@ -23,7 +23,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   titleColor,
   generateWithAI,
   isLoading,
-  sectionId
+  sectionId,
+  alignment = 'left'
 }) => {
   const { sectionColors, capitalizeSections } = useCVCreator();
 
@@ -31,12 +32,25 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;
   const textColor = sectionColorSettings?.title || titleColor;
   const contentColor = sectionColorSettings?.content || '000000';
-  const [titleHovered, setTitleHovered] = React.useState(false);
-
+  /* const [titleHovered, setTitleHovered] = React.useState(false);
+ */
   // Vérifier si la capitalisation des titres est activée
   const isTitleCapitalized = sectionId ? capitalizeSections[sectionId] ?? true : true;
+
+  // Déterminer les classes d'alignement
+  const getAlignmentClasses = () => {
+    switch (alignment) {
+      case 'center':
+        return 'text-center items-center justify-center';
+      case 'right':
+        return 'text-right items-end justify-end';
+      default:
+        return 'text-left items-start justify-start';
+    }
+  };
+
   return (
-    <div className="mt-0">
+    <div className={`mt-0 ${getAlignmentClasses()}`}>
       {editingField === 'contactTitle' ? (
         <div className="flex items-center gap-2">
           <input
@@ -74,7 +88,6 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           showEditButton={true}
         />
       )}
-
       {editingField === 'contact' ? (
         <textarea
           value={editableContent.contact}
@@ -93,13 +106,23 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
       ) : (
         <div className="group relative mt-0">
           <div
-            className="text-[0.85rem] cursor-pointer hover:bg-gray-100 p-0 rounded transition-colors duration-200 whitespace-pre-wrap"
+            className="text-[0.8rem] cursor-pointer hover:bg-gray-100 p-0 rounded transition-colors duration-200 whitespace-pre-wrap leading-relaxed"
             onClick={() => setEditingField('contact')}
             style={{ color: `#${contentColor}` }}
           >
-            {editableContent.contact || 'Cliquez pour ajouter vos informations de contact'}
+            {editableContent.contact
+              ? editableContent.contact
+                  .split(/[,•\n]/)
+                  .filter(part => part.trim())
+                  .map((part, index, array) => (
+                    <React.Fragment key={index}>
+                      {part.trim()}
+                      {index < array.length - 1 && <br />}
+                    </React.Fragment>
+                  ))
+              : 'Cliquez pour ajouter vos informations de contact'
+            }
           </div>
-
         </div>
       )}
     </div>

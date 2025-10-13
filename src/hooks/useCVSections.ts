@@ -237,8 +237,9 @@ export const useCVSections = () => {
 
           let targetWidth: "full" | "half" | "1/3" | "2/3" = "half";
 
-          // SkillsSection a besoin de rester en "full" pour sa logique de layout spéciale
-          if (s.id === 'skills') {
+          // La section skills peut maintenant être réduite normalement
+          if (layoutColumns === 1) {
+            // Mode 1 colonne : columnRatio = 1 (toute la largeur)
             targetWidth = "full";
           } else if (layoutColumns === 2) {
             if (columnRatio === '1/3-2/3') {
@@ -252,7 +253,7 @@ export const useCVSections = () => {
               targetWidth = "half";
             }
           } else {
-            // Mode 1 colonne, garder en half pour cohérence
+            // Mode par défaut, garder en half pour cohérence
             targetWidth = "half";
           }
 

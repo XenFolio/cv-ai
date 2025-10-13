@@ -27,8 +27,8 @@ export const NameSection: React.FC<NameSectionProps> = ({
 }) => {
   const { sectionColors, capitalizeSections } = useCVCreator();
 
-  // Taille de police plus grande pour le template créatif
-  const creativeFontSize = isCreativeTemplate ? 32 : nameFontSize;
+  // Taille de police pour le template créatif (utilise nameFontSize s'il est différent de la valeur par défaut)
+  const creativeFontSize = isCreativeTemplate ? (nameFontSize !== 18 ? nameFontSize : 32) : nameFontSize;
 
   // Couleurs personnalisées pour la section
   const sectionColorSettings = sectionId ? sectionColors[sectionId] : null;

@@ -1,8 +1,9 @@
 import React from 'react';
 import { StyleControls } from '../StyleControls';
-import { useCVCreator } from '../CVCreatorContext.hook';
+import { useCVStyle, useCVContent, useCVUI } from '../contexts';
 
 export const StyleControlsModule: React.FC = () => {
+  // Utiliser les contextes spécialisés pour optimiser les re-rendus
   const {
     customFont,
     setCustomFont,
@@ -34,20 +35,24 @@ export const StyleControlsModule: React.FC = () => {
     setPhotoRotation,
     photoObjectFit,
     setPhotoObjectFit,
-    selectedSection,
     columnRatio,
     setColumnRatio,
     availableFonts,
     availableColors,
-    editableContent,
-    sections,
-    setSectionsOrder,
-    toggleSectionVisibility,
     pageMarginHorizontal,
     setPageMarginHorizontal,
     pageMarginVertical,
     setPageMarginVertical
-  } = useCVCreator();
+  } = useCVStyle();
+
+  const { editableContent } = useCVContent();
+
+  const {
+    selectedSection,
+    sections,
+    setSectionsOrder,
+    toggleSectionVisibility
+  } = useCVUI();
 
   return (
     <StyleControls

@@ -109,8 +109,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
     // Effet d'intersection adapté selon la largeur et la position
     if (position === 'left') {
       // Section gauche : priorité visuelle avec ombre
-      const shadowIntensity = width === '2/3' ? 'shadow-md' : 'shadow-sm';
-      return `relative z-10 ${shadowIntensity}`;
+      return `relative z-10 `;
     } else if (position === 'right') {
       // Section droite : superposition adaptée à la largeur (éviter de couvrir les slots vides)
       const marginOffset = width === '1/3' ? '-ml-2' : width === '2/3' ? '-ml-1' : width === 'half' ? '' : '-ml-1';

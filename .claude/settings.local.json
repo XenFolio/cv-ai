@@ -10,7 +10,8 @@
       "Bash(git commit:*)",
       "Bash(npm run)",
       "Read(//e//**)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npx kill-port:*)"
     ],
     "deny": [],
     "ask": []

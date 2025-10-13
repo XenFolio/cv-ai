@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCVCreator } from '../CVCreatorContext.hook';
+import { useCVStyle, useCVUI } from '../contexts';
 import { DraggableSections } from '../DraggableSections';
 import type { SectionConfig } from '../types';
 
@@ -15,13 +15,16 @@ interface PreviewModuleProps {
 export const PreviewModule: React.FC<PreviewModuleProps> = ({ setSectionsOrder, templates }) => {
   const {
     customFont,
+    pageMarginHorizontal = 20,
+    pageMarginVertical = 20
+  } = useCVStyle();
+
+  const {
     error,
     openAIError,
     selectedTemplate,
-    setSelectedSection,
-    pageMarginHorizontal = 20,
-    pageMarginVertical = 20
-  } = useCVCreator();
+    setSelectedSection
+  } = useCVUI();
   const [showError, setShowError] = React.useState(false);
 
   // Fonction pour trouver le template sélectionné et obtenir sa couleur de fond
