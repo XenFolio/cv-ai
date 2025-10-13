@@ -240,7 +240,7 @@ export const CVCreator: React.FC = () => {
 
     // Charger les compétences pour la première catégorie
     loadSkillsForCategory(categories[0] || '');
-  }, []);
+  }, [loadSkillsForCategory]);
 
   const searchSkills = useCallback((query: string) => {
     setSkillsLibraryState(prev => ({ ...prev, searchQuery: query }));
@@ -265,7 +265,7 @@ export const CVCreator: React.FC = () => {
   const setSelectedSkillsCategory = useCallback((category: string) => {
     setSkillsLibraryState(prev => ({ ...prev, selectedCategory: category }));
     loadSkillsForCategory(category);
-  }, []);
+  }, [loadSkillsForCategory]);
 
   const addSkillFromLibrary = useCallback((skill: { id: number; name: string; category: string }) => {
     // Vérifier si la compétence n'est pas déjà ajoutée
